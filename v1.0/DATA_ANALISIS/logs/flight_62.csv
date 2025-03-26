@@ -1,0 +1,293 @@
+Timestamp,Event,Temperature,Pressure,Altitude,Humidity,AccelX,AccelY,AccelZ,GyroX,GyroY,GyroZ,Latitude,Longitude,DateTime
+945,[INFO] Initializing sensors...
+1447,[INFO] Rocket initialized
+5000,[STATE] WAKING_UP
+10000,[STATE] CHECKING_ROCKET
+10004,[INFO] Checking sensors...
+10008,[INFO] Reading DS18B20 sensor...
+10074,[INFO] DS18B20 sensor OK
+10078,SensorData,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.000000,0.000000,
+,21.19
+10083,[INFO] Reading BME280 sensor...
+10093,[INFO] BME280 sensor OK
+10099,SensorData,20.77,944.00,592.96,52.51,0.00,0.00,0.00,0.00,0.00,0.00,0.000000,0.000000,
+,21.19
+10105,[INFO] Reading MPU6050 sensor...
+10112,[INFO] MPU6050 sensor OK
+10116,SensorData,20.77,944.00,592.96,52.51,1.99,0.29,12.79,-7.34,0.79,-0.28,0.000000,0.000000,
+,21.19
+10121,[INFO] Reading GPS sensor...
+10126,[INFO] Ground altitude: 592.96m
+10130,[INFO] GPS sensor OK
+10134,SensorData,20.77,944.00,592.96,52.51,1.99,0.29,12.79,-7.34,0.79,-0.28,0.000000,0.000000,
+,21.19
+10139,[INFO] Sensors OK
+10189,SensorData,20.77,944.00,592.96,52.51,1.99,0.29,12.79,-7.34,0.79,-0.28,0.000000,0.000000,
+,21.19
+10195,[STATE] WAITING_FOR_LAUNCH
+20195,[STATE] FLIGHT
+20267,SensorData,20.81,944.03,592.97,52.43,1.97,0.31,12.75,-7.31,0.95,-0.04,0.000000,0.000000,
+,21.25
+20282,[WARNING] Failed to transmit telemetry data
+20307,[WARNING] Failed to transmit telemetry data
+20391,SensorData,20.80,943.99,593.25,52.42,1.95,0.29,12.71,-7.34,0.89,-0.01,0.000000,0.000000,
+,21.25
+20405,[WARNING] Failed to transmit telemetry data
+20432,[WARNING] Failed to transmit telemetry data
+20516,SensorData,20.81,944.03,592.95,52.44,1.94,0.27,12.66,-7.21,0.87,-0.24,0.000000,0.000000,
+,21.25
+20531,[WARNING] Failed to transmit telemetry data
+20555,[WARNING] Failed to transmit telemetry data
+20639,SensorData,20.80,943.98,593.35,52.45,2.00,0.28,12.67,-7.27,0.65,-0.04,0.000000,0.000000,
+,21.25
+20654,[WARNING] Failed to transmit telemetry data
+20678,[WARNING] Failed to transmit telemetry data
+20762,SensorData,20.81,944.03,592.90,52.45,1.94,0.23,12.64,-7.37,0.88,-0.18,0.000000,0.000000,
+,21.25
+20779,[WARNING] Failed to transmit telemetry data
+20803,[WARNING] Failed to transmit telemetry data
+20887,SensorData,20.82,944.02,593.00,52.47,1.97,0.23,12.80,-7.24,0.84,0.01,0.000000,0.000000,
+,21.25
+20902,[WARNING] Failed to transmit telemetry data
+20927,[WARNING] Failed to transmit telemetry data
+21010,SensorData,20.82,944.03,592.94,52.48,1.97,0.25,12.71,-7.31,0.66,-0.08,0.000000,0.000000,
+,21.25
+21025,[WARNING] Failed to transmit telemetry data
+21052,[WARNING] Failed to transmit telemetry data
+21135,SensorData,20.82,944.04,592.88,52.47,1.94,0.31,12.71,-7.48,1.13,-0.11,0.000000,0.000000,
+,21.25
+21150,[WARNING] Failed to transmit telemetry data
+21175,[WARNING] Failed to transmit telemetry data
+21259,SensorData,20.80,944.01,593.15,52.48,1.92,0.31,12.69,-7.24,0.73,-0.02,0.000000,0.000000,
+,21.25
+21273,[WARNING] Failed to transmit telemetry data
+21298,[WARNING] Failed to transmit telemetry data
+21382,SensorData,20.81,944.00,593.22,52.93,1.95,0.28,12.78,-7.21,0.74,-0.13,0.000000,0.000000,
+,21.25
+21399,[WARNING] Failed to transmit telemetry data
+21423,[WARNING] Failed to transmit telemetry data
+21552,SensorData,20.82,944.02,592.99,52.51,1.98,0.27,12.74,-7.28,0.72,-0.10,0.000000,0.000000,
+,21.25
+21567,[WARNING] Failed to transmit telemetry data
+21592,[WARNING] Failed to transmit telemetry data
+21676,SensorData,20.82,944.01,593.11,52.55,1.96,0.26,12.67,-7.21,0.64,-0.03,0.000000,0.000000,
+,21.25
+21691,[WARNING] Failed to transmit telemetry data
+21717,[WARNING] Failed to transmit telemetry data
+21801,SensorData,20.83,944.05,592.76,52.65,1.96,0.28,12.81,-7.30,0.93,-0.12,0.000000,0.000000,
+,21.25
+21816,[WARNING] Failed to transmit telemetry data
+21840,[WARNING] Failed to transmit telemetry data
+21856,[INFO] Apogee detected at 593.35 m
+21929,SensorData,20.81,943.99,593.27,52.73,1.97,0.28,12.70,-7.31,0.66,-0.26,0.000000,0.000000,
+,21.25
+21944,[WARNING] Failed to transmit telemetry data
+21968,[WARNING] Failed to transmit telemetry data
+22054,SensorData,20.82,944.03,592.93,52.84,1.92,0.25,12.73,-7.33,0.68,-0.08,0.000000,0.000000,
+,21.25
+22069,[WARNING] Failed to transmit telemetry data
+22094,[WARNING] Failed to transmit telemetry data
+22177,SensorData,20.83,944.02,593.06,52.91,1.94,0.27,12.69,-7.40,0.76,0.05,0.000000,0.000000,
+,21.25
+22192,[WARNING] Failed to transmit telemetry data
+22217,[WARNING] Failed to transmit telemetry data
+22301,SensorData,20.83,944.02,593.06,53.04,1.96,0.28,12.70,-7.42,0.88,-0.02,0.000000,0.000000,
+,21.25
+22318,[WARNING] Failed to transmit telemetry data
+22342,[WARNING] Failed to transmit telemetry data
+22426,SensorData,20.82,944.01,593.14,53.08,1.92,0.32,12.70,-7.27,0.79,-0.34,0.000000,0.000000,
+,21.25
+22441,[WARNING] Failed to transmit telemetry data
+22465,[WARNING] Failed to transmit telemetry data
+22549,SensorData,20.83,943.99,593.31,53.12,1.94,0.25,12.79,-7.34,0.64,-0.09,0.000000,0.000000,
+,21.25
+22564,[WARNING] Failed to transmit telemetry data
+22589,[WARNING] Failed to transmit telemetry data
+22674,SensorData,20.82,943.96,593.53,53.13,1.88,0.25,12.65,-7.23,0.72,-0.11,0.000000,0.000000,
+,21.31
+22689,[WARNING] Failed to transmit telemetry data
+22714,[WARNING] Failed to transmit telemetry data
+22798,SensorData,20.83,944.00,593.22,53.15,1.96,0.25,12.73,-7.29,0.77,0.08,0.000000,0.000000,
+,21.25
+22813,[WARNING] Failed to transmit telemetry data
+22883,[WARNING] Failed to transmit telemetry data
+22967,SensorData,20.83,944.02,593.04,53.17,1.92,0.26,12.70,-7.31,0.61,0.03,0.000000,0.000000,
+,21.25
+22984,[WARNING] Failed to transmit telemetry data
+23008,[WARNING] Failed to transmit telemetry data
+23092,SensorData,20.82,943.99,593.32,53.16,1.95,0.33,12.83,-7.23,0.79,-0.26,0.000000,0.000000,
+,21.31
+23107,[WARNING] Failed to transmit telemetry data
+23132,[WARNING] Failed to transmit telemetry data
+23215,SensorData,20.83,944.00,593.17,53.18,1.96,0.28,12.73,-7.23,0.58,-0.04,0.000000,0.000000,
+,21.31
+23230,[WARNING] Failed to transmit telemetry data
+23255,[WARNING] Failed to transmit telemetry data
+23341,SensorData,20.83,944.00,593.20,53.19,1.98,0.31,12.79,-7.38,0.72,-0.10,0.000000,0.000000,
+,21.31
+23356,[WARNING] Failed to transmit telemetry data
+23380,[WARNING] Failed to transmit telemetry data
+23464,SensorData,20.84,944.04,592.88,53.18,1.95,0.24,12.72,-7.44,0.65,-0.11,0.000000,0.000000,
+,21.31
+23479,[WARNING] Failed to transmit telemetry data
+23504,[WARNING] Failed to transmit telemetry data
+23587,SensorData,20.83,944.00,593.19,53.17,1.93,0.31,12.66,-7.22,0.89,-0.03,0.000000,0.000000,
+,21.31
+23604,[WARNING] Failed to transmit telemetry data
+23629,[WARNING] Failed to transmit telemetry data
+23713,SensorData,20.83,944.00,593.17,53.17,1.98,0.24,12.77,-7.41,0.73,-0.24,0.000000,0.000000,
+,21.31
+23728,[WARNING] Failed to transmit telemetry data
+23752,[WARNING] Failed to transmit telemetry data
+23836,SensorData,20.83,944.00,593.18,53.18,1.92,0.25,12.75,-7.35,1.02,-0.21,0.000000,0.000000,
+,21.31
+23851,[WARNING] Failed to transmit telemetry data
+23876,[WARNING] Failed to transmit telemetry data
+23961,SensorData,20.83,944.01,593.12,53.19,1.98,0.34,12.77,-7.38,0.62,0.08,0.000000,0.000000,
+,21.31
+23976,[WARNING] Failed to transmit telemetry data
+24001,[WARNING] Failed to transmit telemetry data
+24084,SensorData,20.84,944.02,592.98,53.17,1.95,0.29,12.62,-7.31,0.72,-0.07,0.000000,0.000000,
+,21.31
+24099,[WARNING] Failed to transmit telemetry data
+24124,[WARNING] Failed to transmit telemetry data
+24208,SensorData,20.84,943.98,593.34,53.19,2.01,0.25,12.72,-7.17,0.81,-0.11,0.000000,0.000000,
+,21.31
+24225,[WARNING] Failed to transmit telemetry data
+24292,[WARNING] Failed to transmit telemetry data
+24376,SensorData,20.84,944.01,593.14,53.17,1.90,0.26,12.77,-7.20,0.76,-0.17,0.000000,0.000000,
+,21.31
+24391,[WARNING] Failed to transmit telemetry data
+24416,[WARNING] Failed to transmit telemetry data
+24499,SensorData,20.84,943.99,593.31,53.16,1.96,0.30,12.75,-7.18,0.66,-0.22,0.000000,0.000000,
+,21.31
+24514,[WARNING] Failed to transmit telemetry data
+24539,[WARNING] Failed to transmit telemetry data
+24625,SensorData,20.84,944.00,593.22,53.12,1.94,0.30,12.71,-7.40,0.69,-0.12,0.000000,0.000000,
+,21.31
+24640,[WARNING] Failed to transmit telemetry data
+24664,[WARNING] Failed to transmit telemetry data
+24748,SensorData,20.85,944.00,593.22,53.08,1.97,0.27,12.78,-7.47,0.86,-0.09,0.000000,0.000000,
+,21.31
+24763,[WARNING] Failed to transmit telemetry data
+24787,[WARNING] Failed to transmit telemetry data
+24871,SensorData,20.84,943.98,593.36,53.10,2.03,0.31,12.76,-7.28,0.66,0.12,0.000000,0.000000,
+,21.31
+24888,[WARNING] Failed to transmit telemetry data
+24913,[WARNING] Failed to transmit telemetry data
+24996,SensorData,20.84,944.02,593.04,53.09,1.93,0.30,12.71,-7.43,0.70,0.09,0.000000,0.000000,
+,21.31
+25011,[WARNING] Failed to transmit telemetry data
+25036,[WARNING] Failed to transmit telemetry data
+25120,SensorData,20.84,944.01,593.15,53.07,1.98,0.38,12.76,-7.52,0.85,-0.08,0.000000,0.000000,
+,21.31
+25134,[WARNING] Failed to transmit telemetry data
+25159,[WARNING] Failed to transmit telemetry data
+25245,SensorData,20.84,944.00,593.16,53.08,1.97,0.29,12.67,-7.44,0.73,-0.14,0.000000,0.000000,
+,21.31
+25260,[WARNING] Failed to transmit telemetry data
+25284,[WARNING] Failed to transmit telemetry data
+25368,SensorData,20.85,944.01,593.09,53.06,1.92,0.28,12.72,-7.40,0.90,0.04,0.000000,0.000000,
+,21.31
+25383,[WARNING] Failed to transmit telemetry data
+25408,[WARNING] Failed to transmit telemetry data
+25491,SensorData,20.85,944.01,593.12,53.02,2.01,0.26,12.69,-7.31,0.80,-0.06,0.000000,0.000000,
+,21.31
+25508,[WARNING] Failed to transmit telemetry data
+25533,[WARNING] Failed to transmit telemetry data
+25616,SensorData,20.85,944.00,593.24,53.19,1.98,0.24,12.78,-7.22,0.87,-0.09,0.000000,0.000000,
+,21.31
+25631,[WARNING] Failed to transmit telemetry data
+25699,[WARNING] Failed to transmit telemetry data
+25783,SensorData,20.85,943.98,593.39,52.99,1.95,0.30,12.65,-7.44,0.99,0.11,0.000000,0.000000,
+,21.31
+25798,[WARNING] Failed to transmit telemetry data
+25822,[WARNING] Failed to transmit telemetry data
+25908,SensorData,20.86,944.01,593.09,52.95,1.97,0.30,12.74,-7.24,0.77,-0.13,0.000000,0.000000,
+,21.31
+25923,[WARNING] Failed to transmit telemetry data
+25948,[WARNING] Failed to transmit telemetry data
+26031,SensorData,20.86,944.01,593.03,52.33,1.97,0.27,12.70,-7.47,0.86,-0.06,0.000000,0.000000,
+,21.31
+26046,[WARNING] Failed to transmit telemetry data
+26071,[WARNING] Failed to transmit telemetry data
+26155,SensorData,20.85,944.01,593.11,52.91,1.95,0.21,12.66,-7.24,0.81,-0.14,0.000000,0.000000,
+,21.31
+26171,[WARNING] Failed to transmit telemetry data
+26196,[WARNING] Failed to transmit telemetry data
+26280,SensorData,20.86,944.02,593.02,52.89,1.93,0.24,12.69,-7.41,0.77,0.02,0.000000,0.000000,
+,21.31
+26295,[WARNING] Failed to transmit telemetry data
+26319,[WARNING] Failed to transmit telemetry data
+26403,SensorData,20.86,944.00,593.16,52.87,1.99,0.29,12.75,-7.37,0.67,-0.14,0.000000,0.000000,
+,21.31
+26418,[WARNING] Failed to transmit telemetry data
+26443,[WARNING] Failed to transmit telemetry data
+26528,SensorData,20.86,944.01,593.07,52.84,1.94,0.28,12.64,-7.45,0.82,-0.04,0.000000,0.000000,
+,21.31
+26543,[WARNING] Failed to transmit telemetry data
+26568,[WARNING] Failed to transmit telemetry data
+26652,SensorData,20.86,943.99,593.30,52.84,1.96,0.34,12.72,-7.46,0.99,-0.24,0.000000,0.000000,
+,21.31
+26667,[WARNING] Failed to transmit telemetry data
+26691,[WARNING] Failed to transmit telemetry data
+26775,SensorData,20.86,943.98,593.34,52.84,1.97,0.29,12.70,-7.35,0.66,-0.03,0.000000,0.000000,
+,21.31
+26792,[WARNING] Failed to transmit telemetry data
+26816,[WARNING] Failed to transmit telemetry data
+26900,SensorData,20.86,944.00,593.18,52.88,1.93,0.28,12.71,-7.03,0.50,-0.12,0.000000,0.000000,
+,21.31
+26915,[WARNING] Failed to transmit telemetry data
+26940,[WARNING] Failed to transmit telemetry data
+27023,SensorData,20.86,944.00,593.22,52.83,1.95,0.28,12.78,-7.41,0.70,-0.27,0.000000,0.000000,
+,21.31
+27038,[WARNING] Failed to transmit telemetry data
+27108,[WARNING] Failed to transmit telemetry data
+27192,SensorData,20.86,943.98,593.36,52.81,1.97,0.30,12.64,-7.30,0.77,-0.08,0.000000,0.000000,
+,21.31
+27207,[WARNING] Failed to transmit telemetry data
+27231,[WARNING] Failed to transmit telemetry data
+27315,SensorData,20.88,944.01,593.08,52.82,1.94,0.27,12.70,-7.28,0.84,-0.03,0.000000,0.000000,
+,21.31
+27330,[WARNING] Failed to transmit telemetry data
+27355,[WARNING] Failed to transmit telemetry data
+27438,SensorData,20.87,943.98,593.38,52.81,1.94,0.26,12.72,-7.24,0.84,-0.23,0.000000,0.000000,
+,21.31
+27455,[WARNING] Failed to transmit telemetry data
+27480,[WARNING] Failed to transmit telemetry data
+27563,SensorData,20.87,943.99,593.29,52.81,1.98,0.23,12.79,-7.32,0.90,0.00,0.000000,0.000000,
+,21.31
+27578,[WARNING] Failed to transmit telemetry data
+27603,[WARNING] Failed to transmit telemetry data
+27687,SensorData,20.87,943.99,593.26,52.78,1.92,0.31,12.71,-7.24,0.55,0.02,0.000000,0.000000,
+,21.31
+27702,[WARNING] Failed to transmit telemetry data
+27728,[WARNING] Failed to transmit telemetry data
+27812,SensorData,20.87,943.98,593.40,52.77,1.92,0.26,12.71,-7.34,0.80,-0.07,0.000000,0.000000,
+,21.31
+27827,[WARNING] Failed to transmit telemetry data
+27851,[WARNING] Failed to transmit telemetry data
+27935,SensorData,20.87,943.99,593.31,52.75,1.97,0.25,12.66,-7.15,0.82,-0.23,0.000000,0.000000,
+,21.31
+27950,[WARNING] Failed to transmit telemetry data
+27975,[WARNING] Failed to transmit telemetry data
+28058,SensorData,20.87,944.00,593.17,52.75,1.91,0.27,12.75,-7.30,0.78,-0.08,0.000000,0.000000,
+,21.31
+28075,[WARNING] Failed to transmit telemetry data
+28100,[WARNING] Failed to transmit telemetry data
+28184,SensorData,20.88,943.98,593.34,52.75,1.99,0.28,12.76,-7.36,0.80,-0.18,0.000000,0.000000,
+,21.31
+28199,[WARNING] Failed to transmit telemetry data
+28223,[WARNING] Failed to transmit telemetry data
+28307,SensorData,20.89,943.98,593.37,52.76,1.96,0.26,12.68,-7.44,0.72,-0.07,0.000000,0.000000,
+,21.31
+28322,[WARNING] Failed to transmit telemetry data
+28349,[WARNING] Failed to transmit telemetry data
+28432,SensorData,20.87,943.99,593.29,52.76,1.96,0.28,12.71,-7.23,0.84,-0.25,0.000000,0.000000,
+,21.31
+28491,[WARNING] Failed to transmit telemetry data
+28516,[WARNING] Failed to transmit telemetry data
+28599,SensorData,20.88,944.01,593.11,52.76,1.91,0.23,12.70,-7.21,0.69,-0.16,0.000000,0.000000,
+,21.31
+28614,[WARNING] Failed to transmit telemetry data
+28639,[WARNING] Failed to transmit telemetry data
