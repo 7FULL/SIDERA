@@ -18,7 +18,7 @@ TODO:
  - VOLTAGE MONITOR
 
 */
-const bool demo = true;
+const bool demo = false;
 
 void StateMachine::update() {
     rocket.updateBuzzer();
@@ -29,6 +29,14 @@ void StateMachine::update() {
         case ERROR:
             //TODO Recibios el ok del panel de control
             if (demo){
+                if (millis() - previousMillis >= 5000) {
+                    previousMillis = millis();
+                    currentState = IDLE;
+                    rocket.resetLeds();
+
+                    rocket.logData("[STATE] IDLE");
+                }
+            }else{
                 if (millis() - previousMillis >= 5000) {
                     previousMillis = millis();
                     currentState = IDLE;
@@ -68,6 +76,13 @@ void StateMachine::update() {
 
                     rocket.logData("[STATE] CHECKING_ROCKET");
                 }
+            }else{
+                if (millis() - previousMillis >= 5000) {
+                    previousMillis = millis();
+                    currentState = CHECKING_ROCKET;
+
+                    rocket.logData("[STATE] CHECKING_ROCKET");
+                }
             }
             break;
         case CHECKING_ROCKET:
@@ -84,6 +99,8 @@ void StateMachine::update() {
             }
             break;
         case WAITING_FOR_LAUNCH:
+            rocket.receiveCommands();
+
             if (demo){
                 if (millis() - previousMillis >= 10000) {
                     previousMillis = millis();
