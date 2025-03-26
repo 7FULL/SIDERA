@@ -47,7 +47,7 @@ void StateMachine::update() {
             }
             break;
         case IDLE:
-            //TODO: DEEP SLEEP y esperar a wakeup desde el panel de control
+            //TODO: DEEP SLEEP
 
             rocket.receiveCommands();
 

@@ -12,6 +12,7 @@ void StateMachine::setup() {
 void StateMachine::update() {
     controlPanel.updateBuzzer();
 
+    // Check for emergency stop in all states
     if (controlPanel.isEmergencyStop()) {
         controlPanel.emergencyStop();
         currentState = IDLE;
@@ -20,6 +21,12 @@ void StateMachine::update() {
         delay(100);
         return;
     }
+
+    // Check for telemetry in all active states
+    if (currentState >= WAKING_UP_ROCKET) {
+        controlPanel.receiveTelemetry();
+    }
+
     switch (currentState) {
         case IDLE:
             if (controlPanel.isLaunchPlatformInitiated()) {
@@ -49,7 +56,6 @@ void StateMachine::update() {
             break;
         case WAKING_UP_ROCKET:
             if (controlPanel.wakeUp()){
-                //TODO: Send message to wake up the rocket
                 currentState = CHECKING_ROCKET;
 
                 Serial.println("Checking rocket");
@@ -58,30 +64,30 @@ void StateMachine::update() {
             }
             break;
         case CHECKING_ROCKET:
-            //TODO: Check if the rocket is ready
-            currentState = ROCKET_READY;
-            Serial.println("Rocket ready");
+            controlPanel.receiveCommands();
 
-            controlPanel.updateDisplay("Rocket ready");
+            if (controlPanel.isRocketReady()) {
+                currentState = ROCKET_READY;
+                Serial.println("Rocket ready");
+
+                controlPanel.updateDisplay("Rocket ready");
+            }
             break;
         case ROCKET_READY:
             if (controlPanel.isCountdownInitiated()) {
-                currentState = CHECKING_FOR_LAUNCH;
+                currentState = WAITING_FOR_LAUNCH;
                 Serial.println("Checking for launch");
 
                 controlPanel.updateDisplay("Checking for launch");
             }
             break;
-        case CHECKING_FOR_LAUNCH:
-            //TODO: Check if the rocket is ready to launch
-            currentState = WAITING_FOR_LAUNCH;
-            Serial.println("Waiting for launch");
-            break;
         case WAITING_FOR_LAUNCH:
             if (controlPanel.countdown()) {
-                currentState = LAUNCHING;
-                Serial.println("Launching");
-                controlPanel.updateDisplay("Launching");
+                if(controlPanel.launchRocket()){
+                    currentState = LAUNCHING;
+                    Serial.println("Launching");
+                    controlPanel.updateDisplay("Launching");
+                }
             }
             break;
         case LAUNCHING:

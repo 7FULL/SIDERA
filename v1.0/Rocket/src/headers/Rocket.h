@@ -45,7 +45,9 @@ enum CommandCodes {
     CMD_ABORT = 3,
     CMD_REBOOT = 4,
     CMD_WAKE_UP = 5,
-    CMD_LUNCH = 6
+    CMD_LAUNCH = 6,
+    CMD_START_PLATFORM = 7,
+    CMD_ROCKET_READY = 8,
 };
 
 struct TelemetryData {

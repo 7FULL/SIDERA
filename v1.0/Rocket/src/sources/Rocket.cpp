@@ -944,7 +944,7 @@ bool Rocket::initializeRF24() {
     // Configure RF24
     radio.setPALevel(RF24_PA_HIGH);      // Set power amplifier level (LOW, HIGH, MAX)
     radio.setDataRate(RF24_1MBPS);       // Set data rate (250KBPS, 1MBPS, 2MBPS)
-    radio.setChannel(80);                // Set RF channel (0-125)
+    radio.setChannel(11);                // Set RF channel (0-125)
     radio.setRetries(3, 5);              // Set retries (delay, count)
     radio.setCRCLength(RF24_CRC_16);     // Set CRC length
 
@@ -962,11 +962,10 @@ bool Rocket::initializeRF24() {
 }
 
 void Rocket::receiveCommands() {
+    radio.startListening();
+
     // Check for incoming data without blocking
     if (radio.available()) {
-        // Stop listening so we can transmit
-        radio.stopListening();
-
         // Read command data
         CommandData receivedCommand = {0};
         radio.read(&receivedCommand, sizeof(CommandData));
@@ -977,10 +976,9 @@ void Rocket::receiveCommands() {
         } else {
             logData("[WARNING] Invalid command received: " + String(receivedCommand.command));
         }
-
-        // Resume listening
-        radio.startListening();
     }
+
+    radio.stopListening();
 }
 
 void Rocket::sendTelemetry() {
@@ -1072,7 +1070,7 @@ bool Rocket::processCommand(CommandData& command) {
             logData("[INFO] Wake up command received from control panel");
             return true;
 
-        case CMD_LUNCH:
+        case CMD_LAUNCH:
             // Lunch the rocket
             logData("[INFO] Lunch command received from control panel");
             receiveLunch = true;

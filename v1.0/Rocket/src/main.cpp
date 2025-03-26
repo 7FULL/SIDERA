@@ -44,30 +44,28 @@ void loop() {
 //    }
 //
 //    // Configuración del módulo RF24
-//    radio.setPALevel(RF24_PA_LOW);      // Nivel de potencia bajo
-//    radio.setDataRate(RF24_250KBPS);    // Velocidad de transmisión
-//    radio.setChannel(76);               // Canal de comunicación
+//    radio.setPALevel(RF24_PA_HIGH);
+//    radio.setDataRate(RF24_1MBPS);
+//    radio.setChannel(11);
+//    radio.setRetries(3, 5);
+//    radio.setCRCLength(RF24_CRC_16);
 //
 //    // Abrir una tubería de escritura con la dirección del receptor
-//    radio.openWritingPipe(direccion);
+//    radio.openWritingPipe(00002);
+//    radio.openReadingPipe(1, 00001);
 //
 //    // Detener la escucha para poder enviar
-//    radio.stopListening();
+//    radio.startListening();
 //
 //    Serial.println("RF24 inicializado correctamente con HSPI");
 //}
 //
 //void loop() {
-//    // Enviar el mensaje
-//    bool ok = radio.write(&mensaje, sizeof(mensaje));
-//
-//    // Verificar si el mensaje se envió correctamente
-//    if (ok) {
-//        Serial.println("Mensaje enviado con éxito");
-//    } else {
-//        Serial.println("Error al enviar el mensaje");
+//    // Leemos los datos recibidos
+//    if (radio.available()) {
+//        char text[32] = "";
+//        radio.read(&text, sizeof(text));
+//        Serial.print("Mensaje recibido: ");
+//        Serial.println(text);
 //    }
-//
-//    // Esperar 1 segundo antes de enviar otro mensaje
-//    delay(1000);
 //}
