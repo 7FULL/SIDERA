@@ -949,8 +949,8 @@ bool Rocket::initializeRF24() {
     radio.setCRCLength(RF24_CRC_16);     // Set CRC length
 
     // Open pipes for communication
-    radio.openWritingPipe(writingAddress);
-    radio.openReadingPipe(1, readingAddress);
+    radio.openWritingPipe(00002);
+    radio.openReadingPipe(1, 00001);
 
     // Start listening
     radio.startListening();
@@ -966,9 +966,16 @@ void Rocket::receiveCommands() {
 
     // Check for incoming data without blocking
     if (radio.available()) {
+//        char text[32] = "";
+//        radio.read(&text, sizeof(text));
+//        Serial.print("Mensaje recibido: ");
+//        Serial.println(text);
+
         // Read command data
-        CommandData receivedCommand = {0};
+        CommandData receivedCommand;
         radio.read(&receivedCommand, sizeof(CommandData));
+
+        logData("[INFO] Command received: " + String(receivedCommand.command));
 
         // Process the command
         if (processCommand(receivedCommand)) {
@@ -978,7 +985,7 @@ void Rocket::receiveCommands() {
         }
     }
 
-    radio.stopListening();
+//    radio.stopListening();
 }
 
 void Rocket::sendTelemetry() {
@@ -1025,6 +1032,26 @@ void Rocket::sendTelemetry() {
 
     // Resume listening
     radio.startListening();
+}
+
+bool Rocket::sendRocketReady(){
+    radio.stopListening();
+
+    CommandData command;
+    command.command = CMD_ROCKET_READY;
+    command.parameter = 0;
+
+    bool success = radio.write(&command, sizeof(CommandData));
+
+    if (success) {
+        logData("[INFO] Rocket ready transmitted successfully");
+    } else {
+        logData("[WARNING] Failed to transmit rocket ready data");
+    }
+
+    radio.startListening();
+
+    return success;
 }
 
 bool Rocket::processCommand(CommandData& command) {

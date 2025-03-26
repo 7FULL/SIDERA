@@ -63,9 +63,9 @@ void loop() {
 //void loop() {
 //    // Leemos los datos recibidos
 //    if (radio.available()) {
-//        char text[32] = "";
-//        radio.read(&text, sizeof(text));
+//        CommandData commandData;
+//        radio.read(&commandData, sizeof(CommandData));
 //        Serial.print("Mensaje recibido: ");
-//        Serial.println(text);
+//        Serial.println(commandData.command);
 //    }
 //}

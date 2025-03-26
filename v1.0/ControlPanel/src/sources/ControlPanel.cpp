@@ -45,8 +45,8 @@ void ControlPanel::begin() {
     radio.setRetries(3, 5);
     radio.setCRCLength(RF24_CRC_16);
 
-    radio.openReadingPipe(1, readingAddress);
-    radio.openWritingPipe(writingAddress);
+    radio.openWritingPipe(00001);
+    radio.openReadingPipe(1, 00002);
 
     if (!radio.isChipConnected()) {
         Serial.println("¡Error en NRF24L01!");
@@ -151,9 +151,10 @@ void ControlPanel::receiveCommands() {
     // Check for incoming data without blocking
     if (radio.available()) {
         // Read command data
-        CommandData receivedCommand = {0};
+        CommandData receivedCommand;
         radio.read(&receivedCommand, sizeof(CommandData));
 
+        Serial.println("[INFO] Command received: " + String(receivedCommand.command));
         // Process the command
         if (processCommand(receivedCommand)) {
             Serial.println("[INFO] Command processed: " + String(receivedCommand.command));
@@ -162,7 +163,7 @@ void ControlPanel::receiveCommands() {
         }
     }
 
-    radio.stopListening();
+//    radio.stopListening();
 }
 
 bool ControlPanel::processCommand(CommandData& command) {
@@ -272,6 +273,7 @@ bool ControlPanel::wakeUp() {
     command.parameter = 0;
 
     bool success = radio.write(&command, sizeof(CommandData));
+//    bool success = radio.write(&mensaje, sizeof(mensaje));
 
     if (success) {
         Serial.println("Wake up command sent successfully");

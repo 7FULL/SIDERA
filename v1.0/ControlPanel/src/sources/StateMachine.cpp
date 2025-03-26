@@ -23,7 +23,7 @@ void StateMachine::update() {
     }
 
     // Check for telemetry in all active states
-    if (currentState >= WAKING_UP_ROCKET) {
+    if (currentState >= LAUNCHING) {
         controlPanel.receiveTelemetry();
     }
 

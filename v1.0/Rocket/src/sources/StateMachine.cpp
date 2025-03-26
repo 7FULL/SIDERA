@@ -87,10 +87,13 @@ void StateMachine::update() {
             break;
         case CHECKING_ROCKET:
             if (rocket.checkSensors()){
-                currentState = WAITING_FOR_LAUNCH;
-                previousMillis = millis();
+                delay(1000);
+                if(rocket.sendRocketReady()){
+                    currentState = WAITING_FOR_LAUNCH;
+                    previousMillis = millis();
 
-                rocket.logData("[STATE] WAITING_FOR_LAUNCH");
+                    rocket.logData("[STATE] WAITING_FOR_LAUNCH");
+                }
             } else {
                 previousMillis = millis();
                 currentState = ERROR;

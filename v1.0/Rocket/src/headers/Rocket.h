@@ -117,6 +117,8 @@ public:
     bool hasReceivedWakeUp();
     bool hasReceivedLunch();
 
+    bool sendRocketReady();
+
 private:
     const byte readingAddress[6];
     const byte writingAddress[6];
@@ -205,6 +207,7 @@ private:
     bool initializeRF24();
     void sendTelemetry();
     bool processCommand(CommandData& command);
+
 };
 
 #endif
