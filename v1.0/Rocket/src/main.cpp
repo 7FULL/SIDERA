@@ -54,6 +54,8 @@ void loop() {
 //    radio.openWritingPipe(00002);
 //    radio.openReadingPipe(1, 00001);
 //
+//    radio.setAutoAck(false);
+//
 //    // Detener la escucha para poder enviar
 //    radio.startListening();
 //

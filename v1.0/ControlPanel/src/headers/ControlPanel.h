@@ -31,6 +31,7 @@ struct TelemetryData {
     float longitude;
     bool parachuteDeployed;
     bool hasReachedApogee;
+    bool landed;
     uint32_t timestamp;
 };
 
@@ -52,22 +53,24 @@ public:
     bool isEmergencyStop() const;
 
     void updateDisplay(const char* message);
+    void updateDisplay(const char* message1, const char* message2);
 
     bool wakeUp();
     bool countdown();
-    void startPlatform();
+    bool startPlatform();
     void emergencyStop();
 
     void updateBuzzer();
 
     bool launchRocket();
 
-    bool receiveTelemetry();
+    void receiveTelemetry();
 
     void receiveCommands();
 
     bool isRocketReady();
 
+    bool hasRocketLanded();
 private:
     const uint8_t pinLaunchPlatform;
     const uint8_t pinWakeup;
@@ -80,7 +83,7 @@ private:
     const uint8_t cePin;
     const uint8_t csPin;
 
-    bool rocketReady;
+    bool rocketReady, rocketLanded;
 
     const uint8_t buzzerPin;
 

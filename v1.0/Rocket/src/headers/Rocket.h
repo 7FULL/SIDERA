@@ -64,6 +64,7 @@ struct TelemetryData {
     float longitude;
     bool parachuteDeployed;
     bool hasReachedApogee;
+    bool landed;
     uint32_t timestamp;
 };
 
@@ -159,7 +160,7 @@ private:
 
     float temperature, pressure, altitude, humidity, maxAltitude, groundAltitude;
     sensors_event_t accelerometer, gyroscope, tempEvent;
-    bool gpsValid, hasReachedApogee, parachuteDeployed, receiveWakeUp, receiveLunch;
+    bool gpsValid, hasReachedApogee, parachuteDeployed, receiveWakeUp, receiveLunch, hasRocketLanded;
     float gpsLatitude, gpsLongitude;
     String gpsDateTime;
 

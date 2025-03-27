@@ -48,6 +48,9 @@ void ControlPanel::begin() {
     radio.openWritingPipe(00001);
     radio.openReadingPipe(1, 00002);
 
+    //TODO A saber porque cojones no funciona el ack
+    radio.setAutoAck(false);
+
     if (!radio.isChipConnected()) {
         Serial.println("¡Error en NRF24L01!");
         lcd.clear();
@@ -85,7 +88,17 @@ void ControlPanel::updateDisplay(const char* message) {
     lcd.setCursor(0, 0);
     lcd.print(message);
 }
-void ControlPanel::startPlatform() {
+
+void ControlPanel::updateDisplay(const char* message1, const char* message2) {
+    std::lock_guard<std::mutex> lock(i2cMutex);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print(message1);
+    lcd.setCursor(0, 1);
+    lcd.print(message2);
+}
+
+bool ControlPanel::startPlatform() {
     radio.stopListening();
 
     CommandData command;
@@ -100,7 +113,9 @@ void ControlPanel::startPlatform() {
         Serial.println("Failed to send platform start command");
     }
 
-    radio.startListening();
+//    radio.startListening();
+
+    return success;
 }
 
 void ControlPanel::stopLaunch() {
@@ -210,7 +225,7 @@ bool ControlPanel::launchRocket() {
     return success;
 }
 
-bool ControlPanel::receiveTelemetry() {
+void ControlPanel::receiveTelemetry() {
     radio.startListening();
 
     if (radio.available()) {
@@ -220,18 +235,43 @@ bool ControlPanel::receiveTelemetry() {
         // Read the telemetry data
         radio.read(&telemetryData, sizeof(TelemetryData));
 
-        // Update display with relevant telemetry
-        char buffer[17]; // For 16x2 LCD
-        snprintf(buffer, sizeof(buffer), "Alt: %.1fm", telemetryData.altitude);
-        updateDisplay(buffer);
-
         // Log telemetry
         Serial.print("Altitude: "); Serial.print(telemetryData.altitude); Serial.println("m");
         Serial.print("Temperature: "); Serial.print(telemetryData.temperature); Serial.println("°C");
+        Serial.print("Pressure: "); Serial.print(telemetryData.pressure); Serial.println("hPa");
+        Serial.print("Acceleration X: "); Serial.print(telemetryData.accelerationX); Serial.println("m/s^2");
+        Serial.print("Acceleration Y: "); Serial.print(telemetryData.accelerationY); Serial.println("m/s^2");
+        Serial.print("Acceleration Z: "); Serial.print(telemetryData.accelerationZ); Serial.println("m/s^2");
+        Serial.print("Gyro X: "); Serial.print(telemetryData.gyroX); Serial.println("deg/s");
+        Serial.print("Gyro Y: "); Serial.print(telemetryData.gyroY); Serial.println("deg/s");
+        Serial.print("Gyro Z: "); Serial.print(telemetryData.gyroZ); Serial.println("deg/s");
+        Serial.print("Latitude: "); Serial.println(telemetryData.latitude);
+        Serial.print("Longitude: "); Serial.println(telemetryData.longitude);
+        Serial.print("Parachute deployed: "); Serial.println(telemetryData.parachuteDeployed);
+        Serial.print("Has reached apogee: "); Serial.println(telemetryData.hasReachedApogee);
+        Serial.print("Timestamp: "); Serial.println(telemetryData.timestamp);
 
-        return true;
+        if (telemetryData.landed) {
+            Serial.println("Rocket has landed");
+            rocketLanded = true;
+            buzzerActive = true;
+            buzzerStartTime = millis();
+
+            // Update display with rocket location;
+            char buffer[17]; // For 16x2 LCD
+            char buffer2[17]; // For 16x2 LCD
+            snprintf(buffer, sizeof(buffer), "Lat: %.6f", telemetryData.latitude);
+            snprintf(buffer, sizeof(buffer), "Lon: %.6f", telemetryData.longitude);
+            updateDisplay(buffer, buffer2);
+        }else{
+            // Update display with relevant telemetry (Altitude and acceleration)
+            char buffer[17]; // For 16x2 LCD
+            char buffer2[17]; // For 16x2 LCD
+            snprintf(buffer, sizeof(buffer), "Alt: %.1fm", telemetryData.altitude);
+            snprintf(buffer, sizeof(buffer2), "AX: %.1f", telemetryData.accelerationY);
+            updateDisplay(buffer, buffer2);
+        }
     }
-    return false;
 }
 
 void ControlPanel::updateBuzzer() {
@@ -269,20 +309,21 @@ bool ControlPanel::wakeUp() {
     radio.stopListening();
 
     CommandData command;
-    command.command = CMD_WAKE_UP;
+    command.command = CMD_WAKE_UP;  // Or create a specific platform start command
     command.parameter = 0;
 
     bool success = radio.write(&command, sizeof(CommandData));
-//    bool success = radio.write(&mensaje, sizeof(mensaje));
 
     if (success) {
-        Serial.println("Wake up command sent successfully");
-        updateDisplay("Wake up sent");
+        Serial.println("Platform start command sent successfully");
     } else {
-        Serial.println("Failed to send wake up command");
-        updateDisplay("Wake up failed");
+        Serial.println("Failed to send platform start command");
     }
 
-    radio.startListening();
+//    radio.startListening();
     return success;
+}
+
+bool ControlPanel::hasRocketLanded() {
+    return rocketLanded;
 }

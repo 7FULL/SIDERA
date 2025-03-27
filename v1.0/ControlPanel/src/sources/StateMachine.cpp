@@ -22,20 +22,13 @@ void StateMachine::update() {
         return;
     }
 
-    // Check for telemetry in all active states
-    if (currentState >= LAUNCHING) {
-        controlPanel.receiveTelemetry();
-    }
-
     switch (currentState) {
         case IDLE:
             if (controlPanel.isLaunchPlatformInitiated()) {
-                currentState = STARTING_PLATFORM;
-                Serial.println("Starting platform");
-
-                controlPanel.startPlatform();
-
-                controlPanel.updateDisplay("Starting platform");
+                if(controlPanel.startPlatform()){
+                    currentState = STARTING_PLATFORM;
+                    controlPanel.updateDisplay("Starting platform");
+                }
             }
             break;
         case STARTING_PLATFORM:
@@ -82,31 +75,34 @@ void StateMachine::update() {
             }
             break;
         case WAITING_FOR_LAUNCH:
+            if (controlPanel.isLaunchStopped()) {
+                //TODO
+            }
             if (controlPanel.countdown()) {
                 if(controlPanel.launchRocket()){
-                    currentState = LAUNCHING;
+                    currentState = ROCKET_FLYING;
                     Serial.println("Launching");
                     controlPanel.updateDisplay("Launching");
                 }
             }
             break;
-        case LAUNCHING:
-            if (controlPanel.isLaunchStopped()) {
-                currentState = ROCKET_FLYING;
-                Serial.println("Launch stopped");
-            }
-            break;
         case ROCKET_FLYING:
-            if (controlPanel.isEmergencyStop()) {
-                currentState = IDLE;
-                Serial.println("Emergency stop");
+//            if (controlPanel.isEmergencyStop()) {
+//                currentState = IDLE;
+//                Serial.println("Emergency stop");
+//            }
+                controlPanel.receiveTelemetry();
+            if (controlPanel.hasRocketLanded()){
+                currentState = ROCKET_LANDED;
+                Serial.println("Rocket has landed");
             }
             break;
         case ROCKET_LANDED:
-            if (controlPanel.isEmergencyStop()) {
-                currentState = IDLE;
-                Serial.println("Emergency stop");
-            }
+//            if (controlPanel.isEmergencyStop()) {
+//                currentState = IDLE;
+//                Serial.println("Emergency stop");
+//            }
+            controlPanel.receiveTelemetry();
             break;
     }
 }

@@ -72,6 +72,8 @@ bool Rocket::setup() {
     buzzerState.pattern = SINGLE_BEEP;
     greenLed.state = ON;
 
+    hasRocketLanded = false;
+
     return true;
 }
 
@@ -608,6 +610,8 @@ bool Rocket::hasLanded() {
             greenLed.state = DOUBLE_BLINK;
             buzzerState.pattern = LANDED_BEEP;
 
+            hasRocketLanded = true;
+
             return true;
         }
     } else {
@@ -626,11 +630,7 @@ void Rocket::landed(){
     logFile.close();
     SD.end();
 
-    //Keep sending gps location
-    while(true){
-        sendTelemetry();
-        delay(1000);
-    }
+    sendTelemetry();
 }
 
 bool Rocket::houstonWeHaveAProblem(const String &errorMessage) {
@@ -924,7 +924,7 @@ void Rocket::logSensorData() {
     logFile.print(",");
     logFile.print(gpsLongitude, 6);
     logFile.print(",");
-    logFile.println(gpsDateTime);
+    logFile.print(gpsDateTime);
     logFile.print(",");
     logFile.print(ds18b20Temperature);
     logFile.println();
@@ -951,6 +951,9 @@ bool Rocket::initializeRF24() {
     // Open pipes for communication
     radio.openWritingPipe(00002);
     radio.openReadingPipe(1, 00001);
+
+    //TODO A saber porque cojones no funciona el ack
+    radio.setAutoAck(false);
 
     // Start listening
     radio.startListening();
@@ -1004,14 +1007,13 @@ void Rocket::sendTelemetry() {
     telemetryData.parachuteDeployed = parachuteDeployed;
     telemetryData.hasReachedApogee = hasReachedApogee;
     telemetryData.timestamp = millis();
+    telemetryData.landed = hasRocketLanded;
 
     // Stop listening so we can transmit
     radio.stopListening();
 
-    float payload = 0.0;
-
     // Send telemetry data
-    bool success = radio.write(&payload, sizeof(float));
+    bool success = radio.write(&telemetryData, sizeof(TelemetryData));
 
     if (success) {
         // Log successful transmission at a reasonable interval (not every time)
