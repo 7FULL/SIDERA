@@ -250,6 +250,7 @@ void ControlPanel::receiveTelemetry() {
         Serial.print("Parachute deployed: "); Serial.println(telemetryData.parachuteDeployed);
         Serial.print("Has reached apogee: "); Serial.println(telemetryData.hasReachedApogee);
         Serial.print("Timestamp: "); Serial.println(telemetryData.timestamp);
+        Serial.print("Landed: "); Serial.println(telemetryData.landed);
 
         if (telemetryData.landed) {
             Serial.println("Rocket has landed");
@@ -261,14 +262,14 @@ void ControlPanel::receiveTelemetry() {
             char buffer[17]; // For 16x2 LCD
             char buffer2[17]; // For 16x2 LCD
             snprintf(buffer, sizeof(buffer), "Lat: %.6f", telemetryData.latitude);
-            snprintf(buffer, sizeof(buffer), "Lon: %.6f", telemetryData.longitude);
+            snprintf(buffer2, sizeof(buffer2), "Lon: %.6f", telemetryData.longitude);
             updateDisplay(buffer, buffer2);
         }else{
             // Update display with relevant telemetry (Altitude and acceleration)
             char buffer[17]; // For 16x2 LCD
             char buffer2[17]; // For 16x2 LCD
             snprintf(buffer, sizeof(buffer), "Alt: %.1fm", telemetryData.altitude);
-            snprintf(buffer, sizeof(buffer2), "AX: %.1f", telemetryData.accelerationY);
+            snprintf(buffer2, sizeof(buffer2), "AX: %.1f", telemetryData.accelerationY);
             updateDisplay(buffer, buffer2);
         }
     }

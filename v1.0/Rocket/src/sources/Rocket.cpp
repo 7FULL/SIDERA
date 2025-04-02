@@ -233,14 +233,14 @@ bool Rocket::checkSensors() {
     logSensorData();
 
     logData("[INFO] Reading GPS sensor...");
-//TODO
-//    readGPS();
-//
-//    if (gpsLatitude == 0.0 || gpsLongitude == 0.0 || gpsDateTime == "") {
-//        // printGPSData();
-//
-//        return houstonWeHaveAProblem("[ERROR] Failed to read GPS sensor");
-//    }
+
+    readGPS();
+
+    if (gpsLatitude == 0.0 || gpsLongitude == 0.0 || gpsDateTime == "") {
+        // printGPSData();
+
+        return houstonWeHaveAProblem("[ERROR] Failed to read GPS sensor");
+    }
 
 //    printGPSData();
 
@@ -264,8 +264,7 @@ bool Rocket::checkSensors() {
 void Rocket::readSensors() {
     readBME280();
     readMPU6050();
-    //TODO
-//    readGPS();
+    readGPS();
     readDS18B20();
 
     logSensorData();

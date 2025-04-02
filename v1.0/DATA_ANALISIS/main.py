@@ -1253,7 +1253,7 @@ def main():
 
     log_text = None
 
-    with open('logs/flight_62.csv', 'r') as file:
+    with open('logs/flight_162.csv', 'r') as file:
         log_text = file.read()
 
     if log_text is not None:
