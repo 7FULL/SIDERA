@@ -274,20 +274,20 @@ class RocketSimulator:
         self.command_history.append((command, parameter, time.time()))
 
         # Process specific commands
-        if command == CommandCodes.CMD_WAKE_UP and self.current_state == RocketStates.IDLE:
+        if command.value == CommandCodes.CMD_WAKE_UP.value and self.current_state == RocketStates.IDLE:
             # Wake up command
             self.current_state = RocketStates.WAKING_UP
             self.state_transition_time = time.time()
             return True
 
-        elif command == CommandCodes.CMD_LAUNCH and self.current_state == RocketStates.WAITING_FOR_LAUNCH:
+        elif command.value == CommandCodes.CMD_LAUNCH.value and self.current_state == RocketStates.WAITING_FOR_LAUNCH:
             # Launch command
             self.current_state = RocketStates.FLIGHT
             self.launch_time = time.time()
             self.state_transition_time = time.time()
             return True
 
-        elif command == CommandCodes.CMD_DEPLOY_PARACHUTE and (
+        elif command.value == CommandCodes.CMD_DEPLOY_PARACHUTE.value and (
                 self.current_state == RocketStates.FLIGHT or
                 self.current_state == RocketStates.DESCENT):
             # Deploy parachute command
@@ -296,19 +296,19 @@ class RocketSimulator:
             self.state_transition_time = time.time()
             return True
 
-        elif command == CommandCodes.CMD_ABORT:
+        elif command.value == CommandCodes.CMD_ABORT.value:
             # Abort command - deploy parachute and go to error state
             self.telemetry.parachute_deployed = True
             self.current_state = RocketStates.ERROR
             self.state_transition_time = time.time()
             return True
 
-        elif command == CommandCodes.CMD_REBOOT:
+        elif command.value == CommandCodes.CMD_REBOOT.value:
             # Reboot command - reset everything
             self._reset_simulation()
             return True
 
-        elif command == CommandCodes.CMD_PING:
+        elif command.value == CommandCodes.CMD_PING.value:
             # Ping command - just acknowledge
             return True
 
