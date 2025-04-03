@@ -59,21 +59,28 @@ class RocketSimulator:
         self.telemetry_queue = queue.Queue()
         self.command_history = []
 
-        # Simulation parameters
+        # Simulation parameters - modified for more realistic flight
         self.max_altitude = 500.0  # Maximum altitude in meters
-        self.ascent_rate = 20.0  # Meters per second during ascent
-        self.descent_rate = 10.0  # Meters per second during descent
-        self.parachute_descent_rate = 5.0  # Meters per second with parachute
+        self.boost_phase_duration = 3.0  # Duration of engine burn in seconds
+        self.boost_acceleration = 40.0  # Acceleration during boost phase in m/s²
+        self.coast_drag_coefficient = 0.05  # Drag coefficient during coast phase
+        self.descent_rate = 15.0  # Initial descent rate in m/s with no parachute
+        self.parachute_descent_rate = 5.0  # Descent rate with parachute in m/s
+        self.terminal_velocity = 20.0  # Terminal velocity without parachute in m/s
 
         # Flight parameters
         self.launch_time = 0
+        self.boost_end_time = 0
         self.apogee_time = 0
         self.landing_time = 0
         self.ground_altitude = 0
+        self.current_velocity = 0.0  # Instantaneous velocity in m/s
+        self.peak_altitude = 0.0
 
         # Simulation control
         self.running = False
         self.sim_thread = None
+        self.state_transition_time = 0
 
     def start_simulation(self):
         """Start the simulation thread"""
@@ -97,6 +104,9 @@ class RocketSimulator:
             current_time = time.time()
             dt = current_time - last_update
             last_update = current_time
+
+            # Limit the time step to avoid instability
+            dt = min(dt, 0.1)
 
             # Update simulation based on current state
             self._update_simulation(dt)
@@ -136,39 +146,72 @@ class RocketSimulator:
         # State-specific updates
         if self.current_state == RocketStates.IDLE:
             # Idle state - baseline readings with small fluctuations
-            pass
+            self.telemetry.acceleration_z = 9.8 + random.uniform(-0.1, 0.1)  # Normal gravity reading
 
         elif self.current_state == RocketStates.WAKING_UP:
-            # Waking up - transition to checking after 3 seconds
-            if time.time() - self.state_transition_time > 3.0:
+            # Waking up - transition to checking after 2 seconds
+            if time.time() - self.state_transition_time > 2.0:
                 self.current_state = RocketStates.CHECKING_ROCKET
                 self.state_transition_time = time.time()
 
         elif self.current_state == RocketStates.CHECKING_ROCKET:
-            # Checking sensors - transition to waiting after 2 seconds
-            if time.time() - self.state_transition_time > 2.0:
+            # Checking sensors - transition to waiting after 1.5 seconds
+            if time.time() - self.state_transition_time > 1.5:
                 self.current_state = RocketStates.WAITING_FOR_LAUNCH
                 self.state_transition_time = time.time()
 
         elif self.current_state == RocketStates.WAITING_FOR_LAUNCH:
             # Waiting for launch command - nothing special
-            pass
+            self.telemetry.acceleration_z = 9.8 + random.uniform(-0.2, 0.2)  # Normal gravity with slight movements
 
         elif self.current_state == RocketStates.FLIGHT:
-            # Ascent phase
             flight_time = time.time() - self.launch_time
 
-            # Calculate altitude based on time
-            self.telemetry.altitude = self._calculate_ascent_altitude(flight_time)
+            # BOOST PHASE: Rapid acceleration for the first few seconds
+            if flight_time < self.boost_phase_duration:
+                # During boost, the rocket accelerates rapidly
+                self.telemetry.acceleration_z = self.boost_acceleration + random.uniform(-2.0, 2.0)
 
-            # Higher acceleration and vibration during flight
-            self.telemetry.acceleration_z = 15.0 + random.uniform(-2.0, 2.0)
+                # Update velocity and position using kinematics equations
+                self.current_velocity += (self.telemetry.acceleration_z - 9.8) * dt
+                self.telemetry.altitude += self.current_velocity * dt
 
-            # Decrease in pressure with altitude
-            self.telemetry.pressure = self._calculate_pressure(self.telemetry.altitude)
+                # More vibration during engine burn
+                self.telemetry.gyro_x = random.uniform(-25.0, 25.0)
+                self.telemetry.gyro_y = random.uniform(-25.0, 25.0)
+                self.telemetry.gyro_z = random.uniform(-15.0, 15.0)
 
-            # Check if reached apogee
-            if self.telemetry.altitude >= self.max_altitude:
+                # Save boost end time
+                self.boost_end_time = self.launch_time + self.boost_phase_duration
+
+            # COAST PHASE: After engine burn, the rocket continues to rise but slows due to gravity and drag
+            else:
+                # Gravity and drag force act against motion
+                drag_deceleration = self.coast_drag_coefficient * self.current_velocity * abs(self.current_velocity)
+
+                # Direction of drag is opposite to velocity
+                if self.current_velocity > 0:
+                    total_acceleration = -9.8 - drag_deceleration
+                else:
+                    total_acceleration = -9.8 + drag_deceleration
+
+                self.telemetry.acceleration_z = total_acceleration + random.uniform(-0.5, 0.5)
+
+                # Update velocity and position
+                self.current_velocity += total_acceleration * dt
+                self.telemetry.altitude += self.current_velocity * dt
+
+                # Less vibration during coast phase
+                self.telemetry.gyro_x = random.uniform(-5.0, 5.0)
+                self.telemetry.gyro_y = random.uniform(-5.0, 5.0)
+                self.telemetry.gyro_z = random.uniform(-3.0, 3.0)
+
+            # Track peak altitude
+            if self.telemetry.altitude > self.peak_altitude:
+                self.peak_altitude = self.telemetry.altitude
+
+            # Check if reached apogee (when velocity becomes negative or very close to zero)
+            if self.current_velocity <= 0.5 and not self.telemetry.has_reached_apogee:
                 self.telemetry.has_reached_apogee = True
                 self.apogee_time = time.time()
                 self.current_state = RocketStates.DESCENT
@@ -176,20 +219,25 @@ class RocketSimulator:
 
         elif self.current_state == RocketStates.DESCENT:
             # Descent phase before parachute
-            descent_time = time.time() - self.apogee_time
+            time_since_apogee = time.time() - self.apogee_time
 
-            # Calculate altitude during descent
-            altitude_change = self.descent_rate * dt
-            self.telemetry.altitude -= altitude_change
+            # Apply gravity and drag (terminal velocity model)
+            target_velocity = -min(time_since_apogee * 5.0,
+                                   self.terminal_velocity)  # Gradually approach terminal velocity
+            velocity_difference = target_velocity - self.current_velocity
+            acceleration = -9.8 + 2.0 * velocity_difference  # Smooth approach to terminal velocity
 
-            # Negative acceleration during descent
-            self.telemetry.acceleration_z = -12.0 + random.uniform(-3.0, 3.0)
+            self.telemetry.acceleration_z = acceleration + random.uniform(-1.0, 1.0)
+            self.current_velocity += self.telemetry.acceleration_z * dt
+            self.telemetry.altitude += self.current_velocity * dt
 
-            # Update pressure
-            self.telemetry.pressure = self._calculate_pressure(self.telemetry.altitude)
+            # Increased rotation during initial descent
+            self.telemetry.gyro_x = random.uniform(-30.0, 30.0)
+            self.telemetry.gyro_y = random.uniform(-30.0, 30.0)
+            self.telemetry.gyro_z = random.uniform(-20.0, 20.0)
 
-            # Automatic parachute deployment at 300m or after 5 seconds
-            if self.telemetry.altitude <= 300 or descent_time > 5.0:
+            # Automatic parachute deployment at 300m or after 3 seconds of descent
+            if self.telemetry.altitude <= 300 or time_since_apogee > 3.0:
                 self.telemetry.parachute_deployed = True
                 self.current_state = RocketStates.PARACHUTE_DESCENT
                 self.state_transition_time = time.time()
@@ -197,18 +245,33 @@ class RocketSimulator:
         elif self.current_state == RocketStates.PARACHUTE_DESCENT:
             # Descent with parachute deployed
 
-            # Calculate altitude during parachute descent
-            altitude_change = self.parachute_descent_rate * dt
-            self.telemetry.altitude -= altitude_change
+            # Rapid deceleration when parachute first deploys
+            time_since_parachute = time.time() - self.state_transition_time
 
-            # Reduced acceleration with parachute
-            self.telemetry.acceleration_z = -2.0 + random.uniform(-0.5, 0.5)
+            if time_since_parachute < 0.5:  # Initial parachute deployment shock
+                self.telemetry.acceleration_z = 5.0 + random.uniform(-3.0,
+                                                                     3.0)  # Sudden upward force as parachute opens
+                self.telemetry.gyro_x = random.uniform(-50.0, 50.0)  # Chaotic rotation during deployment
+                self.telemetry.gyro_y = random.uniform(-50.0, 50.0)
+                self.telemetry.gyro_z = random.uniform(-30.0, 30.0)
+                self.current_velocity += self.telemetry.acceleration_z * dt
+            else:
+                # Stable descent with parachute
+                target_velocity = -self.parachute_descent_rate
+                velocity_difference = target_velocity - self.current_velocity
+                self.telemetry.acceleration_z = -9.8 + 3.0 * velocity_difference  # Smooth approach to target velocity
+                self.current_velocity += self.telemetry.acceleration_z * dt
 
-            # Update pressure
-            self.telemetry.pressure = self._calculate_pressure(self.telemetry.altitude)
+                # More stable rotation during parachute descent
+                self.telemetry.gyro_x = random.uniform(-10.0, 10.0)
+                self.telemetry.gyro_y = random.uniform(-10.0, 10.0)
+                self.telemetry.gyro_z = random.uniform(-5.0, 5.0)
 
-            # Check if landed
-            if self.telemetry.altitude <= self.ground_altitude + 1.0:
+            # Update altitude
+            self.telemetry.altitude += self.current_velocity * dt
+
+            # Prevent going below ground level
+            if self.telemetry.altitude <= self.ground_altitude:
                 self.telemetry.altitude = self.ground_altitude
                 self.telemetry.landed = True
                 self.landing_time = time.time()
@@ -218,7 +281,13 @@ class RocketSimulator:
         elif self.current_state == RocketStates.LANDED:
             # Landed state
             self.telemetry.altitude = self.ground_altitude
-            self.telemetry.acceleration_z = 0.0 + random.uniform(-0.1, 0.1)
+            self.telemetry.acceleration_z = 9.8 + random.uniform(-0.1, 0.1)  # Normal gravity
+            self.current_velocity = 0.0
+
+            # Minimal rotation when landed
+            self.telemetry.gyro_x = random.uniform(-0.5, 0.5)
+            self.telemetry.gyro_y = random.uniform(-0.5, 0.5)
+            self.telemetry.gyro_z = random.uniform(-0.5, 0.5)
 
         elif self.current_state == RocketStates.ERROR:
             # Error state - erratic readings
@@ -226,6 +295,12 @@ class RocketSimulator:
             self.telemetry.gyro_x = random.uniform(-180.0, 180.0)
             self.telemetry.gyro_y = random.uniform(-180.0, 180.0)
             self.telemetry.gyro_z = random.uniform(-180.0, 180.0)
+
+        # Update pressure based on altitude
+        self.telemetry.pressure = self._calculate_pressure(self.telemetry.altitude)
+
+        # Update temperature based on altitude
+        self.telemetry.temperature = self._calculate_temperature(self.telemetry.altitude)
 
     def _add_sensor_noise(self):
         """Add realistic noise to sensor readings"""
@@ -238,35 +313,39 @@ class RocketSimulator:
         # Acceleration noise
         self.telemetry.acceleration_x = random.uniform(-0.5, 0.5)
         self.telemetry.acceleration_y = random.uniform(-0.5, 0.5)
-        if self.current_state == RocketStates.IDLE or self.current_state == RocketStates.WAITING_FOR_LAUNCH:
-            self.telemetry.acceleration_z = random.uniform(-0.5, 0.5)
 
-        # Gyroscope noise
-        self.telemetry.gyro_x = random.uniform(-1.0, 1.0)
-        self.telemetry.gyro_y = random.uniform(-1.0, 1.0)
-        self.telemetry.gyro_z = random.uniform(-1.0, 1.0)
+        # Add slight vibration to acceleration z (if not already updated in state handling)
+        if self.current_state not in [RocketStates.FLIGHT, RocketStates.DESCENT, RocketStates.PARACHUTE_DESCENT]:
+            self.telemetry.acceleration_z += random.uniform(-0.2, 0.2)
 
         # GPS noise (small movements)
         self.telemetry.latitude += random.uniform(-0.00001, 0.00001)
         self.telemetry.longitude += random.uniform(-0.00001, 0.00001)
 
-    def _calculate_ascent_altitude(self, flight_time):
-        """Calculate altitude during ascent phase"""
-        # Simplified model with initial acceleration
-        if flight_time < 2.0:
-            # Initial acceleration phase
-            return self.ground_altitude + 0.5 * self.ascent_rate * flight_time * flight_time
-        else:
-            # Constant velocity plus diminishing acceleration
-            initial_alt = self.ground_altitude + 0.5 * self.ascent_rate * 4.0  # alt at t=2
-            remaining_time = flight_time - 2.0
-            max_altitude_factor = 1.0 - math.exp(-remaining_time / 10.0)  # Exponential approach to max
-            return initial_alt + (self.max_altitude - initial_alt) * max_altitude_factor
-
     def _calculate_pressure(self, altitude):
-        """Calculate atmospheric pressure based on altitude"""
+        """Calculate atmospheric pressure based on altitude using barometric formula"""
         # Standard atmospheric pressure formula
-        return 1013.25 * math.exp(-altitude / 8500.0)
+        p0 = 1013.25  # Pressure at sea level (hPa)
+        T0 = 288.15  # Standard temperature at sea level (K)
+        g = 9.80665  # Gravitational acceleration (m/s²)
+        M = 0.0289644  # Molar mass of Earth's air (kg/mol)
+        R = 8.31447  # Universal gas constant (J/(mol·K))
+
+        # Convert altitude to pressure using the barometric formula
+        pressure = p0 * math.exp((-g * M * altitude) / (R * T0))
+        return pressure
+
+    def _calculate_temperature(self, altitude):
+        """Calculate temperature based on altitude using lapse rate"""
+        # Assume temperature decreases by 6.5°C per 1000m (standard atmosphere lapse rate)
+        ground_temp = 20.0  # Base temperature at ground level (°C)
+        lapse_rate = 6.5 / 1000.0  # °C per meter
+
+        # Calculate temperature decrease
+        temp_decrease = altitude * lapse_rate
+
+        # Return temperature at given altitude
+        return ground_temp - temp_decrease
 
     def send_command(self, command, parameter=0):
         """Process a command sent to the rocket"""
@@ -285,6 +364,7 @@ class RocketSimulator:
             self.current_state = RocketStates.FLIGHT
             self.launch_time = time.time()
             self.state_transition_time = time.time()
+            self.current_velocity = 0.0  # Start from rest
             return True
 
         elif command.value == CommandCodes.CMD_DEPLOY_PARACHUTE.value and (
@@ -319,8 +399,11 @@ class RocketSimulator:
         self.telemetry = TelemetryData()
         self.current_state = RocketStates.IDLE
         self.launch_time = 0
+        self.boost_end_time = 0
         self.apogee_time = 0
         self.landing_time = 0
+        self.current_velocity = 0.0
+        self.peak_altitude = 0.0
         self.state_transition_time = time.time()
 
     def get_telemetry(self):
