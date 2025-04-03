@@ -913,6 +913,7 @@ class RocketControlPanel(ctk.CTk):
                     continue
 
                 telemetry = self.simulator.get_telemetry()
+
                 if telemetry:
                     # Update UI with telemetry data
                     self.after(10, lambda t=telemetry: self.update_ui(t))

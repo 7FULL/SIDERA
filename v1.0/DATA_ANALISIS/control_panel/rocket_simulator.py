@@ -56,7 +56,7 @@ class RocketSimulator:
     def __init__(self):
         self.telemetry = TelemetryData()
         self.current_state = RocketStates.IDLE
-        self.telemetry_queue = queue.Queue()
+        self.telemetry_queue = TelemetryData()
         self.command_history = []
 
         # Simulation parameters - modified for more realistic flight
@@ -112,8 +112,8 @@ class RocketSimulator:
             self._update_simulation(dt)
 
             # Add telemetry to queue
-            self.telemetry.timestamp = int(current_time * 1000)
-            self.telemetry_queue.put(self._copy_telemetry())
+            telemetry_copy = self._copy_telemetry()
+            self.telemetry_queue = telemetry_copy
 
             # Sleep to control update rate (20Hz)
             time.sleep(0.05)
@@ -237,7 +237,7 @@ class RocketSimulator:
             self.telemetry.gyro_z = random.uniform(-20.0, 20.0)
 
             # Automatic parachute deployment at 300m or after 3 seconds of descent
-            if self.telemetry.altitude <= 300 or time_since_apogee > 3.0:
+            if self.telemetry.altitude <= self.max_altitude*0.75 or time_since_apogee > 3.0:
                 self.telemetry.parachute_deployed = True
                 self.current_state = RocketStates.PARACHUTE_DESCENT
                 self.state_transition_time = time.time()
@@ -407,10 +407,7 @@ class RocketSimulator:
         self.state_transition_time = time.time()
 
     def get_telemetry(self):
-        """Get the next telemetry packet from the queue, if available"""
-        if not self.telemetry_queue.empty():
-            return self.telemetry_queue.get()
-        return None
+        return self.telemetry_queue
 
     def connect(self):
         """Simulate connection to the rocket"""
