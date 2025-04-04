@@ -326,58 +326,40 @@ class RocketControlPanel(ctk.CTk):
         self.status_frame.grid_rowconfigure(1, weight=1)
 
         # Title
-        title_label = ctk.CTkLabel(self.status_frame, text="ROCKET STATUS", font=ctk.CTkFont(size=24, weight="bold"))
-        title_label.grid(row=0, column=0, columnspan=2, padx=10, pady=(10, 20))
+        # title_label = ctk.CTkLabel(self.status_frame, text="ROCKET STATUS", font=ctk.CTkFont(size=24, weight="bold"))
+        # title_label.grid(row=0, column=0, columnspan=2, padx=10, pady=(10, 20))
 
         # Left status column
         left_status = ctk.CTkFrame(self.status_frame)
         left_status.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
 
         # Current state
-        self.state_label = ctk.CTkLabel(left_status, text="State:", font=ctk.CTkFont(size=16))
+        self.state_label = ctk.CTkLabel(left_status, text="State: IDLE", font=ctk.CTkFont(size=16))
         self.state_label.pack(anchor="w", padx=10, pady=5)
 
-        self.state_value = ctk.CTkLabel(left_status, text="IDLE", font=ctk.CTkFont(size=20, weight="bold"))
-        self.state_value.pack(anchor="w", padx=20, pady=5)
-
         # Altitude
-        self.altitude_label = ctk.CTkLabel(left_status, text="Altitude:", font=ctk.CTkFont(size=16))
+        self.altitude_label = ctk.CTkLabel(left_status, text="Altitude: 0.0 m", font=ctk.CTkFont(size=16))
         self.altitude_label.pack(anchor="w", padx=10, pady=5)
 
-        self.altitude_value = ctk.CTkLabel(left_status, text="0.0 m", font=ctk.CTkFont(size=20, weight="bold"))
-        self.altitude_value.pack(anchor="w", padx=20, pady=5)
-
         # Max altitude
-        self.max_altitude_label = ctk.CTkLabel(left_status, text="Max Altitude:", font=ctk.CTkFont(size=16))
+        self.max_altitude_label = ctk.CTkLabel(left_status, text="Max Altitude: 0.0 m", font=ctk.CTkFont(size=16))
         self.max_altitude_label.pack(anchor="w", padx=10, pady=5)
-
-        self.max_altitude_value = ctk.CTkLabel(left_status, text="0.0 m", font=ctk.CTkFont(size=20, weight="bold"))
-        self.max_altitude_value.pack(anchor="w", padx=20, pady=5)
 
         # Right status column
         right_status = ctk.CTkFrame(self.status_frame)
         right_status.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
 
         # Temperature
-        self.temp_label = ctk.CTkLabel(right_status, text="Temperature:", font=ctk.CTkFont(size=16))
+        self.temp_label = ctk.CTkLabel(right_status, text="Temperature: 0.0 °C", font=ctk.CTkFont(size=16))
         self.temp_label.pack(anchor="w", padx=10, pady=5)
 
-        self.temp_value = ctk.CTkLabel(right_status, text="0.0 °C", font=ctk.CTkFont(size=20, weight="bold"))
-        self.temp_value.pack(anchor="w", padx=20, pady=5)
-
         # Pressure
-        self.pressure_label = ctk.CTkLabel(right_status, text="Pressure:", font=ctk.CTkFont(size=16))
+        self.pressure_label = ctk.CTkLabel(right_status, text="Pressure: 0.0 hPa", font=ctk.CTkFont(size=16))
         self.pressure_label.pack(anchor="w", padx=10, pady=5)
 
-        self.pressure_value = ctk.CTkLabel(right_status, text="0.0 hPa", font=ctk.CTkFont(size=20, weight="bold"))
-        self.pressure_value.pack(anchor="w", padx=20, pady=5)
-
         # Parachute status
-        self.parachute_label = ctk.CTkLabel(right_status, text="Parachute:", font=ctk.CTkFont(size=16))
+        self.parachute_label = ctk.CTkLabel(right_status, text="Parachute: NOT DEPLOYED", font=ctk.CTkFont(size=16))
         self.parachute_label.pack(anchor="w", padx=10, pady=5)
-
-        self.parachute_value = ctk.CTkLabel(right_status, text="NOT DEPLOYED", font=ctk.CTkFont(size=20, weight="bold"))
-        self.parachute_value.pack(anchor="w", padx=20, pady=5)
 
     def create_graphs_panel(self):
         # Configure grid for graphs
@@ -958,20 +940,20 @@ class RocketControlPanel(ctk.CTk):
             self.update_state_ui()
 
         # Basic telemetry values
-        self.altitude_value.configure(text=f"{telemetry.altitude:.1f} m")
-        self.temp_value.configure(text=f"{telemetry.temperature:.1f} °C")
-        self.pressure_value.configure(text=f"{telemetry.pressure:.1f} hPa")
+        self.altitude_label.configure(text=f"Altitude: {telemetry.altitude:.1f} m")
+        self.temp_label.configure(text=f"Temperature: {telemetry.temperature:.1f} °C")
+        self.pressure_label.configure(text=f"Pressure: {telemetry.pressure:.1f} hPa")
 
         # Parachute status
         if telemetry.parachute_deployed:
-            self.parachute_value.configure(text="DEPLOYED", text_color="#00CC00")
+            self.parachute_label.configure(text="DEPLOYED", text_color="#FF9900")
         else:
-            self.parachute_value.configure(text="NOT DEPLOYED", text_color="white")
+            self.parachute_label.configure(text="NOT DEPLOYED", text_color="#FFFFFF")
 
         # Update max altitude
-        current_max = float(self.max_altitude_value.cget("text").split()[0])
+        current_max = float(self.max_altitude_label.cget("text").split()[2])
         if telemetry.altitude > current_max:
-            self.max_altitude_value.configure(text=f"{telemetry.altitude:.1f} m")
+            self.max_altitude_label.configure(text=f"Max Altitude: {telemetry.altitude:.1f} m")
 
         # Update detailed telemetry values
         self.telemetry_values["Acceleration X"].configure(text=f"{telemetry.acceleration_x:.2f} m/s²")
