@@ -107,8 +107,6 @@ class NRF24USB:
                     data = self.serial.read(self.serial.in_waiting)
 
                     # Process the received data into TelemetryData
-                    # This would depend on how your NRF24 USB adapter formats the data
-                    # For now, we'll use a placeholder implementation
                     telemetry = self._parse_telemetry(data)
                     if telemetry:
                         self.telemetry_queue.put(telemetry)
@@ -122,8 +120,6 @@ class NRF24USB:
         # the TelemetryData struct in the Arduino code
         try:
             # Example structure (adapt to your actual data format)
-            # This parsing would need to be adjusted to match your actual data format
-
             if len(data) < 56:  # Minimum expected size
                 return None
 
@@ -156,10 +152,6 @@ class NRF24USB:
 
         try:
             # Pack the command data
-            # struct CommandData {
-            #     uint8_t command;
-            #     uint32_t parameter;
-            # };
             command_data = struct.pack('BL', command.value, parameter)
             self.serial.write(command_data)
             return True
@@ -241,8 +233,8 @@ class RocketControlPanel(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        # Modo simulación
-        self.simulation_mode = False  # True por defecto para pruebas
+        # Simulation mode
+        self.simulation_mode = False
 
         # Set appearance mode and default color theme
         ctk.set_appearance_mode("Dark")
@@ -287,92 +279,54 @@ class RocketControlPanel(ctk.CTk):
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def create_widgets(self):
-        # Create main container with two columns
-        self.grid_columnconfigure(0, weight=7)
-        self.grid_columnconfigure(1, weight=3)
+        # Create main container with three columns
+        self.grid_columnconfigure(0, weight=2)  # Graphs column
+        self.grid_columnconfigure(1, weight=3)  # Info & telemetry column
+        self.grid_columnconfigure(2, weight=2)  # Controls column
         self.grid_rowconfigure(0, weight=1)
 
-        # Left panel (visualization)
-        self.left_panel = ctk.CTkFrame(self)
-        self.left_panel.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-        self.create_visualization_panel()
+        # Left column (graphs)
+        self.graphs_column = ctk.CTkFrame(self)
+        self.graphs_column.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+        self.create_graphs_column()
 
-        # Right panel (controls and data)
-        self.right_panel = ctk.CTkFrame(self)
-        self.right_panel.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
-        self.create_control_panel()
+        # Middle column (info & telemetry)
+        self.info_column = ctk.CTkFrame(self)
+        self.info_column.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
+        self.create_info_column()
 
-    def create_visualization_panel(self):
-        # Configure grid
-        self.left_panel.grid_columnconfigure(0, weight=1)
-        self.left_panel.grid_rowconfigure(0, weight=2)
-        self.left_panel.grid_rowconfigure(1, weight=3)
+        # Right column (controls)
+        self.controls_column = ctk.CTkFrame(self)
+        self.controls_column.grid(row=0, column=2, padx=5, pady=5, sticky="nsew")
+        self.create_controls_column()
 
-        # Status panel
-        self.status_frame = ctk.CTkFrame(self.left_panel)
-        self.status_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-        self.create_status_panel()
+    def create_graphs_column(self):
+        # Configure grid for four graphs
+        self.graphs_column.grid_columnconfigure(0, weight=1)
+        self.graphs_column.grid_rowconfigure(0, weight=1)
+        self.graphs_column.grid_rowconfigure(1, weight=1)
+        self.graphs_column.grid_rowconfigure(2, weight=1)
+        self.graphs_column.grid_rowconfigure(3, weight=1)
 
-        # Graphs panel
-        self.graphs_frame = ctk.CTkFrame(self.left_panel)
-        self.graphs_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
-        self.create_graphs_panel()
+        # Create four graph frames
+        self.altitude_graph_frame = ctk.CTkFrame(self.graphs_column)
+        self.altitude_graph_frame.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+        self.create_altitude_graph()
 
-    def create_status_panel(self):
-        # Configure grid
-        self.status_frame.grid_columnconfigure(0, weight=1)
-        self.status_frame.grid_columnconfigure(1, weight=1)
-        self.status_frame.grid_rowconfigure(0, weight=0)
-        self.status_frame.grid_rowconfigure(1, weight=1)
+        self.accel_graph_frame = ctk.CTkFrame(self.graphs_column)
+        self.accel_graph_frame.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
+        self.create_acceleration_graph()
 
-        # Title
-        # title_label = ctk.CTkLabel(self.status_frame, text="ROCKET STATUS", font=ctk.CTkFont(size=24, weight="bold"))
-        # title_label.grid(row=0, column=0, columnspan=2, padx=10, pady=(10, 20))
+        self.gyro_graph_frame = ctk.CTkFrame(self.graphs_column)
+        self.gyro_graph_frame.grid(row=2, column=0, padx=5, pady=5, sticky="nsew")
+        self.create_gyroscope_graph()
 
-        # Left status column
-        left_status = ctk.CTkFrame(self.status_frame)
-        left_status.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+        self.temp_press_frame = ctk.CTkFrame(self.graphs_column)
+        self.temp_press_frame.grid(row=3, column=0, padx=5, pady=5, sticky="nsew")
+        self.create_temp_press_graph()
 
-        # Current state
-        self.state_label = ctk.CTkLabel(left_status, text="State: IDLE", font=ctk.CTkFont(size=16))
-        self.state_label.pack(anchor="w", padx=10, pady=5)
-
-        # Altitude
-        self.altitude_label = ctk.CTkLabel(left_status, text="Altitude: 0.0 m", font=ctk.CTkFont(size=16))
-        self.altitude_label.pack(anchor="w", padx=10, pady=5)
-
-        # Max altitude
-        self.max_altitude_label = ctk.CTkLabel(left_status, text="Max Altitude: 0.0 m", font=ctk.CTkFont(size=16))
-        self.max_altitude_label.pack(anchor="w", padx=10, pady=5)
-
-        # Right status column
-        right_status = ctk.CTkFrame(self.status_frame)
-        right_status.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
-
-        # Temperature
-        self.temp_label = ctk.CTkLabel(right_status, text="Temperature: 0.0 °C", font=ctk.CTkFont(size=16))
-        self.temp_label.pack(anchor="w", padx=10, pady=5)
-
-        # Pressure
-        self.pressure_label = ctk.CTkLabel(right_status, text="Pressure: 0.0 hPa", font=ctk.CTkFont(size=16))
-        self.pressure_label.pack(anchor="w", padx=10, pady=5)
-
-        # Parachute status
-        self.parachute_label = ctk.CTkLabel(right_status, text="Parachute: NOT DEPLOYED", font=ctk.CTkFont(size=16))
-        self.parachute_label.pack(anchor="w", padx=10, pady=5)
-
-    def create_graphs_panel(self):
-        # Configure grid for graphs
-        self.graphs_frame.grid_columnconfigure(0, weight=1)
-        self.graphs_frame.grid_columnconfigure(1, weight=1)
-        self.graphs_frame.grid_rowconfigure(0, weight=1)
-        self.graphs_frame.grid_rowconfigure(1, weight=1)
-
-        # Create altitude graph
-        self.altitude_graph_frame = ctk.CTkFrame(self.graphs_frame)
-        self.altitude_graph_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-
-        self.altitude_fig = Figure(figsize=(5, 4), dpi=100)
+    def create_altitude_graph(self):
+        self.altitude_fig = Figure(figsize=(5, 3), dpi=100)
         self.altitude_ax = self.altitude_fig.add_subplot(111)
         self.altitude_ax.set_title('Altitude')
         self.altitude_ax.set_xlabel('Time (s)')
@@ -383,11 +337,8 @@ class RocketControlPanel(ctk.CTk):
         self.altitude_canvas.draw()
         self.altitude_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-        # Create acceleration graph
-        self.accel_graph_frame = ctk.CTkFrame(self.graphs_frame)
-        self.accel_graph_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
-
-        self.accel_fig = Figure(figsize=(5, 4), dpi=100)
+    def create_acceleration_graph(self):
+        self.accel_fig = Figure(figsize=(5, 3), dpi=100)
         self.accel_ax = self.accel_fig.add_subplot(111)
         self.accel_ax.set_title('Acceleration')
         self.accel_ax.set_xlabel('Time (s)')
@@ -401,11 +352,8 @@ class RocketControlPanel(ctk.CTk):
         self.accel_canvas.draw()
         self.accel_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-        # Create gyroscope graph
-        self.gyro_graph_frame = ctk.CTkFrame(self.graphs_frame)
-        self.gyro_graph_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
-
-        self.gyro_fig = Figure(figsize=(5, 4), dpi=100)
+    def create_gyroscope_graph(self):
+        self.gyro_fig = Figure(figsize=(5, 3), dpi=100)
         self.gyro_ax = self.gyro_fig.add_subplot(111)
         self.gyro_ax.set_title('Gyroscope')
         self.gyro_ax.set_xlabel('Time (s)')
@@ -419,11 +367,8 @@ class RocketControlPanel(ctk.CTk):
         self.gyro_canvas.draw()
         self.gyro_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-        # Create temperature/pressure graph
-        self.temp_press_frame = ctk.CTkFrame(self.graphs_frame)
-        self.temp_press_frame.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
-
-        self.temp_press_fig = Figure(figsize=(5, 4), dpi=100)
+    def create_temp_press_graph(self):
+        self.temp_press_fig = Figure(figsize=(5, 3), dpi=100)
         self.temp_ax = self.temp_press_fig.add_subplot(111)
         self.press_ax = self.temp_ax.twinx()
 
@@ -442,33 +387,159 @@ class RocketControlPanel(ctk.CTk):
         self.temp_press_canvas.draw()
         self.temp_press_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-    def create_control_panel(self):
-        # Configure grid
-        self.right_panel.grid_columnconfigure(0, weight=1)
-        self.right_panel.grid_rowconfigure(0, weight=0)  # Connection panel
-        self.right_panel.grid_rowconfigure(1, weight=0)  # Command panel
-        self.right_panel.grid_rowconfigure(2, weight=1)  # Telemetry panel
-        self.right_panel.grid_rowconfigure(3, weight=0)  # Log panel
+    def create_info_column(self):
+        # Configure grid for info and telemetry panels
+        self.info_column.grid_columnconfigure(0, weight=1)
+        self.info_column.grid_rowconfigure(0, weight=1)  # Status panel
+        self.info_column.grid_rowconfigure(1, weight=3)  # Telemetry panel
 
-        # Connection panel
-        self.connection_frame = ctk.CTkFrame(self.right_panel)
-        self.connection_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
-        self.create_connection_panel()
-
-        # Command panel
-        self.command_frame = ctk.CTkFrame(self.right_panel)
-        self.command_frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
-        self.create_command_panel()
+        # Status panel
+        self.status_frame = ctk.CTkFrame(self.info_column)
+        self.status_frame.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+        self.create_status_panel()
 
         # Telemetry panel
-        self.telemetry_frame = ctk.CTkFrame(self.right_panel)
-        self.telemetry_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
+        self.telemetry_frame = ctk.CTkFrame(self.info_column)
+        self.telemetry_frame.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
         self.create_telemetry_panel()
 
-        # Log panel
-        self.log_frame = ctk.CTkFrame(self.right_panel)
-        self.log_frame.grid(row=3, column=0, padx=10, pady=10, sticky="ew")
+    def create_status_panel(self):
+        # Title
+        status_title = ctk.CTkLabel(self.status_frame, text="ROCKET STATUS", font=ctk.CTkFont(size=20, weight="bold"))
+        status_title.pack(pady=(10, 15))
+
+        # Status container
+        status_container = ctk.CTkFrame(self.status_frame)
+        status_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Configure grid for status values
+        status_container.grid_columnconfigure(0, weight=1)
+        status_container.grid_columnconfigure(1, weight=1)
+
+        # Status labels - left column
+        state_label = ctk.CTkLabel(status_container, text="State:", font=ctk.CTkFont(size=16, weight="bold"),
+                                   anchor="w")
+        state_label.grid(row=0, column=0, sticky="w", padx=10, pady=5)
+
+        altitude_label = ctk.CTkLabel(status_container, text="Altitude:", font=ctk.CTkFont(size=16, weight="bold"),
+                                      anchor="w")
+        altitude_label.grid(row=1, column=0, sticky="w", padx=10, pady=5)
+
+        max_altitude_label = ctk.CTkLabel(status_container, text="Max Altitude:",
+                                          font=ctk.CTkFont(size=16, weight="bold"), anchor="w")
+        max_altitude_label.grid(row=2, column=0, sticky="w", padx=10, pady=5)
+
+        # Status labels - right column
+        temp_label = ctk.CTkLabel(status_container, text="Temperature:", font=ctk.CTkFont(size=16, weight="bold"),
+                                  anchor="w")
+        temp_label.grid(row=0, column=1, sticky="w", padx=10, pady=5)
+
+        pressure_label = ctk.CTkLabel(status_container, text="Pressure:", font=ctk.CTkFont(size=16, weight="bold"),
+                                      anchor="w")
+        pressure_label.grid(row=1, column=1, sticky="w", padx=10, pady=5)
+
+        parachute_label = ctk.CTkLabel(status_container, text="Parachute:", font=ctk.CTkFont(size=16, weight="bold"),
+                                       anchor="w")
+        parachute_label.grid(row=2, column=1, sticky="w", padx=10, pady=5)
+
+        # Status values - left column
+        self.state_value = ctk.CTkLabel(status_container, text="IDLE", font=ctk.CTkFont(size=16))
+        self.state_value.grid(row=0, column=0, sticky="e", padx=10, pady=5)
+
+        self.altitude_value = ctk.CTkLabel(status_container, text="0.0 m", font=ctk.CTkFont(size=16))
+        self.altitude_value.grid(row=1, column=0, sticky="e", padx=10, pady=5)
+
+        self.max_altitude_value = ctk.CTkLabel(status_container, text="0.0 m", font=ctk.CTkFont(size=16))
+        self.max_altitude_value.grid(row=2, column=0, sticky="e", padx=10, pady=5)
+
+        # Status values - right column
+        self.temp_value = ctk.CTkLabel(status_container, text="0.0 °C", font=ctk.CTkFont(size=16))
+        self.temp_value.grid(row=0, column=1, sticky="e", padx=10, pady=5)
+
+        self.pressure_value = ctk.CTkLabel(status_container, text="0.0 hPa", font=ctk.CTkFont(size=16))
+        self.pressure_value.grid(row=1, column=1, sticky="e", padx=10, pady=5)
+
+        self.parachute_value = ctk.CTkLabel(status_container, text="SECURED", font=ctk.CTkFont(size=16))
+        self.parachute_value.grid(row=2, column=1, sticky="e", padx=10, pady=5)
+
+    def create_telemetry_panel(self):
+        # Title
+        telemetry_title = ctk.CTkLabel(self.telemetry_frame, text="TELEMETRY DATA",
+                                       font=ctk.CTkFont(size=20, weight="bold"))
+        telemetry_title.pack(pady=(10, 15))
+
+        # Create scrollable frame for telemetry data
+        telemetry_scrollable_frame = ctk.CTkScrollableFrame(self.telemetry_frame)
+        telemetry_scrollable_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Detailed telemetry values
+        self.telemetry_values = {}
+
+        telemetry_fields = [
+            ("Acceleration X", "0.0 m/s²"),
+            ("Acceleration Y", "0.0 m/s²"),
+            ("Acceleration Z", "0.0 m/s²"),
+            ("Gyroscope X", "0.0 deg/s"),
+            ("Gyroscope Y", "0.0 deg/s"),
+            ("Gyroscope Z", "0.0 deg/s"),
+            ("Latitude", "0.000000°"),
+            ("Longitude", "0.000000°"),
+            ("Flight Time", "0s"),
+            ("Last Update", "N/A"),
+            ("Vertical Speed", "0.0 m/s"),
+            ("Total Distance", "0.0 m"),
+            ("Battery Voltage", "0.0 V"),
+            ("Signal Strength", "0%"),
+            ("Data Rate", "0 bytes/s")
+        ]
+
+        # Create telemetry value containers with a more organized layout
+        for field, value in telemetry_fields:
+            container = ctk.CTkFrame(telemetry_scrollable_frame)
+            container.pack(fill=tk.X, pady=3)
+
+            label = ctk.CTkLabel(container, text=f"{field}:", anchor="w", width=120)
+            label.pack(side=tk.LEFT, padx=10, pady=2)
+
+            value_label = ctk.CTkLabel(container, text=value, anchor="e")
+            value_label.pack(side=tk.RIGHT, padx=10, pady=2)
+
+            self.telemetry_values[field] = value_label
+
+    def create_controls_column(self):
+        # Configure grid for control panels
+        self.controls_column.grid_columnconfigure(0, weight=1)
+        self.controls_column.grid_rowconfigure(0, weight=0)  # Connection
+        self.controls_column.grid_rowconfigure(1, weight=0)  # Commands
+        self.controls_column.grid_rowconfigure(2, weight=0)  # Emergency controls
+        self.controls_column.grid_rowconfigure(3, weight=0)  # Flight logs
+        self.controls_column.grid_rowconfigure(4, weight=0)  # System status
+        self.controls_column.grid_rowconfigure(5, weight=1)  # Extra space
+
+        # Connection panel
+        self.connection_frame = ctk.CTkFrame(self.controls_column)
+        self.connection_frame.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
+        self.create_connection_panel()
+
+        # Commands panel
+        self.command_frame = ctk.CTkFrame(self.controls_column)
+        self.command_frame.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
+        self.create_command_panel()
+
+        # Emergency controls panel
+        self.emergency_frame = ctk.CTkFrame(self.controls_column)
+        self.emergency_frame.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
+        self.create_emergency_panel()
+
+        # Flight logs panel
+        self.log_frame = ctk.CTkFrame(self.controls_column)
+        self.log_frame.grid(row=3, column=0, padx=5, pady=5, sticky="ew")
         self.create_log_panel()
+
+        # System status panel
+        self.system_frame = ctk.CTkFrame(self.controls_column)
+        self.system_frame.grid(row=4, column=0, padx=5, pady=5, sticky="ew")
+        self.create_system_panel()
 
     def create_connection_panel(self):
         # Title
@@ -496,11 +567,11 @@ class RocketControlPanel(ctk.CTk):
         port_label.pack(side=tk.LEFT, padx=5)
 
         self.port_combobox = ctk.CTkComboBox(connection_controls, values=[])
-        self.port_combobox.pack(side=tk.LEFT, padx=5)
+        self.port_combobox.pack(side=tk.LEFT, padx=5, expand=True, fill=tk.X)
 
         # Refresh ports button
         refresh_button = ctk.CTkButton(connection_controls, text="↻", width=30, command=self.refresh_ports)
-        refresh_button.pack(side=tk.LEFT, padx=5)
+        refresh_button.pack(side=tk.RIGHT, padx=5)
 
         # Connect/Disconnect button
         self.connect_button = ctk.CTkButton(self.connection_frame, text="Connect", command=self.toggle_connection)
@@ -539,38 +610,6 @@ class RocketControlPanel(ctk.CTk):
         )
         self.launch_button.pack(fill=tk.X, padx=10, pady=5)
 
-        # Emergency Controls Frame
-        emergency_frame = ctk.CTkFrame(self.command_frame)
-        emergency_frame.pack(fill=tk.X, padx=10, pady=5)
-
-        emergency_label = ctk.CTkLabel(emergency_frame, text="EMERGENCY CONTROLS", font=ctk.CTkFont(weight="bold"))
-        emergency_label.pack(pady=5)
-
-        emergency_buttons_frame = ctk.CTkFrame(emergency_frame)
-        emergency_buttons_frame.pack(fill=tk.X, pady=5)
-
-        # Deploy Parachute button
-        self.deploy_parachute_button = ctk.CTkButton(
-            emergency_buttons_frame,
-            text="Deploy Parachute",
-            fg_color="#FF9900",
-            hover_color="#CC7700",
-            command=lambda: self.send_command(CommandCodes.CMD_DEPLOY_PARACHUTE),
-            state="disabled"
-        )
-        self.deploy_parachute_button.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5, pady=5)
-
-        # Abort button
-        self.abort_button = ctk.CTkButton(
-            emergency_buttons_frame,
-            text="ABORT",
-            fg_color="#CC0000",
-            hover_color="#990000",
-            command=self.abort_mission,
-            state="disabled"
-        )
-        self.abort_button.pack(side=tk.RIGHT, fill=tk.X, expand=True, padx=5, pady=5)
-
         # Reboot button
         self.reboot_button = ctk.CTkButton(
             self.command_frame,
@@ -580,43 +619,33 @@ class RocketControlPanel(ctk.CTk):
         )
         self.reboot_button.pack(fill=tk.X, padx=10, pady=5)
 
-    def create_telemetry_panel(self):
+    def create_emergency_panel(self):
         # Title
-        title_label = ctk.CTkLabel(self.telemetry_frame, text="TELEMETRY DATA",
-                                   font=ctk.CTkFont(size=16, weight="bold"))
-        title_label.pack(pady=5)
+        emergency_label = ctk.CTkLabel(self.emergency_frame, text="EMERGENCY CONTROLS",
+                                       font=ctk.CTkFont(size=16, weight="bold"))
+        emergency_label.pack(pady=5)
 
-        # Create scrollable frame for telemetry data
-        telemetry_scrollable_frame = ctk.CTkScrollableFrame(self.telemetry_frame)
-        telemetry_scrollable_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        # Deploy Parachute button
+        self.deploy_parachute_button = ctk.CTkButton(
+            self.emergency_frame,
+            text="Deploy Parachute",
+            fg_color="#FF9900",
+            hover_color="#CC7700",
+            command=lambda: self.send_command(CommandCodes.CMD_DEPLOY_PARACHUTE),
+            state="disabled"
+        )
+        self.deploy_parachute_button.pack(fill=tk.X, padx=10, pady=5)
 
-        # Detailed telemetry values
-        self.telemetry_values = {}
-
-        telemetry_fields = [
-            ("Acceleration X", "0.0 m/s²"),
-            ("Acceleration Y", "0.0 m/s²"),
-            ("Acceleration Z", "0.0 m/s²"),
-            ("Gyroscope X", "0.0 deg/s"),
-            ("Gyroscope Y", "0.0 deg/s"),
-            ("Gyroscope Z", "0.0 deg/s"),
-            ("Latitude", "0.000000°"),
-            ("Longitude", "0.000000°"),
-            ("Flight Time", "0s"),
-            ("Last Update", "N/A")
-        ]
-
-        for field, value in telemetry_fields:
-            container = ctk.CTkFrame(telemetry_scrollable_frame)
-            container.pack(fill=tk.X, pady=2)
-
-            label = ctk.CTkLabel(container, text=f"{field}:", anchor="w", width=100)
-            label.pack(side=tk.LEFT, padx=5)
-
-            value_label = ctk.CTkLabel(container, text=value)
-            value_label.pack(side=tk.RIGHT, fill=tk.X, expand=True, padx=5)
-
-            self.telemetry_values[field] = value_label
+        # Abort button
+        self.abort_button = ctk.CTkButton(
+            self.emergency_frame,
+            text="ABORT MISSION",
+            fg_color="#CC0000",
+            hover_color="#990000",
+            command=self.abort_mission,
+            state="disabled"
+        )
+        self.abort_button.pack(fill=tk.X, padx=10, pady=5)
 
     def create_log_panel(self):
         # Title
@@ -648,6 +677,37 @@ class RocketControlPanel(ctk.CTk):
         # Log status
         self.log_status = ctk.CTkLabel(self.log_frame, text="Logging: Inactive")
         self.log_status.pack(fill=tk.X, padx=10, pady=5)
+
+    def create_system_panel(self):
+        # Title
+        title_label = ctk.CTkLabel(self.system_frame, text="SYSTEM STATUS", font=ctk.CTkFont(size=16, weight="bold"))
+        title_label.pack(pady=5)
+
+        # Status container
+        system_container = ctk.CTkFrame(self.system_frame)
+        system_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+        system_container.grid_columnconfigure(0, weight=1)
+        system_container.grid_columnconfigure(1, weight=1)
+
+        # System status indicators
+        self.system_indicators = {}
+
+        indicators = [
+            ("RF Signal", "0%", "#777777"),
+            ("Battery", "0%", "#777777"),
+            ("Data Link", "Inactive", "#777777"),
+            ("GPS Lock", "No Signal", "#777777")
+        ]
+
+        for i, (name, value, color) in enumerate(indicators):
+            label = ctk.CTkLabel(system_container, text=f"{name}:", anchor="w")
+            label.grid(row=i, column=0, sticky="w", padx=10, pady=3)
+
+            status = ctk.CTkLabel(system_container, text=value, fg_color=color, corner_radius=5)
+            status.grid(row=i, column=1, sticky="e", padx=10, pady=3)
+
+            self.system_indicators[name] = status
 
     def refresh_ports(self):
         """Refresh the available serial ports"""
@@ -697,6 +757,9 @@ class RocketControlPanel(ctk.CTk):
                     self.logging_button.configure(state="normal")
                     self.abort_button.configure(state="normal")
 
+                    # Update system indicators for simulation
+                    self.update_system_indicators(simulation=True)
+
                     # Start a new log file
                     self.start_logging()
                 else:
@@ -713,6 +776,9 @@ class RocketControlPanel(ctk.CTk):
                 self.deploy_parachute_button.configure(state="disabled")
                 self.abort_button.configure(state="disabled")
                 self.reboot_button.configure(state="disabled")
+
+                # Reset system indicators
+                self.reset_system_indicators()
 
                 # Stop logging
                 self.stop_logging()
@@ -751,8 +817,27 @@ class RocketControlPanel(ctk.CTk):
                 self.abort_button.configure(state="disabled")
                 self.reboot_button.configure(state="disabled")
 
+                # Reset system indicators
+                self.reset_system_indicators()
+
                 # Stop logging
                 self.stop_logging()
+
+    def update_system_indicators(self, simulation=False):
+        """Update system status indicators"""
+        if simulation:
+            self.system_indicators["RF Signal"].configure(text="100%", fg_color="#00AA00")
+            self.system_indicators["Battery"].configure(text="95%", fg_color="#00AA00")
+            self.system_indicators["Data Link"].configure(text="Active", fg_color="#00AA00")
+            self.system_indicators["GPS Lock"].configure(text="Strong (9 sats)", fg_color="#00AA00")
+        else:
+            # Here you would update with real data from the rocket
+            pass
+
+    def reset_system_indicators(self):
+        """Reset system status indicators to default state"""
+        for indicator in self.system_indicators.values():
+            indicator.configure(text="Inactive", fg_color="#777777")
 
     def launch_rocket(self):
         """Initiate rocket launch sequence with confirmation"""
@@ -940,20 +1025,20 @@ class RocketControlPanel(ctk.CTk):
             self.update_state_ui()
 
         # Basic telemetry values
-        self.altitude_label.configure(text=f"Altitude: {telemetry.altitude:.1f} m")
-        self.temp_label.configure(text=f"Temperature: {telemetry.temperature:.1f} °C")
-        self.pressure_label.configure(text=f"Pressure: {telemetry.pressure:.1f} hPa")
+        self.altitude_value.configure(text=f"{telemetry.altitude:.1f} m")
+        self.temp_value.configure(text=f"{telemetry.temperature:.1f} °C")
+        self.pressure_value.configure(text=f"{telemetry.pressure:.1f} hPa")
 
         # Parachute status
         if telemetry.parachute_deployed:
-            self.parachute_label.configure(text="DEPLOYED", text_color="#FF9900")
+            self.parachute_value.configure(text="DEPLOYED", text_color="#FF9900")
         else:
-            self.parachute_label.configure(text="NOT DEPLOYED", text_color="#FFFFFF")
+            self.parachute_value.configure(text="SECURED", text_color="#ff1313")
 
         # Update max altitude
-        current_max = float(self.max_altitude_label.cget("text").split()[2])
+        current_max = float(self.max_altitude_value.cget("text").split()[0])
         if telemetry.altitude > current_max:
-            self.max_altitude_label.configure(text=f"Max Altitude: {telemetry.altitude:.1f} m")
+            self.max_altitude_value.configure(text=f"{telemetry.altitude:.1f} m")
 
         # Update detailed telemetry values
         self.telemetry_values["Acceleration X"].configure(text=f"{telemetry.acceleration_x:.2f} m/s²")
@@ -975,6 +1060,20 @@ class RocketControlPanel(ctk.CTk):
         # Last update time
         current_time = datetime.now().strftime("%H:%M:%S.%f")[:-3]
         self.telemetry_values["Last Update"].configure(text=current_time)
+
+        # Update simulated values for advanced telemetry
+        if "Vertical Speed" in self.telemetry_values:
+            # Simple vertical speed calculation
+            if len(self.altitude_data) > 1 and len(self.time_data) > 1:
+                dt = self.time_data[-1] - self.time_data[-2] if len(self.time_data) > 1 else 0.1
+                if dt > 0:
+                    vertical_speed = (telemetry.altitude - self.altitude_data[-1]) / dt
+                    self.telemetry_values["Vertical Speed"].configure(text=f"{vertical_speed:.2f} m/s")
+
+        # Simulated battery voltage (decreasing over time)
+        if "Battery Voltage" in self.telemetry_values:
+            battery_voltage = 12.0 - (flight_time / 3600) * 0.5  # Lose 0.5V per hour
+            self.telemetry_values["Battery Voltage"].configure(text=f"{max(9.0, battery_voltage):.2f} V")
 
         # Update graph data
         rel_time = flight_time
@@ -1005,6 +1104,25 @@ class RocketControlPanel(ctk.CTk):
 
         # Update graphs
         self.update_graphs()
+
+        # Update system indicators based on telemetry
+        if self.simulation_mode:
+            # Example: Update RF signal strength based on flight phase
+            signal_strength = 100
+            if self.current_state == RocketStates.FLIGHT:
+                # Signal gets weaker as altitude increases
+                signal_strength = max(30, 100 - (telemetry.altitude / 10))
+
+            self.system_indicators["RF Signal"].configure(
+                text=f"{int(signal_strength)}%",
+                fg_color="#00AA00" if signal_strength > 70 else "#AAAA00" if signal_strength > 40 else "#AA0000"
+            )
+
+            # Update GPS lock based on flight phase
+            if self.current_state in [RocketStates.FLIGHT, RocketStates.DESCENT, RocketStates.PARACHUTE_DESCENT]:
+                self.system_indicators["GPS Lock"].configure(text="Strong (9 sats)", fg_color="#00AA00")
+            else:
+                self.system_indicators["GPS Lock"].configure(text="Good (6 sats)", fg_color="#00AA00")
 
         # Log telemetry
         if self.data_logger.current_log_file:
