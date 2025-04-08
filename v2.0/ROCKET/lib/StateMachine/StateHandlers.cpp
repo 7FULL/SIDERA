@@ -81,7 +81,8 @@ void StateHandlers::handleInitState(
         GPSSensorManager* gpsManager,
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
-        SensorFusionSystem* fusionSystem
+        SensorFusionSystem* fusionSystem,
+        DiagnosticManager* diagnosticManager,
 ) {
     // Check the current substate
     auto subState = static_cast<InitSubState*>(stateMachine.getCurrentSubState());
@@ -185,6 +186,32 @@ void StateHandlers::handleInitState(
             }
             break;
     }
+
+    if (preflightSystem) {
+        PreflightStatus status = preflightSystem->runPreflightChecks();
+
+        // Only advance to GROUND_IDLE if checks passed or had warnings
+        if (status == PreflightStatus::PASSED || status == PreflightStatus::WARNING) {
+            stateMachine.processEvent(RocketEvent::BOOT_COMPLETED);
+        } else {
+            // Move to ERROR state if critical tests failed
+            stateMachine.processEvent(RocketEvent::ERROR_DETECTED);
+
+            if (storageManager) {
+                String report = preflightSystem->generatePreflightReport();
+                // Log the report in chunks if necessary
+                // (limited by log message size)
+                int chunkSize = 60;
+                for (int i = 0; i < report.length(); i += chunkSize) {
+                    String chunk = report.substring(i, min(i + chunkSize, report.length()));
+                    storageManager->logMessage(LogLevel::ERROR, Subsystem::SYSTEM, chunk.c_str());
+                }
+            }
+        }
+    } else {
+        // No pre-flight system, advance anyway
+        stateMachine.processEvent(RocketEvent::BOOT_COMPLETED);
+    }
 }
 
 void StateHandlers::handleGroundIdleState(
@@ -246,7 +273,8 @@ void StateHandlers::handleReadyState(
         GPSSensorManager* gpsManager,
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
-        SensorFusionSystem* fusionSystem
+        SensorFusionSystem* fusionSystem,
+        DiagnosticManager* diagnosticManager
 ) {
     // Check the current substate
     auto subState = static_cast<ReadySubState*>(stateMachine.getCurrentSubState());
@@ -295,6 +323,24 @@ void StateHandlers::handleReadyState(
         case ReadySubState::COUNTDOWN:
             // In countdown to launch
             break;
+    }
+
+    if (stateMachine.getCurrentSubState() == ReadySubState::COUNTDOWN) {
+        // Run critical tests only
+        if (diagnosticManager) {
+            bool criticalTestsPassed = diagnosticManager->checkCriticalSystems();
+
+            if (!criticalTestsPassed) {
+                // Abort countdown if critical tests fail
+                if (storageManager) {
+                    storageManager->logMessage(LogLevel::ERROR, Subsystem::SYSTEM,
+                                               "Critical tests failed during countdown - aborting!");
+                }
+
+                // Move back to GROUND_IDLE
+                stateMachine.processEvent(RocketEvent::ABORT_COMMAND);
+            }
+        }
     }
 }
 

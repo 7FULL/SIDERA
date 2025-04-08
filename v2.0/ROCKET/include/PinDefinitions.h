@@ -56,4 +56,7 @@
 #define LED_GREEN 3
 #define LED_BLUE 7
 
+// Battery voltage divider
+#define BATTERY_VOLTAGE_PIN 30
+
 #endif // PIN_DEFINITIONS_H

@@ -16,6 +16,13 @@
 #include "PinDefinitions.h"
 
 #include "../lib/SensorFusion/SensorFusionSystem.h"
+#include "../lib/Diagnostics/DiagnosticManager.h"
+#include "../lib/Diagnostics/SpecificTests.h"
+#include "../lib/Diagnostics/PreflightCheck.h"
+
+#include "../lib/Optimization/ResourceMonitor.h"
+#include "../lib/Optimization/PerformanceOptimizer.h"
+#include "../lib/Optimization/FaultHandler.h"
 
 // Include HAL components
 #include "../lib/HAL/BarometricSensors/BarometricSensorManager.h"
@@ -32,6 +39,9 @@
 #include "../lib/HAL/GPSSensors/L76KBGPSSensor.h"
 #include "../lib/HAL/GPSSensors/ATGM336HGPSSensor.h"
 
+#include "../lib/PowerManagement/PowerManager.h"
+#include "../lib/PowerManagement/PowerController.h"
+
 #include "../lib/HAL/CommunicationSystems/LoRaSystem.h"
 #include "../lib/HAL/CommunicationSystems/TelemetrySerializer.h"
 #include "../lib/HAL/CommunicationSystems/CommandSerializer.h"
@@ -39,6 +49,9 @@
 #include "../lib/HAL/StorageSystems/StorageManager.h"
 #include "../lib/HAL/StorageSystems/FlashStorage.h"
 #include "../lib/HAL/StorageSystems/SDStorage.h"
+
+#include "../lib/Communication/RocketProtocol.h"
+#include "../lib/Communication/CommandHandler.h"
 
 // Include State Machine
 #include "../lib/StateMachine/StateMachine.h"
@@ -68,10 +81,26 @@ BarometricSensorManager baroManager;
 IMUSensorManager imuManager;
 GPSSensorManager gpsManager;
 
+// Optimization components
+ResourceMonitor* resourceMonitor;
+PerformanceOptimizer* performanceOptimizer;
+FaultHandler* faultHandler;
+
 // Storage systems
 FlashStorage* flashStorage;
 SDStorage* sdStorage;
 StorageManager storageManager;
+
+// Power management
+PowerManager* powerManager;
+PowerController* powerController;
+
+// Diagnostic manager
+DiagnosticManager* diagnosticManager;
+PreflightCheckSystem* preflightSystem;
+
+// Command handler
+CommandHandler* commandHandler;
 
 // Communication system
 LoRaSystem* loraSystem;
@@ -164,6 +193,70 @@ void Core0Task(void *pvParameters) {
     imuManager.addSensor(bmi088);
     imuManager.addSensor(adxl375);
 
+    powerManager = new PowerManager(BATTERY_VOLTAGE_PIN, &storageManager);
+    powerManager->setLowVoltageThreshold(3.5f);      // 3.5V for low battery warning
+    powerManager->setCriticalVoltageThreshold(3.2f); // 3.2V for critical battery level
+    powerManager->setBatteryFullVoltage(4.2f);       // 4.2V for fully charged LiPo
+    powerManager->setBatteryEmptyVoltage(3.0f);      // 3.0V for empty LiPo
+
+    if (!powerManager->begin()) {
+        Serial.println("ERROR: Failed to initialize power manager!");
+
+        // Log the error if storage is working
+        if (storageManager.isOperational()) {
+            storageManager.logMessage(LogLevel::ERROR, Subsystem::SYSTEM, "Failed to initialize power manager");
+        }
+    }
+
+    resourceMonitor = new ResourceMonitor(&storageManager);
+    resourceMonitor->begin();
+
+    // Initialize fault handler
+    faultHandler = new FaultHandler(&storageManager, &stateMachine);
+    faultHandler->begin();
+
+    // Initialize performance optimizer
+    performanceOptimizer = new PerformanceOptimizer(
+            &storageManager,
+            &stateMachine,
+            resourceMonitor
+    );
+    performanceOptimizer->begin();
+
+    // Initialize power controller
+    powerController = new PowerController(
+            powerManager,
+            &baroManager,
+            &imuManager,
+            &gpsManager,
+            loraSystem,
+            &stateMachine
+    );
+
+    if (!powerController->begin()) {
+        Serial.println("ERROR: Failed to initialize power controller!");
+
+        // Log the error if storage is working
+        if (storageManager.isOperational()) {
+            storageManager.logMessage(LogLevel::ERROR, Subsystem::SYSTEM, "Failed to initialize power controller");
+        }
+    }
+
+    // Initialize diagnostic manager
+    diagnosticManager = new DiagnosticManager(&storageManager);
+    diagnosticManager->setVerboseLogging(true);
+
+    diagnosticManager->addTest(new BarometricSensorTest(&baroManager));
+    diagnosticManager->addTest(new IMUSensorTest(&imuManager));
+    diagnosticManager->addTest(new GPSSensorTest(&gpsManager));
+    diagnosticManager->addTest(new LoRaCommunicationTest(loraSystem));
+    diagnosticManager->addTest(new StorageTest(&storageManager));
+    diagnosticManager->addTest(new BatteryTest(powerManager));
+    diagnosticManager->addTest(new SensorFusionTest(fusionSystem));
+
+    preflightSystem = new PreflightCheckSystem(diagnosticManager, &storageManager);
+    preflightSystem->begin();
+
     // Initialize GPS sensors
     Serial1.begin(9600);
     Serial2.begin(9600);
@@ -193,6 +286,20 @@ void Core0Task(void *pvParameters) {
 
     initSuccess &= loraSystem->begin() == SensorStatus::OK;
     initSuccess &= storageManager.begin();
+
+    Serial.println("Running initial diagnostics...");
+    std::vector<TestResult> initialResults = diagnosticManager->runAllTests();
+
+    int passCount = 0;
+    for (const auto& result : initialResults) {
+        if (result.passed) passCount++;
+    }
+
+    Serial.print("Initial diagnostics complete: ");
+    Serial.print(passCount);
+    Serial.print("/");
+    Serial.print(initialResults.size());
+    Serial.println(" tests passed");
 
     if (!initSuccess) {
         Serial.println("ERROR: Failed to initialize all subsystems!");
@@ -231,6 +338,36 @@ void Core0Task(void *pvParameters) {
         // Update sensor fusion
         fusionSystem->update();
 
+        resourceMonitor->update();
+        performanceOptimizer->update();
+
+        // Check for low memory condition and report fault if needed
+        if (resourceMonitor->isMemoryLow()) {
+            faultHandler->reportFault(
+                    FaultType::MEMORY_ERROR,
+                    FaultSeverity::WARNING,
+                    "Low memory condition detected",
+                    resourceMonitor->getFreeHeap()
+            );
+        }
+
+        // Check for high CPU usage and report fault if needed
+        if (resourceMonitor->isCpuHigh()) {
+            faultHandler->reportFault(
+                    FaultType::INTERNAL_ERROR,
+                    FaultSeverity::WARNING,
+                    "High CPU usage detected",
+                    static_cast<uint32_t>(resourceMonitor->getCpuUsage() * 100)
+            );
+        }
+
+        // Periodically log resource usage (every 5 minutes)
+        static unsigned long lastResourceLogTime = 0;
+        if (millis() - lastResourceLogTime > 300000) { // 5 minutes
+            lastResourceLogTime = millis();
+            resourceMonitor->logResourceUsage();
+        }
+
         // Get fused data
         FusedFlightData fusedData = fusionSystem->getFusedData();
 
@@ -246,6 +383,12 @@ void Core0Task(void *pvParameters) {
                 storageManager.logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE, message);
             }
         }
+
+        powerManager->update();
+        powerController->update();
+
+        float batteryVoltage = powerManager->getBatteryVoltage();
+        int batteryPercentage = powerManager->getBatteryPercentage();
 
         // Update state machine
         stateMachine.update();
@@ -275,26 +418,30 @@ void Core1Task(void *pvParameters) {
     storageInitialized = true;
     communicationInitialized = true;
 
+    commandHandler = new CommandHandler(
+            loraSystem,
+            &storageManager,
+            &stateMachine,
+            powerManager,
+            diagnosticManager,
+            fusionSystem
+    );
+
+    if (!commandHandler->begin()) {
+        Serial.println("ERROR: Failed to initialize command handler!");
+
+        // Log the error if storage is working
+        if (storageManager.isOperational()) {
+            storageManager.logMessage(LogLevel::ERROR, Subsystem::COMMUNICATION,
+                                      "Failed to initialize command handler");
+        }
+    }
+
     // Main task loop
     while (1) {
-        // Process any incoming LoRa commands
-        if (loraSystem && loraSystem->isOperational()) {
-            Message message;
-            while (loraSystem->hasReceivedMessages() && loraSystem->getNextMessage(message)) {
-                // Process the command
-                if (message.type == MessageType::COMMAND_RESPONSE) {
-                    // Parse command and generate appropriate event
-                    // This would use CommandSerializer to parse the command
-                    // For example:
-                    // CommandPacket command = CommandSerializer::deserialize(message.data, message.length);
-                    // switch (command.commandType) {
-                    //     case CommandType::WAKE_UP:
-                    //         stateMachine.processEvent(RocketEvent::WAKE_UP_COMMAND);
-                    //         break;
-                    //     // Handle other commands...
-                    // }
-                }
-            }
+        // Update command handler - this handles all LoRa command processing
+        if (commandHandler) {
+            commandHandler->update();
         }
 
         // Other non-critical tasks...

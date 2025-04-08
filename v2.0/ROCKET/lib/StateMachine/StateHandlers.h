@@ -14,6 +14,9 @@
 #include "../HAL/CommunicationSystems/LoRaSystem.h"
 #include "../HAL/StorageSystems/StorageManager.h"
 #include "../SensorFusion/SensorFusionSystem.h"
+#include "../HAL/PowerManagement/PowerManager.h"
+#include "../HAL/PowerManagement/PowerController.h"
+#include "../Diagnostics/DiagnosticManager.h"
 
 class StateHandlers {
 public:
@@ -36,7 +39,8 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem
+            SensorFusionSystem* fusionSystem,
+            DiagnosticManager* diagnosticManager
     );
 
     static void handleGroundIdleState(
@@ -56,7 +60,8 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem
+            SensorFusionSystem* fusionSystem,
+            DiagnosticManager* diagnosticManager
     );
 
     static void handlePoweredFlightState(
