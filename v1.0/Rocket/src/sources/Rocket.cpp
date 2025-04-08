@@ -3,7 +3,7 @@
 
 #define SEALEVELPRESSURE_HPA (1013.25)
 
-// We use 9600 baud because is the NEO-8M if it's a NEO-6M use 4800 baud
+//use 9600 baud because is the NEO-8M if it's a NEO-6M use 4800 baud
 #define GPSBaud 9600
 
 SPIClass vspi(VSPI);
@@ -112,7 +112,7 @@ bool Rocket::setupDoubleSpiBus() {
     pinMode(vMosiPin, OUTPUT);
     pinMode(vCsPin, OUTPUT);
 
-    // Configurar VSPI (SD CARD)
+    //VSPI (SD CARD)
     vspi.begin(vSckPin, vMisoPin, vMosiPin, vCsPin);
 
     if (!SD.begin(vCsPin)) {
@@ -150,6 +150,7 @@ bool Rocket::setupDoubleSpiBus() {
     Serial.println("SD Card initialized successfully");
     logData("[INFO] SD Card initialized");
 
+    //HSPI (RF24)
     hspi.begin(hSckPin, hMisoPin, hMosiPin, hCsPin);
 
     if (!initializeRF24()){
@@ -372,41 +373,34 @@ bool Rocket::isDescending() {
 
     receiveCommands();
 
-    // Reduced reading interval - every 100ms instead of 1000ms
     static const unsigned long CHECK_INTERVAL = 100;
 
-    // Larger buffer for high temporal resolution
     static const int BUFFER_SIZE = 20;
     static float altitudeBuffer[BUFFER_SIZE] = {0};
     static int bufferIndex = 0;
     static bool bufferFilled = false;
 
-    // Tracking variables
     static unsigned long lastCheckTime = 0;
     static float highestAltitude = 0;
     static int descentCounter = 0;
     static int consecutiveDescents = 0;
-    static const int REQUIRED_DESCENTS = 5; // More samples to confirm descent
+    static const int REQUIRED_DESCENTS = 5;
 
-    // Adjustable threshold based on altitude and vertical speed
-    static const float BASE_DESCENT_THRESHOLD = 0.2; // More sensitive (in meters)
+    static const float BASE_DESCENT_THRESHOLD = 0.2; // (in meters)
     static float descentThreshold = BASE_DESCENT_THRESHOLD;
 
-    // Only update at the specified frequency
     if (millis() - lastCheckTime >= CHECK_INTERVAL) {
         lastCheckTime = millis();
 
-        // Update the maximum altitude
+
         if (altitude > highestAltitude) {
             highestAltitude = altitude;
-            maxAltitude = highestAltitude; // Update global variable
+            maxAltitude = highestAltitude;
         }
 
-        // Add new reading to the circular buffer
         altitudeBuffer[bufferIndex] = altitude;
         bufferIndex = (bufferIndex + 1) % BUFFER_SIZE;
 
-        // Mark when the buffer has filled for the first time
         if (bufferIndex == 0 && !bufferFilled) {
             bufferFilled = true;
         }
