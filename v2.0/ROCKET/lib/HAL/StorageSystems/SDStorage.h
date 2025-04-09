@@ -12,6 +12,7 @@
 #include <SdFat.h>
 #include <SD.h>
 #include "../StorageSystem.h"
+#include "States.h"
 
 class SDStorage : public StorageSystem {
 public:

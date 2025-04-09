@@ -76,20 +76,33 @@ bool SDStorage::logMessage(LogLevel level, Subsystem subsystem, const char* mess
     }
 
     // Format: timestamp,level,subsystem,"message"
-    char buffer[100];
+    char buffer[256]; // Increased buffer size to handle longer messages
     int len = snprintf(buffer, sizeof(buffer), "%lu,%d,%d,\"%s\"\n",
                        millis(), static_cast<int>(level), static_cast<int>(subsystem), message);
 
+    // Check for buffer overflow
+    if (len >= sizeof(buffer)) {
+        // Message was too long and got truncated
+        status = SensorStatus::READING_ERROR;
+        return false;
+    }
+
     // Write to file
     if (logFile.write(buffer, len) != len) {
+        status = SensorStatus::COMMUNICATION_ERROR;
         return false;
     }
 
     logCount++;
 
-    // Flush every 10 log messages
-    if (logCount % 10 == 0) {
+    // Flush every 10 log messages or if this is a critical/error message
+    //TODO
+    if (logCount % 10 == 0 || level == LogLevel::CRITICAL || level == LogLevel::ERROR) {
         logFile.flush();
+//        if (!logFile.flush()) {
+//            status = SensorStatus::COMMUNICATION_ERROR;
+//            return false;
+//        }
     }
 
     return true;
@@ -101,15 +114,26 @@ bool SDStorage::storeTelemetry(const StoredTelemetry& telemetry) {
     }
 
     // Write binary telemetry data
-    if (telemetryFile.write(&telemetry, sizeof(StoredTelemetry)) != sizeof(StoredTelemetry)) {
+    size_t bytesWritten = telemetryFile.write(&telemetry, sizeof(StoredTelemetry));
+    if (bytesWritten != sizeof(StoredTelemetry)) {
+        status = SensorStatus::COMMUNICATION_ERROR;
         return false;
     }
 
     telemetryCount++;
 
-    // Flush every 50 telemetry entries
-    if (telemetryCount % 50 == 0) {
+    // Flush every 50 telemetry entries or if this is a critical state change
+    // (like reaching apogee or landing)
+    bool isCriticalState = (telemetry.state == static_cast<uint8_t>(RocketState::APOGEE) ||
+                            telemetry.state == static_cast<uint8_t>(RocketState::LANDED) ||
+                            telemetry.state == static_cast<uint8_t>(RocketState::PARACHUTE_DESCENT));
+
+    if (telemetryCount % 50 == 0 || isCriticalState) {
         telemetryFile.flush();
+//        if (!telemetryFile.flush()) {
+//            status = SensorStatus::COMMUNICATION_ERROR;
+//            return false;
+//        }
     }
 
     return true;
@@ -122,14 +146,37 @@ bool SDStorage::flush() {
 
     bool success = true;
 
-    //TODO
-//    if (logFile.isOpen()) {
+    // Flush log file if open
+    if (logFile.isOpen()) {
 //        success &= logFile.flush();
-//    }
-//
-//    if (telemetryFile.isOpen()) {
+        logFile.flush();
+
+        // Set error status if flush failed
+        if (!success) {
+            status = SensorStatus::COMMUNICATION_ERROR;
+            // We can't log the error here as that would create a circular dependency
+        }
+    }
+
+    // Flush telemetry file if open
+    if (telemetryFile.isOpen()) {
 //        success &= telemetryFile.flush();
-//    }
+        telemetryFile.flush();
+
+        // Set error status if flush failed
+        if (!success) {
+            status = SensorStatus::COMMUNICATION_ERROR;
+            // We can't log the error here as that would create a circular dependency
+        }
+    }
+
+    // If flush was successful, reset counters to prevent too frequent flush operations
+    if (success) {
+        // Reset counters but add a small offset to prevent immediate flush
+        // after the next few log entries
+        logCount = logCount % 5;
+        telemetryCount = telemetryCount % 10;
+    }
 
     return success;
 }

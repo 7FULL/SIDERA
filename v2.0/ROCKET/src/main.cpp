@@ -268,7 +268,7 @@ void Core0Task(void *pvParameters) {
     gpsManager.addSensor(atgm336h, 1);  // Priority 1 (secondary)
 
     // Initialize LoRa
-    loraSystem = new LoRaSystem(hspi, LORA_CS, LORA_RST, LORA_DIO0);
+    loraSystem = new LoRaSystem(hspi, LORA_CS, LORA_RST, LORA_DIO0, -1, -1, &storageManager);
 
     // Initialize storage
     flashStorage = new FlashStorage(hspi, FLASH_CS);
@@ -328,7 +328,7 @@ void Core0Task(void *pvParameters) {
 
     // Initialize and setup state machine
     stateMachine.begin(&baroManager, &imuManager, &gpsManager, loraSystem, &storageManager);
-    StateHandlers::setupHandlers(stateMachine, &baroManager, &imuManager, &gpsManager, loraSystem, &storageManager, fusionSystem);
+    StateHandlers::setupHandlers(stateMachine, &baroManager, &imuManager, &gpsManager, loraSystem, &storageManager, fusionSystem, diagnosticManager, preflightSystem, powerManager);
 
     // Signal that sensors are initialized
     sensorsInitialized = true;
@@ -387,9 +387,6 @@ void Core0Task(void *pvParameters) {
         powerManager->update();
         powerController->update();
 
-        float batteryVoltage = powerManager->getBatteryVoltage();
-        int batteryPercentage = powerManager->getBatteryPercentage();
-
         // Update state machine
         stateMachine.update();
 
@@ -424,7 +421,10 @@ void Core1Task(void *pvParameters) {
             &stateMachine,
             powerManager,
             diagnosticManager,
-            fusionSystem
+            fusionSystem,
+            &baroManager,
+            &imuManager,
+            &gpsManager
     );
 
     if (!commandHandler->begin()) {

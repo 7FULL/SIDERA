@@ -89,7 +89,7 @@ private:
     unsigned long lastLogTime;
 
     // ADC configuration
-    static const int ADC_RESOLUTION = 4096;  // 12-bit ADC
+    //    static const int ADC_RESOLUTION = 4096;  // 12-bit ADC
 
     // Voltage calculation
     float referenceVoltage;       // ADC reference voltage

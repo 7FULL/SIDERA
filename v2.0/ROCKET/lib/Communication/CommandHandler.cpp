@@ -6,16 +6,22 @@ CommandHandler::CommandHandler(
         StateMachine* stateMachine,
         PowerManager* powerManager,
         DiagnosticManager* diagnosticManager,
-        SensorFusionSystem* fusionSystem
+        SensorFusionSystem* fusionSystem,
+        BarometricSensorManager* baroManager,
+        IMUSensorManager* imuManager,
+        GPSSensorManager* gpsManager
 )
-        : loraSystem(loraSystem),
-          storageManager(storageManager),
-          stateMachine(stateMachine),
-          powerManager(powerManager),
-          diagnosticManager(diagnosticManager),
-          fusionSystem(fusionSystem),
-          telemetryRateMs(1000),  // Default to 1 second
-          lastTelemetryTime(0)
+        :   loraSystem(loraSystem),
+            storageManager(storageManager),
+            stateMachine(stateMachine),
+            powerManager(powerManager),
+            diagnosticManager(diagnosticManager),
+            fusionSystem(fusionSystem),
+            baroManager(baroManager),
+            imuManager(imuManager),
+            gpsManager(gpsManager),
+            telemetryRateMs(1000),  // Default to 1 second
+            lastTelemetryTime(0)
 {
 }
 
@@ -742,8 +748,8 @@ std::vector<uint8_t> CommandHandler::createTelemetryPayload() {
         uint8_t confidence = static_cast<uint8_t>(data.confidence * 255);
         payload.push_back(confidence);
     } else {
-        // Add zeros if no fusion data
-        for (int i = 0; i < 14; i++) {
+        // Add zeros if no fusion data (15 bytes total)
+        for (int i = 0; i < 15; i++) {
             payload.push_back(0);
         }
     }
@@ -763,22 +769,87 @@ std::vector<uint8_t> CommandHandler::createTelemetryPayload() {
         payload.push_back(0);
     }
 
-    // Add GPS info if available (10 bytes)
-    // Could be expanded with more detailed GPS data
+    // Add GPS info (10 bytes)
+    if (stateMachine && gpsManager && gpsManager->hasPositionFix()) {
+        GPSData gpsData = gpsManager->getGPSData();
+
+        // Latitude (4 bytes, scaled int32)
+        int32_t latitude = static_cast<int32_t>(gpsData.latitude * 10000000); // 10^-7 degrees
+        payload.push_back((latitude >> 24) & 0xFF);
+        payload.push_back((latitude >> 16) & 0xFF);
+        payload.push_back((latitude >> 8) & 0xFF);
+        payload.push_back(latitude & 0xFF);
+
+        // Longitude (4 bytes, scaled int32)
+        int32_t longitude = static_cast<int32_t>(gpsData.longitude * 10000000); // 10^-7 degrees
+        payload.push_back((longitude >> 24) & 0xFF);
+        payload.push_back((longitude >> 16) & 0xFF);
+        payload.push_back((longitude >> 8) & 0xFF);
+        payload.push_back(longitude & 0xFF);
+
+        // Satellites (1 byte)
+        payload.push_back(gpsData.satellites);
+
+        // GPS Altitude (1 byte, 0-255m)
+        uint8_t gpsAlt = static_cast<uint8_t>(min(255.0f, max(0.0f, gpsData.altitude)));
+        payload.push_back(gpsAlt);
+    } else {
+        // Add zeros if no GPS fix
+        for (int i = 0; i < 10; i++) {
+            payload.push_back(0);
+        }
+    }
 
     // Add temperature (2 bytes, scaled int16)
     int16_t temperature = 0;  // 0.1 C
+    if (baroManager) {
+        temperature = static_cast<int16_t>(baroManager->getTemperature() * 10);
+    }
     payload.push_back((temperature >> 8) & 0xFF);
     payload.push_back(temperature & 0xFF);
 
     // Add pressure (3 bytes)
     uint32_t pressure = 0;  // Pa
+    if (baroManager) {
+        pressure = static_cast<uint32_t>(baroManager->getPressure() * 100); // Pa
+    }
     payload.push_back((pressure >> 16) & 0xFF);
     payload.push_back((pressure >> 8) & 0xFF);
     payload.push_back(pressure & 0xFF);
 
     // Add status flags (1 byte)
     uint8_t flags = 0;
+
+    // Set flags based on rocket state
+    if (stateMachine) {
+        RocketState currentState = stateMachine->getCurrentState();
+
+        // Parachute flag
+        if (currentState == RocketState::PARACHUTE_DESCENT) {
+            flags |= 0x01; // Bit 0 for parachute deployed
+        }
+
+        // Apogee flag
+        if (fusionSystem && fusionSystem->isApogeeDetected()) {
+            flags |= 0x02; // Bit 1 for apogee detected
+        }
+
+        // Landed flag
+        if (currentState == RocketState::LANDED) {
+            flags |= 0x04; // Bit 2 for landed
+        }
+
+        // Error flag
+        if (currentState == RocketState::ERROR) {
+            flags |= 0x10; // Bit 4 for error condition
+        }
+    }
+
+    // Battery low flag
+    if (powerManager && powerManager->isBatteryLow()) {
+        flags |= 0x08; // Bit 3 for low battery
+    }
+
     payload.push_back(flags);
 
     return payload;

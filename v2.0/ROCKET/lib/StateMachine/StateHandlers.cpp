@@ -17,27 +17,30 @@ void StateHandlers::setupHandlers(
         GPSSensorManager* gpsManager,
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
-        SensorFusionSystem* fusionSystem
+        SensorFusionSystem* fusionSystem,
+        DiagnosticManager* diagnosticManager,
+        PreflightCheckSystem* preflightSystem,
+        PowerManager* powerManager
 ) {
     // Register state handlers
-    stateMachine.registerStateHandler(RocketState::INIT, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem]() {
-        handleInitState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem);
+    stateMachine.registerStateHandler(RocketState::INIT, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem, diagnosticManager, preflightSystem]() {
+        handleInitState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem, diagnosticManager, preflightSystem);
     });
 
-    stateMachine.registerStateHandler(RocketState::GROUND_IDLE, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem]() {
-        handleGroundIdleState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem);
+    stateMachine.registerStateHandler(RocketState::GROUND_IDLE, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem, powerManager]() {
+        handleGroundIdleState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem, powerManager);
     });
 
-    stateMachine.registerStateHandler(RocketState::READY, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem]() {
-        handleReadyState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem);
+    stateMachine.registerStateHandler(RocketState::READY, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem, diagnosticManager, powerManager]() {
+        handleReadyState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem,diagnosticManager, powerManager);
     });
 
-    stateMachine.registerStateHandler(RocketState::POWERED_FLIGHT, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem]() {
-        handlePoweredFlightState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem);
+    stateMachine.registerStateHandler(RocketState::POWERED_FLIGHT, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem, powerManager]() {
+        handlePoweredFlightState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem, powerManager);
     });
 
-    stateMachine.registerStateHandler(RocketState::COASTING, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem]() {
-        handleCoastingState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem);
+    stateMachine.registerStateHandler(RocketState::COASTING, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem, powerManager]() {
+        handleCoastingState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem, powerManager);
     });
 
     stateMachine.registerStateHandler(RocketState::APOGEE, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem]() {
@@ -48,12 +51,12 @@ void StateHandlers::setupHandlers(
         handleDescentState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem);
     });
 
-    stateMachine.registerStateHandler(RocketState::PARACHUTE_DESCENT, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem]() {
-        handleParachuteDescentState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem);
+    stateMachine.registerStateHandler(RocketState::PARACHUTE_DESCENT, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem, powerManager]() {
+        handleParachuteDescentState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem, powerManager);
     });
 
-    stateMachine.registerStateHandler(RocketState::LANDED, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem]() {
-        handleLandedState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem);
+    stateMachine.registerStateHandler(RocketState::LANDED, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem, powerManager]() {
+        handleLandedState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem, powerManager);
     });
 
     stateMachine.registerStateHandler(RocketState::ERROR, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem]() {
@@ -83,6 +86,7 @@ void StateHandlers::handleInitState(
         StorageManager* storageManager,
         SensorFusionSystem* fusionSystem,
         DiagnosticManager* diagnosticManager,
+        PreflightCheckSystem* preflightSystem
 ) {
     // Check the current substate
     auto subState = static_cast<InitSubState*>(stateMachine.getCurrentSubState());
@@ -221,7 +225,8 @@ void StateHandlers::handleGroundIdleState(
         GPSSensorManager* gpsManager,
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
-        SensorFusionSystem* fusionSystem
+        SensorFusionSystem* fusionSystem,
+        PowerManager* powerManager
 ) {
     // Check the current substate
     auto subState = static_cast<GroundIdleSubState*>(stateMachine.getCurrentSubState());
@@ -245,8 +250,16 @@ void StateHandlers::handleGroundIdleState(
         lastTelemetryTime = currentTime;
 
         if (loraSystem) {
-            // Create and send telemetry message
-            // (This would call your telemetry code from the LoRa system)
+            // Send telemetry data
+            sendTelemetryData(
+                    loraSystem,
+                    baroManager,
+                    imuManager,
+                    gpsManager,
+                    fusionSystem,
+                    powerManager,
+                    static_cast<uint8_t>(RocketState::GROUND_IDLE)
+            );
         }
     }
 
@@ -266,6 +279,119 @@ void StateHandlers::handleGroundIdleState(
     }
 }
 
+void StateHandlers::sendTelemetryData(
+        LoRaSystem* loraSystem,
+        BarometricSensorManager* baroManager,
+        IMUSensorManager* imuManager,
+        GPSSensorManager* gpsManager,
+        SensorFusionSystem* fusionSystem,
+        PowerManager* powerManager,
+        uint8_t rocketState
+) {
+    if (!loraSystem) {
+        return;
+    }
+
+    // Create telemetry packet
+    TelemetryPacket packet;
+
+    // Set timestamp and state
+    packet.timestamp = millis();
+    packet.rocketState = rocketState;
+
+    // Get sensor data from fusion system if available, otherwise from individual sensors
+    if (fusionSystem) {
+        FusedFlightData fusedData = fusionSystem->getFusedData();
+        packet.altitude = fusedData.altitude;
+        packet.verticalSpeed = fusedData.verticalSpeed;
+        packet.acceleration = fusedData.verticalAccel;
+
+        // Set flags if apogee detected
+        if (fusedData.apogeeDetected) {
+            packet.flags |= TelemetryPacket::FLAG_APOGEE_DETECTED;
+        }
+    } else if (baroManager) {
+        // Fallback to barometer data
+        packet.altitude = baroManager->getAltitude();
+        // Not calculating velocity without fusion system
+        packet.verticalSpeed = 0.0f;
+        packet.acceleration = 0.0f;
+    }
+
+    // Get temperature and pressure from barometer
+    if (baroManager) {
+        packet.temperature = baroManager->getTemperature();
+        packet.pressure = baroManager->getPressure();
+    }
+
+    // Get IMU data
+    if (imuManager) {
+        AccelerometerData accelData = imuManager->getAccelerometerData();
+        packet.acceleration = accelData.magnitude;
+    }
+
+    // Get GPS data
+    if (gpsManager && gpsManager->hasPositionFix()) {
+        GPSData gpsData = gpsManager->getGPSData();
+        packet.gpsSatellites = gpsData.satellites;
+        packet.gpsLatitude = gpsData.latitude;
+        packet.gpsLongitude = gpsData.longitude;
+        packet.gpsAltitude = gpsData.altitude;
+    } else {
+        packet.gpsSatellites = 0;
+        packet.gpsLatitude = 0.0f;
+        packet.gpsLongitude = 0.0f;
+        packet.gpsAltitude = 0.0f;
+    }
+
+    // Battery data
+    packet.batteryVoltage = powerManager->getBatteryVoltage();
+
+    // Check for low battery
+    if (packet.batteryVoltage < 3.5f) {
+        packet.flags |= TelemetryPacket::FLAG_LOW_BATTERY;
+    }
+
+    // Set parachute flag if in parachute descent state
+    if (rocketState == static_cast<uint8_t>(RocketState::PARACHUTE_DESCENT)) {
+        packet.flags |= TelemetryPacket::FLAG_PARACHUTE_DEPLOYED;
+    }
+
+    // Set landed flag if in landed state
+    if (rocketState == static_cast<uint8_t>(RocketState::LANDED)) {
+        packet.flags |= TelemetryPacket::FLAG_LANDED;
+    }
+
+    // Set error flag if in error state
+    if (rocketState == static_cast<uint8_t>(RocketState::ERROR)) {
+        packet.flags |= TelemetryPacket::FLAG_ERROR_CONDITION;
+    }
+
+    // Create sensor status byte
+    packet.sensorStatus = 0;
+
+    // Now serialize and send the packet
+    TelemetrySerializer serializer;
+    std::vector<uint8_t> packetData = serializer.serialize(packet);
+
+    // Create LoRa message
+    Message message;
+    message.type = MessageType::TELEMETRY;
+    message.priority = 100;  // Medium priority for telemetry
+    message.timestamp = millis();
+    message.length = packetData.size();
+    message.data = new uint8_t[message.length];
+    memcpy(message.data, packetData.data(), message.length);
+    message.acknowledged = false;
+
+    // Send the message
+    loraSystem->sendMessage(message);
+
+    // Clean up
+    delete[] message.data;
+}
+
+
 void StateHandlers::handleReadyState(
         StateMachine& stateMachine,
         BarometricSensorManager* baroManager,
@@ -274,7 +400,8 @@ void StateHandlers::handleReadyState(
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
         SensorFusionSystem* fusionSystem,
-        DiagnosticManager* diagnosticManager
+        DiagnosticManager* diagnosticManager,
+        PowerManager* powerManager
 ) {
     // Check the current substate
     auto subState = static_cast<ReadySubState*>(stateMachine.getCurrentSubState());
@@ -311,7 +438,16 @@ void StateHandlers::handleReadyState(
         lastTelemetryTime = currentTime;
 
         if (loraSystem) {
-            // Create and send telemetry message
+            // Send telemetry data
+            sendTelemetryData(
+                    loraSystem,
+                    baroManager,
+                    imuManager,
+                    gpsManager,
+                    fusionSystem,
+                    powerManager,
+                    static_cast<uint8_t>(RocketState::READY)
+            );
         }
     }
 
@@ -325,7 +461,7 @@ void StateHandlers::handleReadyState(
             break;
     }
 
-    if (stateMachine.getCurrentSubState() == ReadySubState::COUNTDOWN) {
+    if (stateMachine.isInSubState(ReadySubState::COUNTDOWN)) {
         // Run critical tests only
         if (diagnosticManager) {
             bool criticalTestsPassed = diagnosticManager->checkCriticalSystems();
@@ -351,7 +487,8 @@ void StateHandlers::handlePoweredFlightState(
         GPSSensorManager* gpsManager,
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
-        SensorFusionSystem* fusionSystem
+        SensorFusionSystem* fusionSystem,
+        PowerManager* powerManager
 ) {
     // Update sensors at full rate during flight
     unsigned long currentTime = millis();
@@ -404,7 +541,16 @@ void StateHandlers::handlePoweredFlightState(
         lastTelemetryTime = currentTime;
 
         if (loraSystem) {
-            // Create and send telemetry message
+            // Send telemetry data
+            sendTelemetryData(
+                    loraSystem,
+                    baroManager,
+                    imuManager,
+                    gpsManager,
+                    fusionSystem,
+                    powerManager,
+                    static_cast<uint8_t>(RocketState::POWERED_FLIGHT)
+            );
         }
     }
 }
@@ -416,7 +562,8 @@ void StateHandlers::handleCoastingState(
         GPSSensorManager* gpsManager,
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
-        SensorFusionSystem* fusionSystem
+        SensorFusionSystem* fusionSystem,
+        PowerManager* powerManager
 ) {
     // Update sensors at full rate during flight
     unsigned long currentTime = millis();
@@ -454,7 +601,16 @@ void StateHandlers::handleCoastingState(
         lastTelemetryTime = currentTime;
 
         if (loraSystem) {
-            // Create and send telemetry message
+            // Send telemetry data
+            sendTelemetryData(
+                    loraSystem,
+                    baroManager,
+                    imuManager,
+                    gpsManager,
+                    fusionSystem,
+                    powerManager,
+                    static_cast<uint8_t>(RocketState::COASTING)
+            );
         }
     }
 }
@@ -504,7 +660,8 @@ void StateHandlers::handleParachuteDescentState(
         GPSSensorManager* gpsManager,
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
-        SensorFusionSystem* fusionSystem
+        SensorFusionSystem* fusionSystem,
+        PowerManager* powerManager
 ) {
     // Update sensors at a moderate rate during descent
     unsigned long currentTime = millis();
@@ -543,7 +700,16 @@ void StateHandlers::handleParachuteDescentState(
         lastTelemetryTime = currentTime;
 
         if (loraSystem) {
-            // Create and send telemetry message
+            // Send telemetry data
+            sendTelemetryData(
+                    loraSystem,
+                    baroManager,
+                    imuManager,
+                    gpsManager,
+                    fusionSystem,
+                    powerManager,
+                    static_cast<uint8_t>(RocketState::PARACHUTE_DESCENT)
+            );
         }
     }
 }
@@ -555,7 +721,8 @@ void StateHandlers::handleLandedState(
         GPSSensorManager* gpsManager,
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
-        SensorFusionSystem* fusionSystem
+        SensorFusionSystem* fusionSystem,
+        PowerManager* powerManager
 ) {
     // We've landed, reduce sampling rate
     unsigned long currentTime = millis();
@@ -590,19 +757,16 @@ void StateHandlers::handleLandedState(
         lastTelemetryTime = currentTime;
 
         if (loraSystem) {
-            // Create and send telemetry message
-            // Include GPS coordinates for recovery
-            if (gpsManager && gpsManager->hasPositionFix()) {
-                GPSData gpsData = gpsManager->getGPSData();
-
-                // Send position data for recovery
-                if (storageManager) {
-                    char message[50];
-                    snprintf(message, sizeof(message), "Recovery position: %.6f, %.6f",
-                             gpsData.latitude, gpsData.longitude);
-                    storageManager->logMessage(LogLevel::INFO, Subsystem::GPS, message);
-                }
-            }
+            // Send telemetry data
+            sendTelemetryData(
+                    loraSystem,
+                    baroManager,
+                    imuManager,
+                    gpsManager,
+                    fusionSystem,
+                    powerManager,
+                    static_cast<uint8_t>(RocketState::GROUND_IDLE)
+            );
         }
     }
 

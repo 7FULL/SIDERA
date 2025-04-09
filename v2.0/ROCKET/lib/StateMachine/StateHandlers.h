@@ -14,9 +14,11 @@
 #include "../HAL/CommunicationSystems/LoRaSystem.h"
 #include "../HAL/StorageSystems/StorageManager.h"
 #include "../SensorFusion/SensorFusionSystem.h"
-#include "../HAL/PowerManagement/PowerManager.h"
-#include "../HAL/PowerManagement/PowerController.h"
+#include "../PowerManagement/PowerManager.h"
+#include "../PowerManagement/PowerController.h"
 #include "../Diagnostics/DiagnosticManager.h"
+#include "../Diagnostics/PreflightCheck.h"
+#include "../HAL/CommunicationSystems/TelemetrySerializer.h"
 
 class StateHandlers {
 public:
@@ -27,10 +29,23 @@ public:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem
+            SensorFusionSystem* fusionSystem,
+            DiagnosticManager* diagnosticManager,
+            PreflightCheckSystem* preflightSystem,
+            PowerManager* powerManager
     );
 
 private:
+    static void sendTelemetryData(
+            LoRaSystem* loraSystem,
+            BarometricSensorManager* baroManager,
+            IMUSensorManager* imuManager,
+            GPSSensorManager* gpsManager,
+            SensorFusionSystem* fusionSystem,
+            PowerManager* powerManager,
+            uint8_t rocketState
+    );
+
     // Individual state handlers
     static void handleInitState(
             StateMachine& stateMachine,
@@ -40,7 +55,8 @@ private:
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
             SensorFusionSystem* fusionSystem,
-            DiagnosticManager* diagnosticManager
+            DiagnosticManager* diagnosticManager,
+            PreflightCheckSystem* preflightSystem
     );
 
     static void handleGroundIdleState(
@@ -50,7 +66,8 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem
+            SensorFusionSystem* fusionSystem,
+            PowerManager* powerManager
     );
 
     static void handleReadyState(
@@ -61,7 +78,8 @@ private:
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
             SensorFusionSystem* fusionSystem,
-            DiagnosticManager* diagnosticManager
+            DiagnosticManager* diagnosticManager,
+            PowerManager* powerManager
     );
 
     static void handlePoweredFlightState(
@@ -71,7 +89,8 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem
+            SensorFusionSystem* fusionSystem,
+            PowerManager* powerManager
     );
 
     static void handleCoastingState(
@@ -81,7 +100,8 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem
+            SensorFusionSystem* fusionSystem,
+            PowerManager* powerManager
     );
 
     static void handleApogeeState(
@@ -111,7 +131,8 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem
+            SensorFusionSystem* fusionSystem,
+            PowerManager* powerManager
     );
 
     static void handleLandedState(
@@ -121,7 +142,8 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem
+            SensorFusionSystem* fusionSystem,
+            PowerManager* powerManager
     );
 
     static void handleErrorState(

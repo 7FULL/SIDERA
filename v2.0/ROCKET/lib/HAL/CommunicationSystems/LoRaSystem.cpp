@@ -6,8 +6,8 @@
 
 LoRaSystem* LoRaSystem::instance = nullptr;
 
-LoRaSystem::LoRaSystem(SPIClass& spi, int8_t csPin, int8_t resetPin, int8_t irqPin, int8_t txEnPin, int8_t rxEnPin)
-        : spi(spi), csPin(csPin), resetPin(resetPin), irqPin(irqPin), txEnPin(txEnPin), rxEnPin(rxEnPin) {
+LoRaSystem::LoRaSystem(SPIClass& spi, int8_t csPin, int8_t resetPin, int8_t irqPin, int8_t txEnPin, int8_t rxEnPin, StorageManager *storageManager)
+        : spi(spi), csPin(csPin), resetPin(resetPin), irqPin(irqPin), txEnPin(txEnPin), rxEnPin(rxEnPin), storageManager(storageManager) {
     instance = this;
 }
 
@@ -343,7 +343,16 @@ bool LoRaSystem::sendPacket(const LoRaPacket& packet) {
 
     // Add to sent packets if waiting for ACK
     if (result && (packet.flags & LoRaPacket::FLAG_ACK_REQUEST)) {
-        sentPackets.push_back(packet);
+        // Make a copy of the packet to store in the sent packets queue
+        LoRaPacket sentPacket = packet;
+
+        // Update sent time to current time if this is a new packet
+        // (not a retransmission with an already set time)
+        if (!(packet.flags & LoRaPacket::FLAG_RETRANSMISSION)) {
+            sentPacket.sentTime = millis();
+        }
+
+        sentPackets.push_back(sentPacket);
     }
 
     // Return to receive mode
@@ -370,6 +379,8 @@ LoRaPacket LoRaSystem::messageToPacket(const Message& message) {
     packet.flags = LoRaPacket::FLAG_ACK_REQUEST; // Request ACK for all packets
     packet.type = message.type;
     packet.length = message.length;
+    packet.sentTime = millis(); // Initialize sent time
+    packet.retryCount = 0;      // Initialize retry count
 
     // Copy payload
     packet.payload.resize(message.length);
@@ -406,8 +417,57 @@ void LoRaSystem::retransmitPendingPackets() {
 
     // Check each pending packet for retransmission
     for (auto it = sentPackets.begin(); it != sentPackets.end();) {
-        // TODO: Add logic for when to retransmit (would need to add timestamp to LoRaPacket)
-        // For now, we'll just keep them in the list and not retransmit
+        // Calculate how long ago the packet was sent
+        unsigned long elapsedTime = now - it->sentTime;
+
+        // Define retransmission parameters
+        const unsigned long RETRY_INTERVAL = 1000;     // Retry after 1 second
+        const unsigned long MAX_RETRY_INTERVAL = 5000; // Maximum retry interval (5 seconds)
+        const uint8_t MAX_RETRIES = 5;                 // Maximum number of retransmission attempts
+
+        // Calculate dynamic retry interval with exponential backoff
+        unsigned long retryInterval = RETRY_INTERVAL * (1 << min(it->retryCount, (uint8_t)4));
+        retryInterval = min(retryInterval, MAX_RETRY_INTERVAL);
+
+        // Check if it's time to retransmit
+        if (elapsedTime >= retryInterval) {
+            // Check if we've reached the maximum number of retries
+            if (it->retryCount >= MAX_RETRIES) {
+                // Maximum retries reached, abandon packet
+                if (storageManager != nullptr) {
+                    char message[64];
+                    snprintf(message, sizeof(message), "Abandoning packet ID %d after %d retries",
+                             it->id, it->retryCount);
+                    storageManager->logMessage(LogLevel::WARNING, Subsystem::COMMUNICATION, message);
+                }
+
+                // Remove the packet from the queue
+                it = sentPackets.erase(it);
+                continue;
+            }
+
+            // Set the retransmission flag
+            it->flags |= LoRaPacket::FLAG_RETRANSMISSION;
+
+            // Increment retry count
+            it->retryCount++;
+
+            // Update sent time
+            it->sentTime = now;
+
+            // Log retransmission
+            if (storageManager != nullptr) {
+                char message[64];
+                snprintf(message, sizeof(message), "Retransmitting packet ID %d (attempt %d)",
+                         it->id, it->retryCount);
+                storageManager->logMessage(LogLevel::DEBUG, Subsystem::COMMUNICATION, message);
+            }
+
+            // Resend the packet
+            sendPacket(*it);
+        }
+
+        // Move to the next packet
         ++it;
     }
 }

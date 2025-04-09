@@ -8,6 +8,7 @@
 #include "../PowerManagement/PowerManager.h"
 #include "../Diagnostics/DiagnosticManager.h"
 #include "../SensorFusion/SensorFusionSystem.h"
+#include "../HAL/GPSSensors/GPSSensorManager.h"
 
 class CommandHandler {
 public:
@@ -17,7 +18,10 @@ public:
             StateMachine* stateMachine,
             PowerManager* powerManager,
             DiagnosticManager* diagnosticManager,
-            SensorFusionSystem* fusionSystem
+            SensorFusionSystem* fusionSystem,
+            BarometricSensorManager* baroManager,
+            IMUSensorManager* imuManager,
+            GPSSensorManager* gpsManager
     );
 
     // Initialize command handler
@@ -49,6 +53,9 @@ private:
     PowerManager* powerManager;
     DiagnosticManager* diagnosticManager;
     SensorFusionSystem* fusionSystem;
+    BarometricSensorManager* baroManager;
+    IMUSensorManager* imuManager;
+    GPSSensorManager* gpsManager;
 
     // Telemetry timing
     uint16_t telemetryRateMs;

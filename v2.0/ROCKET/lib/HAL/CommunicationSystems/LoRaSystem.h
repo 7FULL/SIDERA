@@ -13,6 +13,7 @@
 #include <vector>
 #include <Arduino.h>
 #include "../CommunicationSystem.h"
+#include "../HAL/StorageSystems/StorageManager.h"
 
 // LoRa packet format
 struct LoRaPacket {
@@ -23,6 +24,8 @@ struct LoRaPacket {
     MessageType type;      // Message type
     uint16_t length;       // Payload length
     std::vector<uint8_t> payload; // Message payload
+    unsigned long sentTime;      // Time when packet was sent
+    uint8_t retryCount;          // Number of retransmission attempts
 
     // Control flag bits
     static const uint8_t FLAG_ACK_REQUEST = 0x01;
@@ -32,7 +35,7 @@ struct LoRaPacket {
 
 class LoRaSystem : public CommunicationSystem {
 public:
-    LoRaSystem(SPIClass& spi, int8_t csPin, int8_t resetPin, int8_t irqPin, int8_t txEnPin = -1, int8_t rxEnPin = -1);
+    LoRaSystem(SPIClass& spi, int8_t csPin, int8_t resetPin, int8_t irqPin, int8_t txEnPin = -1, int8_t rxEnPin = -1, StorageManager* storageManager = nullptr);
     ~LoRaSystem() override;
 
     // Implement Sensor interface
@@ -71,6 +74,7 @@ private:
     int8_t irqPin;
     int8_t txEnPin;
     int8_t rxEnPin;
+    StorageManager* storageManager;
 
     uint8_t nodeId = 1;           // Default node ID
     uint8_t destinationId = 0;    // Default destination (0 = broadcast)
