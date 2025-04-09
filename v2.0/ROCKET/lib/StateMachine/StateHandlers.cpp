@@ -237,7 +237,7 @@ void StateHandlers::handleGroundIdleState(
 
     // Update sensors at a reduced rate to save power
     unsigned long currentTime = millis();
-    if (currentTime - lastSensorUpdateTime >= 1000) {  // 1Hz updates in idle
+    if (currentTime - lastSensorUpdateTime >= GROUND_IDLE_SENSOR_RATE) {  // 1Hz updates in idle
         lastSensorUpdateTime = currentTime;
 
         if (baroManager) baroManager->update();
@@ -246,7 +246,7 @@ void StateHandlers::handleGroundIdleState(
     }
 
     // Periodically send telemetry
-    if (currentTime - lastTelemetryTime >= 5000) {  // 0.2Hz telemetry in idle
+    if (currentTime - lastTelemetryTime >= GROUND_IDLE_TELEMETRY_RATE) {  // 0.2Hz telemetry in idle
         lastTelemetryTime = currentTime;
 
         if (loraSystem) {
@@ -412,7 +412,7 @@ void StateHandlers::handleReadyState(
 
     // Update sensors at a higher rate now that we're armed
     unsigned long currentTime = millis();
-    if (currentTime - lastSensorUpdateTime >= 100) {  // 10Hz updates when ready
+    if (currentTime - lastSensorUpdateTime >= READY_SENSOR_RATE) {  // 10Hz updates when ready
         lastSensorUpdateTime = currentTime;
 
         if (baroManager) baroManager->update();
@@ -434,7 +434,7 @@ void StateHandlers::handleReadyState(
     }
 
     // Periodically send telemetry
-    if (currentTime - lastTelemetryTime >= 1000) {  // 1Hz telemetry when ready
+    if (currentTime - lastTelemetryTime >= READY_TELEMETRY_RATE) {  // 1Hz telemetry when ready
         lastTelemetryTime = currentTime;
 
         if (loraSystem) {
@@ -492,7 +492,7 @@ void StateHandlers::handlePoweredFlightState(
 ) {
     // Update sensors at full rate during flight
     unsigned long currentTime = millis();
-    if (currentTime - lastSensorUpdateTime >= 10) {  // 100Hz during powered flight
+    if (currentTime - lastSensorUpdateTime >= FLIGHT_SENSOR_RATE) {  // 100Hz during powered flight
         lastSensorUpdateTime = currentTime;
 
         if (baroManager) baroManager->update();
@@ -515,9 +515,6 @@ void StateHandlers::handlePoweredFlightState(
         if (imuManager) {
             AccelerometerData accelData = imuManager->getAccelerometerData();
 
-            // Simple burnout detection - when acceleration drops below threshold
-            // A more sophisticated approach would use a state estimator
-            static const float BURNOUT_ACCEL_THRESHOLD = 2.0f;  // g
             static bool highAccelPhase = false;
 
             // First make sure we've seen high acceleration
@@ -537,7 +534,7 @@ void StateHandlers::handlePoweredFlightState(
     }
 
     // Send telemetry less frequently
-    if (currentTime - lastTelemetryTime >= 200) {  // 5Hz telemetry during flight
+    if (currentTime - lastTelemetryTime >= FLIGHT_TELEMETRY_RATE) {  // 5Hz telemetry during flight
         lastTelemetryTime = currentTime;
 
         if (loraSystem) {
@@ -567,7 +564,7 @@ void StateHandlers::handleCoastingState(
 ) {
     // Update sensors at full rate during flight
     unsigned long currentTime = millis();
-    if (currentTime - lastSensorUpdateTime >= 10) {  // 100Hz during coast
+    if (currentTime - lastSensorUpdateTime >= COAST_SENSOR_RATE) {  // 100Hz during coast
         lastSensorUpdateTime = currentTime;
 
         if (baroManager) baroManager->update();
@@ -597,7 +594,7 @@ void StateHandlers::handleCoastingState(
     }
 
     // Send telemetry
-    if (currentTime - lastTelemetryTime >= 200) {  // 5Hz telemetry
+    if (currentTime - lastTelemetryTime >= COAST_TELEMETRY_RATE) {  // 5Hz telemetry
         lastTelemetryTime = currentTime;
 
         if (loraSystem) {
@@ -665,7 +662,7 @@ void StateHandlers::handleParachuteDescentState(
 ) {
     // Update sensors at a moderate rate during descent
     unsigned long currentTime = millis();
-    if (currentTime - lastSensorUpdateTime >= 20) {  // 50Hz during descent
+    if (currentTime - lastSensorUpdateTime >= DESCENT_SENSOR_RATE) {  // 50Hz during descent
         lastSensorUpdateTime = currentTime;
 
         if (baroManager) baroManager->update();
@@ -696,7 +693,7 @@ void StateHandlers::handleParachuteDescentState(
     }
 
     // Send telemetry
-    if (currentTime - lastTelemetryTime >= 500) {  // 2Hz telemetry during descent
+    if (currentTime - lastTelemetryTime >= DESCENT_TELEMETRY_RATE) {  // 2Hz telemetry during descent
         lastTelemetryTime = currentTime;
 
         if (loraSystem) {
@@ -726,7 +723,7 @@ void StateHandlers::handleLandedState(
 ) {
     // We've landed, reduce sampling rate
     unsigned long currentTime = millis();
-    if (currentTime - lastSensorUpdateTime >= 500) {  // 2Hz after landing
+    if (currentTime - lastSensorUpdateTime >= LANDED_SENSOR_RATE) {  // 2Hz after landing
         lastSensorUpdateTime = currentTime;
 
         if (baroManager) baroManager->update();
@@ -753,7 +750,7 @@ void StateHandlers::handleLandedState(
     }
 
     // Send telemetry at reduced rate to save power but allow tracking
-    if (currentTime - lastTelemetryTime >= 5000) {  // 0.2Hz telemetry after landing
+    if (currentTime - lastTelemetryTime >= LANDED_TELEMETRY_RATE) {  // 0.2Hz telemetry after landing
         lastTelemetryTime = currentTime;
 
         if (loraSystem) {
@@ -797,7 +794,7 @@ void StateHandlers::handleErrorState(
 
     // Keep sensors updated at a low rate
     unsigned long currentTime = millis();
-    if (currentTime - lastSensorUpdateTime >= 1000) {  // 1Hz in error state
+    if (currentTime - lastSensorUpdateTime >= ERROR_SENSOR_RATE) {  // 1Hz in error state
         lastSensorUpdateTime = currentTime;
 
         if (baroManager) baroManager->update();
@@ -806,7 +803,7 @@ void StateHandlers::handleErrorState(
     }
 
     // Send error telemetry more frequently
-    if (currentTime - lastTelemetryTime >= 2000) {  // 0.5Hz telemetry in error state
+    if (currentTime - lastTelemetryTime >= ERROR_TELEMETRY_RATE) {  // 0.5Hz telemetry in error state
         lastTelemetryTime = currentTime;
 
         if (loraSystem) {

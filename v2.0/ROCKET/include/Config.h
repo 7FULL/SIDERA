@@ -1,38 +1,84 @@
 /**
  * Rocket Control System - Global Configuration
- *
- * This file contains global configuration parameters for the rocket system.
  */
 
 #ifndef CONFIG_H
 #define CONFIG_H
 
-// Debug mode - Set to 1 to enable debug output
-#define DEBUG_MODE 1
-
 // Version information
 #define FIRMWARE_VERSION "1.0.0"
+#define CONFIG_VERSION 1
 
-// Flight parameters
+// Debug settings
+#define DEBUG_MODE 1
+#define VERBOSE_LOGGING 1
+
+//=== FLIGHT PARAMETERS ===//
 #define LAUNCH_ACCELERATION_THRESHOLD 2.5f  // g-force needed to detect launch
-#define APOGEE_DETECTION_WINDOW 10          // Number of samples to confirm apogee
-#define LANDED_ALTITUDE_THRESHOLD 10.0f     // Meters from ground level
-#define LANDED_STABILITY_TIME 5000          // Milliseconds of stability to confirm landing
+#define APOGEE_DETECTION_THRESHOLD 2.0f     // m below peak to confirm apogee
+#define APOGEE_DETECTION_WINDOW 10          // samples to confirm apogee
+#define LANDED_ALTITUDE_THRESHOLD 10.0f     // meters from ground level
+#define LANDED_STABILITY_TIME 5000          // ms of stability to confirm landing
+#define BURNOUT_ACCEL_THRESHOLD 2.0f        // g threshold for burnout detection
 
-// Sensor fusion parameters
-#define USE_SENSOR_FUSION 1                // Enable sensor fusion algorithms
-#define COMPLEMENTARY_FILTER_ALPHA 0.98f   // Complementary filter parameter
+//=== SENSOR PARAMETERS ===//
+// Update rates by state (ms)
+#define GROUND_IDLE_SENSOR_RATE 1000        // 1Hz in idle
+#define READY_SENSOR_RATE 100               // 10Hz when ready
+#define FLIGHT_SENSOR_RATE 10               // 100Hz during flight
+#define COAST_SENSOR_RATE 10                // 100Hz during coast
+#define DESCENT_SENSOR_RATE 20              // 50Hz during descent
+#define LANDED_SENSOR_RATE 500              // 2Hz after landing
+#define ERROR_SENSOR_RATE 1000              // 1Hz in error state
 
-// CommunicationSystems parameters
-#define LORA_FREQUENCY 915E6              // LoRa frequency in Hz
-#define TELEMETRY_INTERVAL 1000           // Send telemetry every X milliseconds
-#define TELEMETRY_BUFFER_SIZE 10          // Number of packets to buffer
+// Sensor fusion settings
+#define USE_SENSOR_FUSION 1
+#define COMPLEMENTARY_FILTER_ALPHA 0.98f
+#define KALMAN_POSITION_NOISE 0.01f
+#define KALMAN_VELOCITY_NOISE 0.1f
 
-// StorageSystems parameters
-#define LOG_FILE_PREFIX "FLIGHT_"         // Prefix for log files
-#define LOG_INTERVAL 100                  // Log data every X milliseconds
+//=== COMMUNICATION PARAMETERS ===//
+// Telemetry rates by state (ms)
+#define GROUND_IDLE_TELEMETRY_RATE 2000     // 0.5Hz in idle - reduced to save power
+#define READY_TELEMETRY_RATE 1000           // 1Hz when ready
+#define FLIGHT_TELEMETRY_RATE 200           // 5Hz during flight
+#define COAST_TELEMETRY_RATE 200            // 5Hz during coast
+#define DESCENT_TELEMETRY_RATE 500          // 2Hz during descent
+#define LANDED_TELEMETRY_RATE 1000          // 1Hz after landing
+#define ERROR_TELEMETRY_RATE 2000           // 0.5Hz in error state
 
-// Power management
-#define LOW_BATTERY_THRESHOLD 3.3f        // Volts
-#define CRITICAL_BATTERY_THRESHOLD 3.0f   // Volts
+// LoRa parameters
+#define LORA_FREQUENCY 915E6                // Hz (US frequency)
+#define LORA_BANDWIDTH 125E3                // 125 kHz bandwidth
+#define LORA_SPREADING_FACTOR 7             // SF7
+#define LORA_CODING_RATE 5                  // 4/5 coding rate
+#define LORA_TX_POWER 17                    // dBm (5-20)
+#define LORA_RETRY_MAX 5                    // Max transmission retries
+#define LORA_RETRY_INTERVAL 1000            // ms between retries
+
+//=== STORAGE PARAMETERS ===//
+#define LOG_FILE_PREFIX "FLIGHT_"
+#define LOG_INTERVAL 100                    // ms between logs
+#define FLUSH_INTERVAL 5000                 // ms between forced storage flushes
+#define LOG_BUFFER_SIZE 256                 // bytes for log messages
+
+//=== POWER MANAGEMENT ===//
+#define BATTERY_ADC_REF_VOLTAGE 3.3f        // Reference voltage for ADC
+#define BATTERY_DIVIDER_RATIO 2.0f          // Voltage divider ratio
+#define BATTERY_FILTER_ALPHA 0.2f           // Low-pass filter coefficient
+#define BATTERY_FULL_VOLTAGE 4.2f           // Full LiPo voltage
+#define BATTERY_EMPTY_VOLTAGE 3.0f          // Empty LiPo voltage
+#define LOW_BATTERY_THRESHOLD 3.5f          // Low battery warning threshold
+#define CRITICAL_BATTERY_THRESHOLD 3.2f     // Critical battery threshold
+
+//=== PARACHUTE PARAMETERS ===//
+#define PARACHUTE_DEPLOYMENT_DURATION 1000  // ms to activate deployment mechanism
+#define PARACHUTE_SERVO_DEPLOYED_POS 180    // Servo position for deployment
+#define PARACHUTE_SERVO_STOWED_POS 0        // Servo position for stowed
+
+//=== DIAGNOSTICS ===//
+#define DIAG_MEMORY_WARNING_THRESHOLD 1024  // bytes of free memory to trigger warning
+#define DIAG_CPU_WARNING_THRESHOLD 90.0f    // % CPU usage to trigger warning
+#define DIAG_REPORT_INTERVAL 300000         // ms between resource reports (5 min)
+
 #endif // CONFIG_H

@@ -25,11 +25,4 @@
 #define LOGGING_STACK_SIZE      1536
 #define GPS_STACK_SIZE          1536
 
-// Task cycles (in milliseconds)
-#define SENSOR_READ_CYCLE       10    // 100 Hz
-#define EVENT_DETECT_CYCLE      20    // 50 Hz
-#define TELEMETRY_CYCLE         100   // 10 Hz
-#define LOGGING_CYCLE           50    // 20 Hz
-#define GPS_CYCLE               100   // 10 Hz
-
 #endif // TASK_CONFIG_H

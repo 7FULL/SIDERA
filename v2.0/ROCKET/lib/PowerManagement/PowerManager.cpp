@@ -3,6 +3,7 @@
  */
 
 #include "PowerManager.h"
+#include "Config.h"
 
 PowerManager::PowerManager(int batteryPin, StorageManager* storageManager)
         : batteryPin(batteryPin),
@@ -54,7 +55,7 @@ void PowerManager::update() {
     float newVoltage = calculateBatteryVoltage(adcReading);
 
     // Apply low-pass filter to reduce noise
-    const float FILTER_ALPHA = 0.2f; // Lower = more filtering
+    const float FILTER_ALPHA = BATTERY_FILTER_ALPHA;
     batteryVoltage = FILTER_ALPHA * newVoltage + (1.0f - FILTER_ALPHA) * batteryVoltage;
 
     // Check for battery state changes
