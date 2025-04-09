@@ -19,9 +19,7 @@ CommandHandler::CommandHandler(
             fusionSystem(fusionSystem),
             baroManager(baroManager),
             imuManager(imuManager),
-            gpsManager(gpsManager),
-            telemetryRateMs(1000),  // Default to 1 second
-            lastTelemetryTime(0)
+            gpsManager(gpsManager)
 {
 }
 
@@ -38,8 +36,6 @@ bool CommandHandler::begin() {
         storageManager->logMessage(LogLevel::INFO, Subsystem::COMMUNICATION,
                                    "Command handler initialized");
     }
-
-    lastTelemetryTime = millis();
     return true;
 }
 
@@ -60,9 +56,6 @@ void CommandHandler::update() {
                         break;
                     case CommandCode::GET_STATUS:
                         success = handleGetStatusCommand(packet);
-                        break;
-                    case CommandCode::GET_TELEMETRY:
-                        success = handleGetTelemetryCommand(packet);
                         break;
                     case CommandCode::ARM_ROCKET:
                         success = handleArmCommand(packet);
@@ -126,13 +119,6 @@ void CommandHandler::update() {
             }
         }
     }
-
-    // Send periodic telemetry if needed
-    unsigned long currentTime = millis();
-    if (currentTime - lastTelemetryTime >= telemetryRateMs) {
-        lastTelemetryTime = currentTime;
-        sendTelemetry();
-    }
 }
 
 bool CommandHandler::sendResponse(ResponseCode code, const uint8_t* payload,
@@ -164,18 +150,6 @@ bool CommandHandler::sendResponse(ResponseCode code, const uint8_t* payload,
     return result;
 }
 
-bool CommandHandler::sendTelemetry() {
-    if (!loraSystem || !fusionSystem) {
-        return false;
-    }
-
-    // Create telemetry payload
-    std::vector<uint8_t> payload = createTelemetryPayload();
-
-    // Send telemetry response
-    return sendResponse(ResponseCode::TELEMETRY_DATA, payload.data(), payload.size());
-}
-
 bool CommandHandler::sendErrorMessage(const char* message) {
     if (!loraSystem || !message) {
         return false;
@@ -205,17 +179,6 @@ bool CommandHandler::sendEventNotification(uint8_t eventCode, const char* descri
 
     // Send event notification
     return sendResponse(ResponseCode::EVENT_NOTIFICATION, payload, descLen + 1);
-}
-
-void CommandHandler::setTelemetryRate(uint16_t rateMs) {
-    telemetryRateMs = rateMs;
-
-    // Log rate change
-    if (storageManager) {
-        char msg[50];
-        snprintf(msg, sizeof(msg), "Telemetry rate set to %d ms", rateMs);
-        storageManager->logMessage(LogLevel::INFO, Subsystem::COMMUNICATION, msg);
-    }
 }
 
 bool CommandHandler::handlePingCommand(const ProtocolPacket& packet) {
@@ -344,11 +307,6 @@ bool CommandHandler::handleGetStatusCommand(const ProtocolPacket& packet) {
     payload[17] = errorFlags & 0xFF;
 
     return sendResponse(ResponseCode::STATUS_DATA, payload, sizeof(payload), packet.sequenceNumber);
-}
-
-bool CommandHandler::handleGetTelemetryCommand(const ProtocolPacket& packet) {
-    // Simply trigger a telemetry send
-    return sendTelemetry();
 }
 
 bool CommandHandler::handleArmCommand(const ProtocolPacket& packet) {
@@ -554,10 +512,6 @@ bool CommandHandler::handleSetParameterCommand(const ProtocolPacket& packet) {
 
     // Handle different parameters
     switch (paramId) {
-        case ParameterId::TELEMETRY_RATE:
-            setTelemetryRate(paramValue);
-            break;
-
         case ParameterId::SENSOR_UPDATE_RATE:
             // Set sensor update rate
             break;
@@ -605,10 +559,6 @@ bool CommandHandler::handleGetParameterCommand(const ProtocolPacket& packet) {
 
     // Get parameter value
     switch (paramId) {
-        case ParameterId::TELEMETRY_RATE:
-            paramValue = telemetryRateMs;
-            break;
-
         case ParameterId::SENSOR_UPDATE_RATE:
             // Get sensor update rate
             break;
@@ -692,165 +642,4 @@ bool CommandHandler::handleResetSystemCommand(const ProtocolPacket& packet) {
 //    NVIC_SystemReset();
 
     return true;
-}
-
-std::vector<uint8_t> CommandHandler::createTelemetryPayload() {
-    std::vector<uint8_t> payload;
-
-    // Add timestamp (4 bytes)
-    uint32_t timestamp = millis();
-    payload.push_back((timestamp >> 24) & 0xFF);
-    payload.push_back((timestamp >> 16) & 0xFF);
-    payload.push_back((timestamp >> 8) & 0xFF);
-    payload.push_back(timestamp & 0xFF);
-
-    // Add rocket state (1 byte)
-    uint8_t state = 0;
-    if (stateMachine) {
-        state = static_cast<uint8_t>(stateMachine->getCurrentState());
-    }
-    payload.push_back(state);
-
-    // Add sensor fusion data if available
-    if (fusionSystem) {
-        FusedFlightData data = fusionSystem->getFusedData();
-
-        // Altitude (4 bytes, float as int32)
-        int32_t altitude = static_cast<int32_t>(data.altitude * 1000);  // mm
-        payload.push_back((altitude >> 24) & 0xFF);
-        payload.push_back((altitude >> 16) & 0xFF);
-        payload.push_back((altitude >> 8) & 0xFF);
-        payload.push_back(altitude & 0xFF);
-
-        // Vertical speed (2 bytes, scaled int16)
-        int16_t vertSpeed = static_cast<int16_t>(data.verticalSpeed * 100);  // cm/s
-        payload.push_back((vertSpeed >> 8) & 0xFF);
-        payload.push_back(vertSpeed & 0xFF);
-
-        // Vertical acceleration (2 bytes, scaled int16)
-        int16_t vertAccel = static_cast<int16_t>(data.verticalAccel * 100);  // cm/s²
-        payload.push_back((vertAccel >> 8) & 0xFF);
-        payload.push_back(vertAccel & 0xFF);
-
-        // Orientation (3x2 bytes)
-        int16_t roll = static_cast<int16_t>(data.roll * 10);  // 0.1 degrees
-        int16_t pitch = static_cast<int16_t>(data.pitch * 10);
-        int16_t yaw = static_cast<int16_t>(data.yaw * 10);
-
-        payload.push_back((roll >> 8) & 0xFF);
-        payload.push_back(roll & 0xFF);
-        payload.push_back((pitch >> 8) & 0xFF);
-        payload.push_back(pitch & 0xFF);
-        payload.push_back((yaw >> 8) & 0xFF);
-        payload.push_back(yaw & 0xFF);
-
-        // Confidence (1 byte, scaled 0-255)
-        uint8_t confidence = static_cast<uint8_t>(data.confidence * 255);
-        payload.push_back(confidence);
-    } else {
-        // Add zeros if no fusion data (15 bytes total)
-        for (int i = 0; i < 15; i++) {
-            payload.push_back(0);
-        }
-    }
-
-    // Add battery info (3 bytes)
-    if (powerManager) {
-        float voltage = powerManager->getBatteryVoltage();
-        int percentage = powerManager->getBatteryPercentage();
-
-        uint16_t voltageInt = static_cast<uint16_t>(voltage * 100);  // centivolts
-        payload.push_back((voltageInt >> 8) & 0xFF);
-        payload.push_back(voltageInt & 0xFF);
-        payload.push_back(percentage);
-    } else {
-        payload.push_back(0);
-        payload.push_back(0);
-        payload.push_back(0);
-    }
-
-    // Add GPS info (10 bytes)
-    if (stateMachine && gpsManager && gpsManager->hasPositionFix()) {
-        GPSData gpsData = gpsManager->getGPSData();
-
-        // Latitude (4 bytes, scaled int32)
-        int32_t latitude = static_cast<int32_t>(gpsData.latitude * 10000000); // 10^-7 degrees
-        payload.push_back((latitude >> 24) & 0xFF);
-        payload.push_back((latitude >> 16) & 0xFF);
-        payload.push_back((latitude >> 8) & 0xFF);
-        payload.push_back(latitude & 0xFF);
-
-        // Longitude (4 bytes, scaled int32)
-        int32_t longitude = static_cast<int32_t>(gpsData.longitude * 10000000); // 10^-7 degrees
-        payload.push_back((longitude >> 24) & 0xFF);
-        payload.push_back((longitude >> 16) & 0xFF);
-        payload.push_back((longitude >> 8) & 0xFF);
-        payload.push_back(longitude & 0xFF);
-
-        // Satellites (1 byte)
-        payload.push_back(gpsData.satellites);
-
-        // GPS Altitude (1 byte, 0-255m)
-        uint8_t gpsAlt = static_cast<uint8_t>(min(255.0f, max(0.0f, gpsData.altitude)));
-        payload.push_back(gpsAlt);
-    } else {
-        // Add zeros if no GPS fix
-        for (int i = 0; i < 10; i++) {
-            payload.push_back(0);
-        }
-    }
-
-    // Add temperature (2 bytes, scaled int16)
-    int16_t temperature = 0;  // 0.1 C
-    if (baroManager) {
-        temperature = static_cast<int16_t>(baroManager->getTemperature() * 10);
-    }
-    payload.push_back((temperature >> 8) & 0xFF);
-    payload.push_back(temperature & 0xFF);
-
-    // Add pressure (3 bytes)
-    uint32_t pressure = 0;  // Pa
-    if (baroManager) {
-        pressure = static_cast<uint32_t>(baroManager->getPressure() * 100); // Pa
-    }
-    payload.push_back((pressure >> 16) & 0xFF);
-    payload.push_back((pressure >> 8) & 0xFF);
-    payload.push_back(pressure & 0xFF);
-
-    // Add status flags (1 byte)
-    uint8_t flags = 0;
-
-    // Set flags based on rocket state
-    if (stateMachine) {
-        RocketState currentState = stateMachine->getCurrentState();
-
-        // Parachute flag
-        if (currentState == RocketState::PARACHUTE_DESCENT) {
-            flags |= 0x01; // Bit 0 for parachute deployed
-        }
-
-        // Apogee flag
-        if (fusionSystem && fusionSystem->isApogeeDetected()) {
-            flags |= 0x02; // Bit 1 for apogee detected
-        }
-
-        // Landed flag
-        if (currentState == RocketState::LANDED) {
-            flags |= 0x04; // Bit 2 for landed
-        }
-
-        // Error flag
-        if (currentState == RocketState::ERROR) {
-            flags |= 0x10; // Bit 4 for error condition
-        }
-    }
-
-    // Battery low flag
-    if (powerManager && powerManager->isBatteryLow()) {
-        flags |= 0x08; // Bit 3 for low battery
-    }
-
-    payload.push_back(flags);
-
-    return payload;
 }
