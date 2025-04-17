@@ -1,0 +1,3 @@
+Timestamp,Event,Temperature,Pressure,Altitude,Humidity,AccelX,AccelY,AccelZ,GyroX,GyroY,GyroZ,Latitude,Longitude,DateTime
+72,[INFO] Rocket initialized
+78,[INFO] Initializing sensors...
