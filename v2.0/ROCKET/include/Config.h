@@ -81,4 +81,14 @@
 #define DIAG_CPU_WARNING_THRESHOLD 90.0f    // % CPU usage to trigger warning
 #define DIAG_REPORT_INTERVAL 300000         // ms between resource reports (5 min)
 
+//=== ERROR HANDLING ===//
+#define ERROR_RETRY_COUNT 3
+#define ERROR_RECOVERY_TIMEOUT 5000      // ms
+#define ERROR_AUTO_RESET_ENABLED 1       // 0 for disabled
+
+//=== PERFORMANCE MONITORING ===//
+#define PERF_CPU_WARNING_THRESHOLD 90.0f // %
+#define PERF_MEMORY_WARNING_THRESHOLD 1024 // bytes
+#define PERF_MONITOR_UPDATE_RATE 1000    // ms
+
 #endif // CONFIG_H

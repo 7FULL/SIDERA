@@ -1,0 +1,20 @@
+// FusionConfig.h - For sensor fusion parameters
+#ifndef FUSION_CONFIG_H
+#define FUSION_CONFIG_H
+
+// Kalman Filter parameters
+#define KALMAN_ALT_PROCESS_NOISE_POS 0.01f
+#define KALMAN_ALT_PROCESS_NOISE_VEL 0.1f
+#define KALMAN_ALT_MEASUREMENT_NOISE 0.5f
+#define KALMAN_ALT_PREDICTION_FACTOR 1.0f
+
+// Complementary Filter parameters
+#define COMP_FILTER_ALPHA 0.01f
+#define COMP_FILTER_GYRO_TRUST 0.98f
+
+// Apogee Detection parameters
+#define APOGEE_DETECTION_THRESHOLD 2.0f
+#define APOGEE_CONFIRMATION_SAMPLES 5
+#define APOGEE_MINIMUM_ALTITUDE 10.0f
+
+#endif // FUSION_CONFIG_H

@@ -11,6 +11,7 @@
 #include <SPI.h>
 #include <Adafruit_SPIFlash.h>
 #include "../StorageSystem.h"
+#include "StorageConfig.h"
 
 class FlashStorage : public StorageSystem {
 public:
@@ -44,11 +45,11 @@ private:
     Adafruit_SPIFlash flash;
 
     // Memory organization
-    static const uint32_t SECTOR_SIZE = 4096;      // Flash sector size in bytes
-    static const uint32_t LOG_START_ADDRESS = 0;   // Start address for log data
-    static const uint32_t LOG_SIZE = 0x10000;      // 64KB for log messages
-    static const uint32_t TELEMETRY_START_ADDRESS = LOG_SIZE; // Start address for telemetry
-    static const uint32_t TELEMETRY_SIZE = 0x70000; // 448KB for telemetry
+    static const uint32_t SECTOR_SIZE = FLASH_SECTOR_SIZE;      // Flash sector size in bytes
+    static const uint32_t LOG_START_ADDRESS = FLASH_LOG_START_ADDRESS;   // Start address for log data
+    static const uint32_t LOG_SIZE = FLASH_LOG_SIZE;      // 64KB for log messages
+    static const uint32_t TELEMETRY_START_ADDRESS = FLASH_TELEMETRY_START_ADDRESS; // Start address for telemetry
+    static const uint32_t TELEMETRY_SIZE = FLASH_TELEMETRY_SIZE; // 448KB for telemetry
     static const uint32_t METADATA_ADDRESS = LOG_SIZE + TELEMETRY_SIZE; // Metadata address
 
     // Current indices

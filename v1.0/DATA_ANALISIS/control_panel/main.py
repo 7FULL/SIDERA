@@ -146,7 +146,7 @@ class NRF24USB:
             print(f"Error parsing telemetry data: {e}")
             return None
 
-    def send_command(self, command, parameter=0):
+    def  send_command(self, command, parameter=0):
         if not self.connected or not self.serial:
             return False
 
