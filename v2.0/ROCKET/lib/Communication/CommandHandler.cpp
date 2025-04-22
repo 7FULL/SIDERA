@@ -1,4 +1,5 @@
 #include "CommandHandler.h"
+#include "../../include/States.h"
 
 CommandHandler::CommandHandler(
         LoRaSystem* loraSystem,
@@ -522,7 +523,7 @@ bool CommandHandler::handleSetParameterCommand(const ProtocolPacket& packet) {
             }
             break;
 
-        case ParameterId::APOGEE_DETECTION_THRESHOLD:
+        case ParameterId::PARAM_APOGEE_DETECTION:
             // Set apogee detection threshold
             break;
 
@@ -567,7 +568,7 @@ bool CommandHandler::handleGetParameterCommand(const ProtocolPacket& packet) {
             // Get LoRa TX power
             break;
 
-        case ParameterId::APOGEE_DETECTION_THRESHOLD:
+        case ParameterId::PARAM_APOGEE_DETECTION:
             // Get apogee detection threshold
             break;
 

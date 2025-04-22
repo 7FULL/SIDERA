@@ -73,7 +73,7 @@ struct ParameterId {
     static const uint8_t TELEMETRY_RATE = 0x01;
     static const uint8_t SENSOR_UPDATE_RATE = 0x02;
     static const uint8_t LORA_POWER = 0x03;
-    static const uint8_t APOGEE_DETECTION_THRESHOLD = 0x10;
+    static const uint8_t PARAM_APOGEE_DETECTION  = 0x10;
     static const uint8_t LANDING_DETECTION_THRESHOLD = 0x11;
     static const uint8_t LOGGING_LEVEL = 0x20;
 };
