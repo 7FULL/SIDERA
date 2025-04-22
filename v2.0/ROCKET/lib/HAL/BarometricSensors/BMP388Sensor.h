@@ -11,7 +11,7 @@
 
 class BMP388Sensor : public BarometricSensor {
 public:
-    BMP388Sensor(TwoWire& wire = Wire, int address = BMP3XX_DEFAULT_ADDRESS);
+    BMP388Sensor(TwoWire& wire = Wire, uint8_t address = BMP3XX_DEFAULT_ADDRESS);
     ~BMP388Sensor() override;
 
     // Implement Sensor interface
@@ -32,7 +32,7 @@ public:
 private:
     Adafruit_BMP3XX sensor;
     TwoWire& wire;
-    int address;
+    uint8_t address;
     float temperature;
     float pressure;
     float altitude;

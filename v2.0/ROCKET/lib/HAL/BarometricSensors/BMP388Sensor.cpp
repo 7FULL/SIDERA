@@ -4,7 +4,7 @@
 
 #include "BMP388Sensor.h"
 
-BMP388Sensor::BMP388Sensor(TwoWire& wire, int address)
+BMP388Sensor::BMP388Sensor(TwoWire& wire, uint8_t address)
         : wire(wire), address(address), temperature(0.0f), pressure(0.0f), altitude(0.0f) {
 }
 
@@ -13,7 +13,9 @@ BMP388Sensor::~BMP388Sensor() {
 }
 
 SensorStatus BMP388Sensor::begin() {
+    Serial.println("Initializing BMP388...");
     if (!sensor.begin_I2C(address, &wire)) {
+        Serial.println("BMP388 initialization failed!");
         status = SensorStatus::INITIALIZATION_ERROR;
         return status;
     }
@@ -25,6 +27,7 @@ SensorStatus BMP388Sensor::begin() {
     sensor.setOutputDataRate(BMP3_ODR_50_HZ);
 
     status = SensorStatus::OK;
+    Serial.println("BMP388 initialized successfully!");
     return status;
 }
 

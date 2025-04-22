@@ -26,6 +26,9 @@ bool BarometricSensorManager::begin() {
     for (auto sensor : sensors) {
         if (sensor->begin() == SensorStatus::OK) {
             anyInitialized = true;
+        }else{
+            // Log the error
+            Serial.println("Sensor initialization failed");
         }
     }
 

@@ -1,6 +1,9 @@
 #include "RocketProtocol.h"
 
 // Initialize static members
+// Initialize static members
+const uint8_t ProtocolPacket::PROTOCOL_VERSION = 0x01;
+const uint16_t ProtocolPacket::HEADER_MAGIC = 0xA55A;
 uint16_t RocketProtocol::sequenceCounter = 0;
 
 void RocketProtocol::initialize() {

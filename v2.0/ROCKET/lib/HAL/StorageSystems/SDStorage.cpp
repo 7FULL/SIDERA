@@ -3,7 +3,7 @@
  */
 
 #include "SDStorage.h"
-#include <string.h>
+#include <cstring>
 
 SDStorage::SDStorage(SPIClass& spi, int8_t csPin)
         : spi(spi), csPin(csPin) {

@@ -1,11 +1,11 @@
-/**
- * Rocket Control System - RP2040 Version
- * Main entry point
- *
- * This file initializes the hardware, sets up FreeRTOS tasks
- * and starts the scheduler on both cores.
- */
-
+///**
+// * Rocket Control System - RP2040 Version
+// * Main entry point
+// *
+// * This file initializes the hardware, sets up FreeRTOS tasks
+// * and starts the scheduler on both cores.
+// */
+//
 #include <Arduino.h>
 #include <FreeRTOS.h>
 #include <task.h>
@@ -114,7 +114,9 @@ StateMachine stateMachine;
 void setup() {
     // Initialize serial communication
     Serial.begin(115200);
-    delay(2000); // Give time for serial monitor to connect
+    while (!Serial) {
+        delay(10);
+    }
     Serial.println("Rocket Control System - RP2040 Starting...");
 
     // Initialize synchronization primitives
@@ -169,29 +171,49 @@ void Core0Task(void *pvParameters) {
     // Setup LED for status indication
     pinMode(LED_BUILTIN, OUTPUT);
 
+    Serial.println("Initializing wiringPi...");
+
     // Initialize I2C bus for sensors
-    Wire.setSDA(I2C0_SDA);
-    Wire.setSCL(I2C0_SCL);
-    Wire.begin();
-    Wire.setClock(400000);  // 400kHz fast mode
+    Wire1.setSDA(I2C1_SDA);
+    Wire1.setSCL(I2C1_SCL);
+
+    Serial.println("Setting up I2C pins...");
+
+    Wire1.begin();
+    Wire1.setClock(400000);  // 400kHz fast mode
+
+    Serial.println("I2C bus initialized");
+
 
     // Initialize SPI buses
     vspi.begin();
     hspi.begin();
 
+    Serial.println("Initializing sensors...");
+
     // Initialize barometric sensors
-    BMP388Sensor* bmp388 = new BMP388Sensor(Wire);
-    MPL3115A2Sensor* mpl3115a2 = new MPL3115A2Sensor(Wire);
+    BMP388Sensor* bmp388 = new BMP388Sensor(Wire1, BMP_ADDR);
+
+    MPL3115A2Sensor* mpl3115a2 = new MPL3115A2Sensor(Wire1);
+
+    Serial.println("Adding barometric sensors...");
 
     baroManager.addSensor(bmp388);
     baroManager.addSensor(mpl3115a2);
 
+    Serial.println("Barometric sensors added");
+
     // Initialize IMU sensors
-    BMI088Sensor* bmi088 = new BMI088Sensor(Wire);
-    ADXL375Sensor* adxl375 = new ADXL375Sensor(Wire);
+    BMI088Sensor* bmi088 = new BMI088Sensor(Wire1);
+    ADXL375Sensor* adxl375 = new ADXL375Sensor(Wire1);
+
+    Serial.println("Adding IMU sensors...");
 
     imuManager.addSensor(bmi088);
     imuManager.addSensor(adxl375);
+
+    Serial.println("IMU sensors added");
+    Serial.println("Initializing power manager...");
 
     powerManager = new PowerManager(BATTERY_VOLTAGE_PIN, &storageManager);
     powerManager->setLowVoltageThreshold(3.5f);      // 3.5V for low battery warning
@@ -208,12 +230,21 @@ void Core0Task(void *pvParameters) {
         }
     }
 
+    Serial.println("Power manager initialized");
+    Serial.println("Initializing communication system...");
+
     resourceMonitor = new ResourceMonitor(&storageManager);
     resourceMonitor->begin();
+
+    Serial.println("Resource monitor initialized");
+    Serial.println("Initializing fault handler...");
 
     // Initialize fault handler
     faultHandler = new FaultHandler(&storageManager, &stateMachine);
     faultHandler->begin();
+
+    Serial.println("Fault handler initialized");
+    Serial.println("Initializing performance optimizer...");
 
     // Initialize performance optimizer
     performanceOptimizer = new PerformanceOptimizer(
@@ -222,6 +253,9 @@ void Core0Task(void *pvParameters) {
             resourceMonitor
     );
     performanceOptimizer->begin();
+
+    Serial.println("Performance optimizer initialized");
+    Serial.println("Initializing power controller...");
 
     // Initialize power controller
     powerController = new PowerController(
@@ -242,9 +276,15 @@ void Core0Task(void *pvParameters) {
         }
     }
 
+    Serial.println("Power controller initialized");
+    Serial.println("Initializing DiagnosticManager...");
+
     // Initialize diagnostic manager
     diagnosticManager = new DiagnosticManager(&storageManager);
     diagnosticManager->setVerboseLogging(true);
+
+    Serial.println("DiagnosticManager initialized");
+    Serial.println("Adding diagnostic tests...");
 
     diagnosticManager->addTest(new BarometricSensorTest(&baroManager));
     diagnosticManager->addTest(new IMUSensorTest(&imuManager));
@@ -254,8 +294,14 @@ void Core0Task(void *pvParameters) {
     diagnosticManager->addTest(new BatteryTest(powerManager));
     diagnosticManager->addTest(new SensorFusionTest(fusionSystem));
 
+    Serial.println("Diagnostic tests added");
+    Serial.println("Initializing PreflightCheckSystem...");
+
     preflightSystem = new PreflightCheckSystem(diagnosticManager, &storageManager);
     preflightSystem->begin();
+
+    Serial.println("PreflightCheckSystem initialized");
+    Serial.println("Initializing gps...");
 
     // Initialize GPS sensors
     Serial1.begin(9600);
@@ -264,28 +310,61 @@ void Core0Task(void *pvParameters) {
     L76KBGPSSensor* l76kb = new L76KBGPSSensor(Serial1, L76_STBY);
     ATGM336HGPSSensor* atgm336h = new ATGM336HGPSSensor(Serial2, ATGM_STBY);
 
+    Serial.println("Adding GPS sensors...");
+
     gpsManager.addSensor(l76kb, 0);  // Priority 0 (primary)
     gpsManager.addSensor(atgm336h, 1);  // Priority 1 (secondary)
 
+    Serial.println("GPS sensors added");
+    Serial.println("Initializing LoRaSystem...");
+
     // Initialize LoRa
     loraSystem = new LoRaSystem(hspi, LORA_CS, LORA_RST, LORA_DIO0, -1, -1, &storageManager);
+
+    Serial.println("LoRaSystem initialized");
+    Serial.println("Initializing storage systems...");
 
     // Initialize storage
     flashStorage = new FlashStorage(hspi, FLASH_CS);
     sdStorage = new SDStorage(vspi, SD_CS);
 
+    Serial.println("Adding storage systems...");
+
     storageManager.addStorage(flashStorage, true);  // Primary
     storageManager.addStorage(sdStorage, false);    // Secondary
+
+    Serial.println("Storage systems added");
 
     // Initialize everything
     bool initSuccess = true;
 
-    initSuccess &= baroManager.begin();
-    initSuccess &= imuManager.begin();
-    initSuccess &= gpsManager.begin();
+    Serial.println("Initializing all managers...");
 
+//    if (bmp388->begin() != SensorStatus::OK) {
+//        Serial.println("ERROR: Failed to initialize BMP388 sensor!");
+//    }else{
+//        Serial.println("BMP388 sensor initialized");
+//    }
+
+    Serial.println("Initializing barometric sensors...");
+    initSuccess &= baroManager.begin();
+    Serial.println("Barometric sensors initialized");
+
+    Serial.println("Initializing IMU sensors...");
+    initSuccess &= imuManager.begin();
+    Serial.println("IMU sensors initialized");
+
+    Serial.println("Initializing GPS sensors...");
+    initSuccess &= gpsManager.begin();
+    Serial.println("GPS sensors initialized");
+
+    Serial.println("Initializing loraSystem...");
     initSuccess &= loraSystem->begin() == SensorStatus::OK;
+    Serial.println("LoRa system initialized");
+
+    Serial.println("Initializing storage systems...");
     initSuccess &= storageManager.begin();
+    Serial.println("Storage systems initialized");
 
     Serial.println("Running initial diagnostics...");
     std::vector<TestResult> initialResults = diagnosticManager->runAllTests();
@@ -404,12 +483,16 @@ void Core0Task(void *pvParameters) {
 
 // Core 1 main task - Handles non-critical operations
 void Core1Task(void *pvParameters) {
+
+    return;
     Serial.println("Core 1 task started");
 
     // Wait for sensors to be initialized by Core 0
     while (!sensorsInitialized) {
         vTaskDelay(pdMS_TO_TICKS(10));
     }
+
+    Serial.println("Core 1: Sensors initialized");
 
     // Signal that secondary systems are initialized
     storageInitialized = true;
@@ -437,6 +520,8 @@ void Core1Task(void *pvParameters) {
         }
     }
 
+    Serial.println("Core 1: Command handler initialized");
+
     // Main task loop
     while (1) {
         // Update command handler - this handles all LoRa command processing
@@ -450,3 +535,31 @@ void Core1Task(void *pvParameters) {
         vTaskDelay(pdMS_TO_TICKS(50)); // 50ms cycle for non-critical tasks
     }
 }
+
+//void setup() {
+//    Serial.begin(115200);
+//    // Espera activa hasta que el monitor serie esté abierto
+//    while (!Serial) {
+//        delay(10);
+//    }
+//
+//    // Initialize I2C bus for sensors
+//    Wire1.setSDA(I2C1_SDA);
+//    Wire1.setSCL(I2C1_SCL);
+//
+//    Serial.println("Setting up I2C pins...");
+//
+//    Wire1.begin();
+//    Wire1.setClock(400000);  // 400kHz fast mode
+//
+//    // Initialize barometric sensors
+//    BMP388Sensor* bmp388 = new BMP388Sensor(Wire1, BMP_ADDR);
+//
+//    bmp388->begin();
+//
+//    Serial.println("Barometric sensor initialized");
+//}
+//
+//void loop() {
+//
+//}

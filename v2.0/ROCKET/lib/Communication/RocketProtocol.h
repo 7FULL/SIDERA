@@ -53,8 +53,8 @@ enum class RocketStatusCode : uint8_t {
 
 // Packet structure for communication
 struct ProtocolPacket {
-    static const uint16_t HEADER_MAGIC = 0xA55A;  // Magic number for packet identification
-    static const uint8_t PROTOCOL_VERSION = 0x01; // Protocol version
+    static const uint16_t HEADER_MAGIC;  // Magic number for packet identification
+    static const uint8_t PROTOCOL_VERSION; // Protocol version
 
     uint16_t header;         // Magic header (HEADER_MAGIC)
     uint8_t version;         // Protocol version
