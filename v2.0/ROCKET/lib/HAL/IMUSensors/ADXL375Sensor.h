@@ -8,10 +8,11 @@
 #include <Wire.h>
 #include <Adafruit_ADXL375.h>
 #include "../IMUSensor.h"
+#include "PinDefinitions.h"
 
 class ADXL375Sensor : public IMUSensor {
 public:
-    ADXL375Sensor(TwoWire& wire = Wire, int32_t sensorID = 0);
+    ADXL375Sensor(TwoWire& wire = Wire, uint8_t address = AXL_ADDR, int32_t sensorID = 0);
     ~ADXL375Sensor() override;
 
     // Implement Sensor interface
@@ -37,6 +38,7 @@ private:
     Adafruit_ADXL375 sensor;
     TwoWire& wire;
     int32_t sensorID;
+    uint8_t address;
     float accelRange = 200.0f; // Fixed ±200g for ADXL375
     AccelerometerData accelData;
     GyroscopeData dummyGyroData; // ADXL375 has no gyroscope

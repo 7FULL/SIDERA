@@ -17,31 +17,41 @@ L76KBGPSSensor::~L76KBGPSSensor() {
 }
 
 SensorStatus L76KBGPSSensor::begin() {
+    Serial.println("Initializing L76KB GPS sensor...");
+
     // Configure pins if provided
     if (standbyPin >= 0) {
+        Serial.print("Configuring standby pin: ");
+        Serial.println(standbyPin);
         pinMode(standbyPin, OUTPUT);
         digitalWrite(standbyPin, HIGH); // Active mode
     }
 
     if (resetPin >= 0) {
+        Serial.print("Configuring reset pin: ");
+        Serial.println(resetPin);
         pinMode(resetPin, OUTPUT);
         digitalWrite(resetPin, HIGH); // Normal operation
     }
 
-    // Initialize serial communication (9600 baud is typical for GPS)
+    // Initialize serial communication
+    Serial.println("Starting GPS serial communication at 9600 baud");
     serial.begin(9600);
 
     // Wait for the serial connection to be established
-    delay(100);
+    delay(200);  // Increased delay
 
     // Reset module
     if (resetPin >= 0) {
+        Serial.println("Resetting GPS module...");
         digitalWrite(resetPin, LOW);
         delay(200);
         digitalWrite(resetPin, HIGH);
         delay(500);
     }
 
+    // Skip PMTK251 command to avoid baud rate change issues
+    /*
     // Send basic configuration commands
     sendCommand("$PMTK251,38400*27\r\n"); // Set baud rate to 38400
     delay(100);
@@ -51,30 +61,50 @@ SensorStatus L76KBGPSSensor::begin() {
     delay(100);
     serial.begin(38400);
     delay(100);
+    */
 
     // Configure update rate
+    Serial.println("Setting GPS update rate to 1Hz...");
     setUpdateRate(1); // 1Hz update rate
 
     // Enable all NMEA sentences we need
+    Serial.println("Enabling NMEA sentences...");
     sendCommand("$PMTK314,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0*28\r\n");
 
     // Initial update to check if sensor is responsive
     unsigned long startTime = millis();
+    Serial.println("Waiting for initial GPS data...");
+    bool receivedData = false;
+
     while (millis() - startTime < CONNECTION_TIMEOUT) {
         if (serial.available()) {
-            parseGPS(serial.read());
+            char c = serial.read();
+            Serial.print(c);  // Echo GPS data for debugging
+            parseGPS(c);
             lastSerialActivity = millis();
+            receivedData = true;
         }
 
         if (gps.charsProcessed() > 100) {
             // We got some data, so likely the GPS is responding
+            Serial.println("\nGPS is responding");
             status = SensorStatus::OK;
             return status;
         }
+
+        // Add a short delay to prevent busy-waiting
+        delay(5);
     }
 
-    // If we got here, the GPS didn't respond within the timeout
+    if (!receivedData) {
+        Serial.println("No data received from GPS");
+    } else {
+        Serial.println("Received some data but not enough");
+    }
+
+    // If we got here, the GPS didn't respond with enough data within the timeout
     status = SensorStatus::INITIALIZATION_ERROR;
+    Serial.println("GPS initialization failed - timeout waiting for data");
     return status;
 }
 

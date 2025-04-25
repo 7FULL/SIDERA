@@ -4,8 +4,8 @@
 
 #include "ADXL375Sensor.h"
 
-ADXL375Sensor::ADXL375Sensor(TwoWire& wire, int32_t sensorID)
-        : sensor(sensorID), wire(wire), sensorID(sensorID) { // Inicializar explícitamente 'sensor'
+ADXL375Sensor::ADXL375Sensor(TwoWire& wire, uint8_t address, int32_t sensorID)
+        : wire(wire), sensor(sensorID, &wire), sensorID(sensorID), address(address) {
     // Initialize data structures
     accelData = {0.0f, 0.0f, 0.0f, 0.0f};
     dummyGyroData = {0.0f, 0.0f, 0.0f};
@@ -17,7 +17,7 @@ ADXL375Sensor::~ADXL375Sensor() {
 
 SensorStatus ADXL375Sensor::begin() {
     // Initialize the sensor - corregido para que coincida con la API
-    if (!sensor.begin()) {
+    if (!sensor.begin(address)) {
         status = SensorStatus::INITIALIZATION_ERROR;
         return status;
     }

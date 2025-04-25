@@ -186,15 +186,15 @@ void Core0Task(void *pvParameters) {
 
 
     // Initialize SPI buses
-    vspi.begin();
-    hspi.begin();
+//    vspi.begin();
+//    hspi.begin();
 
     Serial.println("Initializing sensors...");
 
     // Initialize barometric sensors
     BMP388Sensor* bmp388 = new BMP388Sensor(Wire1, BMP_ADDR);
 
-    MPL3115A2Sensor* mpl3115a2 = new MPL3115A2Sensor(Wire1);
+    MPL3115A2Sensor* mpl3115a2 = new MPL3115A2Sensor(Wire1, MPL_ADDR);
 
     Serial.println("Adding barometric sensors...");
 
@@ -204,8 +204,8 @@ void Core0Task(void *pvParameters) {
     Serial.println("Barometric sensors added");
 
     // Initialize IMU sensors
-    BMI088Sensor* bmi088 = new BMI088Sensor(Wire1);
-    ADXL375Sensor* adxl375 = new ADXL375Sensor(Wire1);
+    BMI088Sensor* bmi088 = new BMI088Sensor(Wire1, BMIO_GYR_ADDR, BMIO_ACCEL_ADDR);
+    ADXL375Sensor* adxl375 = new ADXL375Sensor(Wire1, AXL_ADDR);
 
     Serial.println("Adding IMU sensors...");
 
@@ -277,33 +277,15 @@ void Core0Task(void *pvParameters) {
     }
 
     Serial.println("Power controller initialized");
-    Serial.println("Initializing DiagnosticManager...");
-
-    // Initialize diagnostic manager
-    diagnosticManager = new DiagnosticManager(&storageManager);
-    diagnosticManager->setVerboseLogging(true);
-
-    Serial.println("DiagnosticManager initialized");
-    Serial.println("Adding diagnostic tests...");
-
-    diagnosticManager->addTest(new BarometricSensorTest(&baroManager));
-    diagnosticManager->addTest(new IMUSensorTest(&imuManager));
-    diagnosticManager->addTest(new GPSSensorTest(&gpsManager));
-    diagnosticManager->addTest(new LoRaCommunicationTest(loraSystem));
-    diagnosticManager->addTest(new StorageTest(&storageManager));
-    diagnosticManager->addTest(new BatteryTest(powerManager));
-    diagnosticManager->addTest(new SensorFusionTest(fusionSystem));
-
-    Serial.println("Diagnostic tests added");
-    Serial.println("Initializing PreflightCheckSystem...");
-
-    preflightSystem = new PreflightCheckSystem(diagnosticManager, &storageManager);
-    preflightSystem->begin();
-
-    Serial.println("PreflightCheckSystem initialized");
     Serial.println("Initializing gps...");
 
     // Initialize GPS sensors
+//    Serial1.setRX(L76_RX);
+//    Serial1.setTX(L76_TX);
+//
+//    Serial2.setRX(ATGM_RX);
+//    Serial2.setTX(ATGM_TX);
+
     Serial1.begin(9600);
     Serial2.begin(9600);
 
@@ -365,6 +347,31 @@ void Core0Task(void *pvParameters) {
     Serial.println("Initializing storage systems...");
     initSuccess &= storageManager.begin();
     Serial.println("Storage systems initialized");
+
+    Serial.println("Initializing DiagnosticManager...");
+
+    // Initialize diagnostic manager
+    diagnosticManager = new DiagnosticManager(&storageManager);
+    diagnosticManager->setVerboseLogging(true);
+
+    Serial.println("DiagnosticManager initialized");
+    Serial.println("Adding diagnostic tests...");
+
+    diagnosticManager->addTest(new BarometricSensorTest(&baroManager));
+    diagnosticManager->addTest(new IMUSensorTest(&imuManager));
+    diagnosticManager->addTest(new GPSSensorTest(&gpsManager));
+    diagnosticManager->addTest(new LoRaCommunicationTest(loraSystem));
+    diagnosticManager->addTest(new StorageTest(&storageManager));
+    diagnosticManager->addTest(new BatteryTest(powerManager));
+    diagnosticManager->addTest(new SensorFusionTest(fusionSystem));
+
+    Serial.println("Diagnostic tests added");
+    Serial.println("Initializing PreflightCheckSystem...");
+
+    preflightSystem = new PreflightCheckSystem(diagnosticManager, &storageManager);
+    preflightSystem->begin();
+
+    Serial.println("PreflightCheckSystem initialized");
 
     Serial.println("Running initial diagnostics...");
     std::vector<TestResult> initialResults = diagnosticManager->runAllTests();
@@ -562,4 +569,120 @@ void Core1Task(void *pvParameters) {
 //
 //void loop() {
 //
+//}
+
+//#include <Arduino.h>
+//#include <SPI.h>
+//#include <SdFat.h>
+//
+//// SD card pins from schematic
+//#define SD_CS_PIN 16
+//
+//// Create SD card object
+//SdFat sd;
+//
+//void setup() {
+//    // Initialize serial for debugging
+//    Serial.begin(115200);
+//    while (!Serial) {
+//        delay(10); // Wait for serial port to connect
+//    }
+//    Serial.println("SD Card Test");
+//
+//    // Configure SPI pins if needed
+////    SPI1.setRX(SD_MISO_PIN);
+////    SPI1.setTX(SD_MOSI_PIN);
+////    SPI1.setSCK(SD_SCK_PIN);
+//
+//    SPI1.setCustomPins();
+//    SPI1.begin();
+//
+//    // Initialize SD card
+//    Serial.print("Initializing SD card...");
+//
+//    if (!sd.begin(SdSpiConfig(SD_CS_PIN, 1, SD_SCK_MHZ(25), &SPI1))) {
+//        Serial.println("initialization failed!");
+//        Serial.println("Things to check:");
+//        Serial.println("* is a card inserted?");
+//        Serial.println("* is your wiring correct?");
+//        Serial.println("* did you change the chipSelect pin to match your shield or module?");
+//        while (1); // Stop here
+//    }
+//
+//    Serial.println("initialization done.");
+//
+//    // Print the card type
+//    Serial.print("Card type: ");
+//    switch (sd.card()->type()) {
+//        case SD_CARD_TYPE_SD1:
+//            Serial.println("SD1");
+//            break;
+//        case SD_CARD_TYPE_SD2:
+//            Serial.println("SD2");
+//            break;
+//        case SD_CARD_TYPE_SDHC:
+//            Serial.println("SDHC");
+//            break;
+//        default:
+//            Serial.println("Unknown");
+//    }
+//
+//    // List files in root directory
+//    Serial.println("Files found in root directory:");
+//    SdFile root;
+//    SdFile file;
+//
+//    root.openRoot(sd.vol());
+//    while (file.openNext(&root, O_READ)) {
+//        char fileName[13];
+//        file.getName(fileName, sizeof(fileName));
+//        Serial.print("  ");
+//        Serial.print(fileName);
+//        Serial.print("  ");
+//        Serial.print(file.fileSize());
+//        Serial.println(" bytes");
+//        file.close();
+//    }
+//
+//    // Create a new file
+//    Serial.println("Creating test.txt...");
+//    SdFile testFile;
+//    if (!testFile.open("test.txt", O_WRITE | O_CREAT | O_TRUNC)) {
+//        Serial.println("Error opening test.txt");
+//        while (1);
+//    }
+//
+//    // Write something to the file
+//    testFile.println("Hello from Raspberry Pi Pico!");
+//    testFile.println("If you can read this, your SD card is working!");
+//    testFile.close();
+//    Serial.println("Done writing to test.txt");
+//
+//    // Re-open the file to read and verify
+//    if (!testFile.open("test.txt", O_READ)) {
+//        Serial.println("Error re-opening test.txt");
+//        while (1);
+//    }
+//
+//    Serial.println("Reading from test.txt:");
+//    char line[100];
+//    int i = 0;
+//    while (testFile.available()) {
+//        line[i] = testFile.read();
+//        if (line[i] == '\n' || i >= sizeof(line) - 1) {
+//            line[i + 1] = 0; // Null terminate
+//            Serial.print(line);
+//            i = 0;
+//        } else {
+//            i++;
+//        }
+//    }
+//    testFile.close();
+//
+//    Serial.println("\nSD Card test completed successfully!");
+//}
+//
+//void loop() {
+//    // Nothing to do in loop
+//    delay(1000);
 //}

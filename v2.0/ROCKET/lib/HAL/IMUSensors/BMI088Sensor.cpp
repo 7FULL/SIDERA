@@ -4,10 +4,10 @@
 
 #include "BMI088Sensor.h"
 
-BMI088Sensor::BMI088Sensor(TwoWire& wire)
+BMI088Sensor::BMI088Sensor(TwoWire& wire, uint8_t gyroAddress, uint8_t acclAddress)
         : wire(wire),
-          accel(wire, 0x18),
-          gyro(wire, 0x68)
+          accel(wire, acclAddress),
+          gyro(wire, gyroAddress)
 {
     // Initialize data structures
     accelData = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -19,8 +19,12 @@ BMI088Sensor::~BMI088Sensor() {
 }
 
 SensorStatus BMI088Sensor::begin() {
-    // Initialize the accelerometer
-    if (accel.begin() != 1) {
+    int initStatus = accel.begin();
+
+    Serial.print("BMI088 accelerometer initialization status: ");
+    Serial.println(initStatus);
+
+    if (initStatus != 1) {
         status = SensorStatus::INITIALIZATION_ERROR;
         accelInitialized = false;
         return status;
@@ -29,8 +33,12 @@ SensorStatus BMI088Sensor::begin() {
     accelInitialized = true;
 
 
-    // Initialize the gyroscope
-    if (gyro.begin() != 1) {
+    int gyroStatus = gyro.begin();
+
+    Serial.print("BMI088 gyroscope initialization status: ");
+    Serial.println(gyroStatus);
+
+    if (gyroStatus != 1) {
         // We can still work with just the accelerometer
         gyroInitialized = false;
     } else {

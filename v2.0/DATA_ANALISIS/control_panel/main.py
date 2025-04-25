@@ -56,7 +56,7 @@ class TelemetryData:
 
 # NRF24 USB Communication Class
 class NRF24USB:
-    def __init__(self, port=None, baud_rate=115200):
+    def __init__(self, port=None, baud_rate=125E3):
         self.port = port
         self.baud_rate = baud_rate
         self.serial = None

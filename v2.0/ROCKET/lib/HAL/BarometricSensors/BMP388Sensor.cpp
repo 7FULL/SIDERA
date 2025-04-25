@@ -13,9 +13,9 @@ BMP388Sensor::~BMP388Sensor() {
 }
 
 SensorStatus BMP388Sensor::begin() {
-    Serial.println("Initializing BMP388...");
+//    Serial.println("Initializing BMP388...");
     if (!sensor.begin_I2C(address, &wire)) {
-        Serial.println("BMP388 initialization failed!");
+//        Serial.println("BMP388 initialization failed!");
         status = SensorStatus::INITIALIZATION_ERROR;
         return status;
     }
@@ -27,7 +27,7 @@ SensorStatus BMP388Sensor::begin() {
     sensor.setOutputDataRate(BMP3_ODR_50_HZ);
 
     status = SensorStatus::OK;
-    Serial.println("BMP388 initialized successfully!");
+//    Serial.println("BMP388 initialized successfully!");
     return status;
 }
 

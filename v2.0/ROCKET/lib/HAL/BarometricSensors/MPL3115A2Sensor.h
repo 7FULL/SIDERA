@@ -11,7 +11,7 @@
 
 class MPL3115A2Sensor : public BarometricSensor {
 public:
-    MPL3115A2Sensor(TwoWire& wire = Wire);
+    MPL3115A2Sensor(TwoWire& wire = Wire, uint8_t address = 0x60);
     ~MPL3115A2Sensor() override;
 
     // Implement Sensor interface
@@ -32,9 +32,13 @@ public:
 private:
     Adafruit_MPL3115A2 sensor;
     TwoWire& wire;
+    uint8_t address;
     float temperature;
     float pressure;
     float altitude;
+
+    void writeRegister(byte reg, byte value);
+    byte readRegister(byte reg);
 };
 
 #endif // MPL3115A2_SENSOR_H

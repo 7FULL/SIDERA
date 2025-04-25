@@ -4,6 +4,7 @@
 
 #ifndef BMI088_SENSOR_H
 #define BMI088_SENSOR_H
+#include "PinDefinitions.h"
 
 #include <Wire.h>
 #include <BMI088.h>
@@ -11,7 +12,7 @@
 
 class BMI088Sensor : public IMUSensor {
 public:
-    BMI088Sensor(TwoWire& wire = Wire);
+    BMI088Sensor(TwoWire& wire = Wire, uint8_t gyroAddress = BMIO_GYR_ADDR, uint8_t accelAddress = BMIO_ACCEL_ADDR);
     ~BMI088Sensor() override;
 
     // Implement Sensor interface

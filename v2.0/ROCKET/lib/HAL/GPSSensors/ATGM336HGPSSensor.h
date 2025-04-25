@@ -47,7 +47,7 @@ private:
     unsigned long lastSerialActivity = 0;
 
     static const unsigned long RESPONSE_TIMEOUT = 1000; // 1 second timeout for commands
-    static const unsigned long CONNECTION_TIMEOUT = 5000; // 5 seconds timeout for connection
+    static const unsigned long CONNECTION_TIMEOUT = 300000; // 5 seconds timeout for connection
 
     void parseGPS(char c);
     bool waitForResponse(const char* expectedResponse, unsigned long timeout = RESPONSE_TIMEOUT);

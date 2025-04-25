@@ -27,15 +27,37 @@ void GPSSensorManager::addSensor(GPSSensor* sensor, uint8_t priority) {
 
 bool GPSSensorManager::begin() {
     if (sensors.empty()) {
+        Serial.println("No GPS sensors added to manager");
         return false;
     }
 
+    Serial.println("Starting initialization of GPS sensors...");
+    Serial.print("Number of GPS sensors: ");
+    Serial.println(sensors.size());
+
     bool anyInitialized = false;
+    int sensorIndex = 1;
 
     for (auto& sensorInfo : sensors) {
-        if (sensorInfo.sensor->begin() == SensorStatus::OK) {
+        Serial.print("Initializing GPS sensor ");
+        Serial.print(sensorIndex++);
+        Serial.print(" (");
+        Serial.print(sensorInfo.sensor->getName());
+        Serial.print(") with priority ");
+        Serial.print(sensorInfo.priority);
+        Serial.println("...");
+
+        SensorStatus result = sensorInfo.sensor->begin();
+        if (result == SensorStatus::OK) {
+            Serial.println("GPS sensor initialization succeeded");
             anyInitialized = true;
+        } else {
+            Serial.print("GPS sensor initialization failed with status: ");
+            Serial.println(static_cast<int>(result));
         }
+
+        // Add a delay between GPS sensor initializations
+        delay(100);
     }
 
     initialized = anyInitialized;
@@ -43,8 +65,12 @@ bool GPSSensorManager::begin() {
     // Find the best sensor to start with
     if (initialized) {
         updateActiveSensor();
+        Serial.print("Active GPS sensor: ");
+        Serial.println(getActiveSensorName());
     }
 
+    Serial.print("GPS sensor initialization complete. Success: ");
+    Serial.println(anyInitialized ? "YES" : "NO");
     return anyInitialized;
 }
 

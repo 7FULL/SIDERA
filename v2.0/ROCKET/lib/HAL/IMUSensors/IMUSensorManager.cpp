@@ -18,18 +18,37 @@ void IMUSensorManager::addSensor(IMUSensor* sensor) {
 
 bool IMUSensorManager::begin() {
     if (sensors.empty()) {
+        Serial.println("No IMU sensors added to manager");
         return false;
     }
 
+    Serial.println("Starting initialization of IMU sensors...");
+    Serial.print("Number of sensors: ");
+    Serial.println(sensors.size());
+
     bool anyInitialized = false;
+    int sensorIndex = 1;
 
     for (auto sensor : sensors) {
-        if (sensor->begin() == SensorStatus::OK) {
+        Serial.print("Initializing IMU sensor ");
+        Serial.print(sensorIndex++);
+        Serial.print(" (");
+        Serial.print(sensor->getName());
+        Serial.println(")...");
+
+        SensorStatus result = sensor->begin();
+        if (result == SensorStatus::OK) {
+            Serial.println("IMU sensor initialization succeeded");
             anyInitialized = true;
+        } else {
+            Serial.print("[ERROR]--------------IMU sensor initialization failed with status: ");
+            Serial.println(static_cast<int>(result));
         }
     }
 
     initialized = anyInitialized;
+    Serial.print("IMU sensor initialization complete. Success: ");
+    Serial.println(anyInitialized ? "YES" : "NO");
     return anyInitialized;
 }
 
