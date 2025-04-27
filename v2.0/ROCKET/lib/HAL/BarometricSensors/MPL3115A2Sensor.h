@@ -36,9 +36,6 @@ private:
     float temperature;
     float pressure;
     float altitude;
-
-    void writeRegister(byte reg, byte value);
-    byte readRegister(byte reg);
 };
 
 #endif // MPL3115A2_SENSOR_H

@@ -8,10 +8,11 @@
 #include <Wire.h>
 #include "Adafruit_BMP3XX.h"
 #include "../BarometricSensor.h"
+#include "PinDefinitions.h"
 
 class BMP388Sensor : public BarometricSensor {
 public:
-    BMP388Sensor(TwoWire& wire = Wire, uint8_t address = BMP3XX_DEFAULT_ADDRESS);
+    BMP388Sensor(TwoWire& wire = Wire1, uint8_t address = BMP_ADDR);
     ~BMP388Sensor() override;
 
     // Implement Sensor interface

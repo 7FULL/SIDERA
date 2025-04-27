@@ -27,66 +27,16 @@ MPL3115A2Sensor::~MPL3115A2Sensor() {
     // No need for special cleanup
 }
 
-// Write a value to a register
-void MPL3115A2Sensor::writeRegister(byte reg, byte value) {
-    wire.beginTransmission(address);
-    wire.write(reg);
-    wire.write(value);
-    wire.endTransmission();
-}
-
-// Read a value from a register
-byte MPL3115A2Sensor::readRegister(byte reg) {
-    wire.beginTransmission(address);
-    wire.write(reg);
-    wire.endTransmission(false);
-
-    wire.requestFrom(address, 1);
-    if (wire.available()) {
-        return wire.read();
-    }
-    return 0;
-}
-
 SensorStatus MPL3115A2Sensor::begin() {
-    wire.beginTransmission(address);
-    wire.write(MPL3115A2_WHO_AM_I);
-    wire.endTransmission(false);
-
-    wire.requestFrom(address, 1);
-
-    if (wire.available()) {
-        byte whoAmI = wire.read();
-        Serial.print("WHO_AM_I register value: 0x");
-        Serial.println(whoAmI, HEX);
-
-        if (whoAmI == 0xC4) {
-            Serial.println("MPL3115A2 sensor detected!");
-        } else {
-            Serial.println("Unknown device detected!");
-        }
-    } else {
-        Serial.println("No response from the sensor!");
+    // Comprueba conexión con el sensor
+    if (!sensor.begin(&wire)) {
+        Serial.println("¡No se encontró el sensor MPL3115A2! Verifique las conexiones.");
+        status = SensorStatus::NOT_INITIALIZED;
+        return status;
     }
 
-    Serial.println("Initializing MPL3115A2 sensor...");
-    // Configure the sensor
-    // Reset the sensor
-    writeRegister(MPL3115A2_CTRL_REG1, 0x04); // Software reset
-    delay(10);
-
-    // Configure pressure and temperature measurement with oversampling ratio of 128
-    writeRegister(MPL3115A2_CTRL_REG1, 0x38); // Set SBYB=0, OST=0, RST=0, ALT=0, RAW=0, OS=111 (oversample ratio=128)
-
-    // Enable data flags
-    writeRegister(MPL3115A2_PT_DATA_CFG, 0x07); // Enable pressure, temperature, and altitude data ready flags
-
-    // Set to active mode and altimeter mode
-    writeRegister(MPL3115A2_CTRL_REG1, 0xB9); // Set SBYB=1, OST=1, RST=0, ALT=1, RAW=0, OS=111 (oversample ratio=128)
-
-    Serial.println("MPL3115A2 initialized successfully!");
-
-    return status = SensorStatus::OK;
+    status = SensorStatus::OK;
+    return status;
 }
 
 SensorStatus MPL3115A2Sensor::update() {
@@ -97,92 +47,29 @@ SensorStatus MPL3115A2Sensor::update() {
     float newPressure = 0;
     float newTemperature = 0;
 
-    // Read data from the sensor
-    // Toggle OST bit to initiate a measurement
-    byte ctrl_reg1 = readRegister(MPL3115A2_CTRL_REG1);
-    writeRegister(MPL3115A2_CTRL_REG1, ctrl_reg1 | 0x02);  // Set OST bit
+    sensor.setMode(MPL3115A2_BAROMETER); // Asegúrate de que está en modo barómetro
 
-    // Wait for the measurement to complete
-    delay(10);
+    // Lecturas de presión y temperatura
+    float pressure = sensor.getPressure();       // en Pascales (Pa)
+    float temperature = sensor.getTemperature(); // en °C
 
-    // Check if data is ready
-    if (readRegister(MPL3115A2_STATUS) & 0x08) {  // Check PDR (Pressure Data Ready) bit
-        // Read altitude
-        wire.beginTransmission(address);
-        wire.write(MPL3115A2_OUT_P_MSB);  // Start from pressure MSB
-        wire.endTransmission(false);
+    // Si está en modo barómetro, convertimos Pa a hPa
+    float pressure_hpa = pressure / 100.0;
 
-        wire.requestFrom(address, 5);  // Request 5 bytes (pressure + temperature)
+    Serial.print("Temperatura: ");
+    Serial.print(temperature);
+    Serial.print(" °C\t");
+    Serial.print("Presión: ");
+    Serial.print(pressure_hpa);
+    Serial.println(" hPa");
 
-        uint32_t pressure_raw = 0;
-        if (wire.available() >= 3) {
-            pressure_raw = wire.read() << 16;  // MSB
-            pressure_raw |= wire.read() << 8;   // CSB
-            pressure_raw |= wire.read();        // LSB
-        }
+    // Si quisieras leer altitud en modo altímetro:
+    sensor.setMode(MPL3115A2_ALTIMETER);
 
-        // The pressure is in Q18.2 format (18 integer bits and 2 fractional bits)
-        newPressure = (float)pressure_raw / 4.0;  // Convert to Pa
-
-        // Check if the read was successful
-        if (isnan(newPressure)) {
-            status = SensorStatus::READING_ERROR;
-            return status;
-        }
-
-        // Read temperature
-        int16_t temp_raw = 0;
-        if (wire.available() >= 2) {
-            temp_raw = wire.read() << 8;  // MSB
-            temp_raw |= wire.read();      // LSB
-        }
-
-        // The temperature is in Q8.4 format (8 integer bits and 4 fractional bits)
-        newTemperature = (float)temp_raw / 256.0;  // Convert to °C
-
-        // Check if the read was successful
-        if (isnan(newTemperature)) {
-            status = SensorStatus::READING_ERROR;
-            return status;
-        }
-
-        // Switch to altimeter mode to read altitude
-        writeRegister(MPL3115A2_CTRL_REG1, (ctrl_reg1 | 0x80));  // Set ALT bit
-        delay(10);
-
-        // Toggle OST bit to initiate an altitude measurement
-        writeRegister(MPL3115A2_CTRL_REG1, (ctrl_reg1 | 0x82));  // Set OST and ALT bits
-        delay(10);
-
-        // Read altitude
-        wire.beginTransmission(address);
-        wire.write(MPL3115A2_OUT_P_MSB);
-        wire.endTransmission(false);
-
-        wire.requestFrom(address, 3);
-
-        uint32_t altitude_raw = 0;
-        if (wire.available() >= 3) {
-            altitude_raw = wire.read() << 16;
-            altitude_raw |= wire.read() << 8;
-            altitude_raw |= wire.read();
-        }
-
-        // The altitude is in Q16.4 format (16 integer bits and 4 fractional bits)
-        uint32_t alt20 = altitude_raw >> 4;           // Q16.4
-        newAltitude = alt20 / 16.0;             // metros
-
-        // Check if the read was successful
-        if (isnan(newAltitude)) {
-            status = SensorStatus::READING_ERROR;
-            return status;
-        }
-
-        // Switch back to barometer mode
-        writeRegister(MPL3115A2_CTRL_REG1, ctrl_reg1 & ~0x80);  // Clear ALT bit
-    } else {
-        Serial.println("Waiting for data...");
-    }
+    float altitude = sensor.getAltitude(); // en metros
+    Serial.print("Altitud: ");
+    Serial.print(altitude);
+    Serial.println(" m");
 
     // Update sensor data
     altitude = newAltitude - referenceAltitude;

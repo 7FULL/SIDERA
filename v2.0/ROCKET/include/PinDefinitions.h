@@ -7,9 +7,6 @@
 #ifndef PIN_DEFINITIONS_H
 #define PIN_DEFINITIONS_H
 
-// Built-in LED
-#define LED_BUILTIN 25
-
 // I2C Bus 1 (Barometric sensors, IMU)
 #define I2C1_SDA 2
 #define I2C1_SCL 3

@@ -72,10 +72,6 @@ volatile bool storageInitialized = false;
 volatile bool communicationInitialized = false;
 volatile bool apogeeDetectedFlag = false;
 
-// Hardware interfaces
-SPIClass& vspi = SPI;  // Use default SPI for SD card
-SPIClass& hspi = SPI1; // Use SPI1 for LoRa and Flash
-
 // Sensor managers
 BarometricSensorManager baroManager;
 IMUSensorManager imuManager;
@@ -111,13 +107,31 @@ SensorFusionSystem* fusionSystem;
 // State machine
 StateMachine stateMachine;
 
+//Adafruit_MPL3115A2  mpl3115 = Adafruit_MPL3115A2();
+//Adafruit_BMP3XX bmp388 = Adafruit_BMP3XX();
+MPL3115A2Sensor mpl3115Sensor = MPL3115A2Sensor(Wire1, MPL_ADDR);
+BMP388Sensor bmp388Sensor = BMP388Sensor(Wire1, BMP_ADDR);
+
 void setup() {
+    delay(1000);
     // Initialize serial communication
     Serial.begin(115200);
+
     while (!Serial) {
-        delay(10);
+        delay(10); // Wait for serial port to connect
     }
-    Serial.println("Rocket Control System - RP2040 Starting...");
+
+    Serial.println("Initializing system...");
+
+    pinMode(LED_RED, OUTPUT);
+    pinMode(LED_BLUE, OUTPUT);
+
+    Wire1.setSDA(I2C1_SDA);
+    Wire1.setSCL(I2C1_SCL);
+    Wire1.begin();
+
+//    mpl3115Sensor.begin();
+//    bmp388Sensor.begin();
 
     // Initialize synchronization primitives
     xSensorDataMutex = xSemaphoreCreateMutex();
@@ -154,52 +168,25 @@ void setup() {
     Serial.println("ERROR: FreeRTOS scheduler failed to start!");
     while (1) {
         // Error loop
-        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+        digitalWrite(LED_RED, !digitalRead(LED_RED));
         delay(100);
     }
 }
 
 void loop() {
-    // Empty - everything happens in FreeRTOS tasks
-    // This function will never be called when FreeRTOS is running
+    //Ponemos el led rojo a parpadear
+//    digitalWrite(LED_RED, !digitalRead(LED_RED));
+//    delay(100);
 }
 
 // Core 0 main task - Handles critical flight operations
 void Core0Task(void *pvParameters) {
     Serial.println("Core 0 task started");
 
-    // Setup LED for status indication
-    pinMode(LED_BUILTIN, OUTPUT);
-
-    Serial.println("Initializing wiringPi...");
-
-    // Initialize I2C bus for sensors
-    Wire1.setSDA(I2C1_SDA);
-    Wire1.setSCL(I2C1_SCL);
-
-    Serial.println("Setting up I2C pins...");
-
-    Wire1.begin();
-    Wire1.setClock(400000);  // 400kHz fast mode
-
-    Serial.println("I2C bus initialized");
-
-
-    // Initialize SPI buses
-//    vspi.begin();
-//    hspi.begin();
-
-    Serial.println("Initializing sensors...");
-
-    // Initialize barometric sensors
-    BMP388Sensor* bmp388 = new BMP388Sensor(Wire1, BMP_ADDR);
-
-    MPL3115A2Sensor* mpl3115a2 = new MPL3115A2Sensor(Wire1, MPL_ADDR);
-
     Serial.println("Adding barometric sensors...");
 
-    baroManager.addSensor(bmp388);
-    baroManager.addSensor(mpl3115a2);
+    baroManager.addSensor(&bmp388Sensor);
+    baroManager.addSensor(&mpl3115Sensor);
 
     Serial.println("Barometric sensors added");
 
@@ -207,6 +194,7 @@ void Core0Task(void *pvParameters) {
     BMI088Sensor* bmi088 = new BMI088Sensor(Wire1, BMIO_GYR_ADDR, BMIO_ACCEL_ADDR);
     ADXL375Sensor* adxl375 = new ADXL375Sensor(Wire1, AXL_ADDR);
 
+    digitalWrite(LED_BLUE, HIGH);
     Serial.println("Adding IMU sensors...");
 
     imuManager.addSensor(bmi088);
@@ -301,14 +289,14 @@ void Core0Task(void *pvParameters) {
     Serial.println("Initializing LoRaSystem...");
 
     // Initialize LoRa
-    loraSystem = new LoRaSystem(hspi, LORA_CS, LORA_RST, LORA_DIO0, -1, -1, &storageManager);
+    loraSystem = new LoRaSystem(SPI1, LORA_CS, LORA_RST, LORA_DIO0, -1, -1, &storageManager);
 
     Serial.println("LoRaSystem initialized");
     Serial.println("Initializing storage systems...");
 
     // Initialize storage
-    flashStorage = new FlashStorage(hspi, FLASH_CS);
-    sdStorage = new SDStorage(vspi, SD_CS);
+    flashStorage = new FlashStorage(SPI1, FLASH_CS);
+    sdStorage = new SDStorage(SPI, SD_CS);
 
     Serial.println("Adding storage systems...");
 

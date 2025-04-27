@@ -14,20 +14,32 @@ BMP388Sensor::~BMP388Sensor() {
 
 SensorStatus BMP388Sensor::begin() {
 //    Serial.println("Initializing BMP388...");
+//    if (!sensor.begin_I2C(address, &wire)) {
+////        Serial.println("BMP388 initialization failed!");
+//        status = SensorStatus::INITIALIZATION_ERROR;
+//        return status;
+//    }
+//
+//    // Set up sensor with default settings
+//    sensor.setTemperatureOversampling(BMP3_OVERSAMPLING_8X);
+//    sensor.setPressureOversampling(BMP3_OVERSAMPLING_4X);
+//    sensor.setIIRFilterCoeff(BMP3_IIR_FILTER_COEFF_3);
+//    sensor.setOutputDataRate(BMP3_ODR_50_HZ);
+
+    // BMP388 (0x76 ó 0x77)
     if (!sensor.begin_I2C(address, &wire)) {
-//        Serial.println("BMP388 initialization failed!");
-        status = SensorStatus::INITIALIZATION_ERROR;
-        return status;
+        Serial.println("¡No se encontró el sensor BMP388! Revisa conexiones y direcciones.");
+        while (1) delay(10);
     }
 
-    // Set up sensor with default settings
+    // Configuración del BMP388
     sensor.setTemperatureOversampling(BMP3_OVERSAMPLING_8X);
     sensor.setPressureOversampling(BMP3_OVERSAMPLING_4X);
     sensor.setIIRFilterCoeff(BMP3_IIR_FILTER_COEFF_3);
     sensor.setOutputDataRate(BMP3_ODR_50_HZ);
 
     status = SensorStatus::OK;
-//    Serial.println("BMP388 initialized successfully!");
+    Serial.println("BMP388 initialized successfully!");
     return status;
 }
 

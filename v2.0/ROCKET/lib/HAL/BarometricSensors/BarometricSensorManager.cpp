@@ -13,6 +13,8 @@ BarometricSensorManager::~BarometricSensorManager() {
 }
 
 void BarometricSensorManager::addSensor(BarometricSensor* sensor) {
+    Serial.print("Adding sensor: ");
+    Serial.println(sensor->getName());
     sensors.push_back(sensor);
 }
 
