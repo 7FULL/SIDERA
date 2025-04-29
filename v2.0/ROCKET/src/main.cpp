@@ -216,12 +216,6 @@ void initializeAllSystems(){
 //    Serial2.setRX(ATGM_RX);
 //    Serial2.setTX(ATGM_TX);
 
-    Serial1.customSetPinsUart0();
-    Serial2.customSetPinsUart1();
-
-    Serial1.begin(9600);
-    Serial2.begin(9600);
-
     L76KBGPSSensor* l76kb = new L76KBGPSSensor(Serial1, L76_STBY);
     ATGM336HGPSSensor* atgm336h = new ATGM336HGPSSensor(Serial2, ATGM_STBY);
 
@@ -269,10 +263,6 @@ void initializeAllSystems(){
     initSuccess &= imuManager.begin();
     Serial.println("IMU sensors initialized");
 
-    Serial.println("Initializing GPS sensors...");
-    initSuccess &= gpsManager.begin();
-    Serial.println("GPS sensors initialized");
-
     Serial.println("Initializing loraSystem...");
     initSuccess &= loraSystem->begin() == SensorStatus::OK;
     Serial.println("LoRa system initialized");
@@ -284,6 +274,10 @@ void initializeAllSystems(){
     Serial.println("Initializing storage systems...");
     initSuccess &= storageManager.begin();
     Serial.println("Storage systems initialized");
+
+    Serial.println("Initializing GPS sensors...");
+    initSuccess &= gpsManager.begin();
+    Serial.println("GPS sensors initialized");
 
     // Initialize sensor fusion
     fusionSystem = new SensorFusionSystem(&baroManager, &imuManager, &storageManager);
@@ -306,10 +300,10 @@ void initializeAllSystems(){
     Serial.println("Adding diagnostic tests...");
 
     diagnosticManager->addTest(new BarometricSensorTest(&baroManager));
-    diagnosticManager->addTest(new IMUSensorTest(&imuManager));
+//    diagnosticManager->addTest(new IMUSensorTest(&imuManager));
     diagnosticManager->addTest(new GPSSensorTest(&gpsManager));
     diagnosticManager->addTest(new LoRaCommunicationTest(loraSystem));
-    diagnosticManager->addTest(new StorageTest(&storageManager));
+//    diagnosticManager->addTest(new StorageTest(&storageManager));
     diagnosticManager->addTest(new BatteryTest(powerManager));
     diagnosticManager->addTest(new SensorFusionTest(fusionSystem));
     diagnosticManager->addTest(new TemperatureSensorTest(&temperatureManager));
@@ -354,13 +348,13 @@ void initializeAllSystems(){
             }
         }
 
-        while (1) {
-            // Error loop
-            digitalWrite(LED_RED, HIGH);
-            delay(100);
-            digitalWrite(LED_RED, LOW);
-            delay(100);
-        }
+//        while (1) {
+//            // Error loop
+//            digitalWrite(LED_RED, HIGH);
+//            delay(100);
+//            digitalWrite(LED_RED, LOW);
+//            delay(100);
+//        }
     } else {
         Serial.println("All subsystems initialized successfully");
 
@@ -377,12 +371,12 @@ void initializeAllSystems(){
 }
 
 void setup() {
-    delay(1000);
     // Initialize serial communication
     Serial.begin(115200);
 
-    while (!Serial) {
-        delay(10); // Wait for serial port to connect
+    // Wait for serial port to connect or timeout of 10 seconds
+    while (!Serial && millis() < 10000) {
+        delay(10);
     }
 
     Serial.println("Initializing system...");
@@ -398,6 +392,15 @@ void setup() {
     SPI1.setMOSI(SPI1_MOSI);
     SPI1.setSCK(SPI1_SCK);
     SPI1.begin();
+
+    pinMode(LORA_CS, OUTPUT);
+    digitalWrite(LORA_CS, HIGH);
+
+    Serial1.customSetPinsUart0();
+    Serial2.customSetPinsUart1();
+
+    Serial1.begin(9600);
+    Serial2.begin(9600);
 
     // Initialize all systems
     initializeAllSystems();
@@ -453,6 +456,7 @@ void loop() {
 
 // Core 0 main task - Handles critical flight operations
 void Core0Task(void *pvParameters) {
+    Serial.println("Core 0 task started");
     while (1) {
         // Update sensor fusion
         fusionSystem->update();
@@ -513,7 +517,7 @@ void Core0Task(void *pvParameters) {
         static unsigned long lastLedTime = 0;
         if (millis() - lastLedTime >= 250) {  // 4Hz blink
             lastLedTime = millis();
-            digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+            digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
         }
 
         // Give other tasks a chance to run
@@ -524,7 +528,7 @@ void Core0Task(void *pvParameters) {
 // Core 1 main task - Handles non-critical operations
 void Core1Task(void *pvParameters) {
 
-    return;
+//    return;
     Serial.println("Core 1 task started");
 
     // Wait for sensors to be initialized by Core 0

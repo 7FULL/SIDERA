@@ -21,6 +21,17 @@ LoRaSystem::~LoRaSystem() {
 }
 
 SensorStatus LoRaSystem::begin() {
+    if (resetPin >= 0) {
+        Serial.println("LoRa: Performing hardware reset...");
+        pinMode(resetPin, OUTPUT);
+        digitalWrite(resetPin, LOW);
+        delay(10);
+        digitalWrite(resetPin, HIGH);
+        delay(100); // Give the module more time to stabilize
+    }
+
+//    SPI1.setCS();
+
     // Configure LoRa module with SPI and pins
     LoRa.setPins(csPin, resetPin, irqPin);
     LoRa.setSPI(spi);
@@ -39,7 +50,7 @@ SensorStatus LoRaSystem::begin() {
         Serial.print(maxAttempts);
 
         // Check if the module is ready
-        if (LoRa.begin(868E6)) { // Default to 915 MHz for US region 868E6 for EU
+        if (LoRa.begin(868E6)) { // Default to 915E6 for US region 868E6 for EU
             moduleReady = true;
             break;
         }
