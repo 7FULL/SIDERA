@@ -15,6 +15,7 @@
 #include "../HAL/StorageSystems/StorageManager.h"
 #include "../PowerManagement/PowerManager.h"
 #include "../SensorFusion/SensorFusionSystem.h"
+#include "TemperatureSensors/TemperatureSensorManager.h"
 
 // Barometric sensor tests
 class BarometricSensorTest : public DiagnosticTest {
@@ -112,6 +113,20 @@ public:
 
 private:
     SensorFusionSystem* fusionSystem;
+};
+
+// Temperature sensor tests
+class TemperatureSensorTest : public DiagnosticTest {
+public:
+    TemperatureSensorTest(TemperatureSensorManager* manager);
+    TestResult runTest() override;
+    String getName() const override;
+    String getDescription() const override;
+    bool isCritical() const override;
+    String getSubsystem() const override;
+
+private:
+    TemperatureSensorManager* manager;
 };
 
 #endif // SPECIFIC_TESTS_H

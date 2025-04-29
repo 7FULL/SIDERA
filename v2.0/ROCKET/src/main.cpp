@@ -87,6 +87,9 @@ FlashStorage* flashStorage;
 SDStorage* sdStorage;
 StorageManager storageManager;
 
+// Temperature manager
+TemperatureSensorManager temperatureManager;
+
 // Power management
 PowerManager* powerManager;
 PowerController* powerController;
@@ -134,6 +137,12 @@ void initializeAllSystems(){
     imuManager.addSensor(adxl375);
 
     Serial.println("IMU sensors added");
+
+    DS18B20Sensor* ds18b20 = new DS18B20Sensor(DS18B20_PIN);
+
+    Serial.println("Adding temperature sensors...");
+    temperatureManager.addSensor(ds18b20);
+
     Serial.println("Initializing power manager...");
 
     powerManager = new PowerManager(BATTERY_VOLTAGE_PIN, &storageManager);
@@ -268,6 +277,10 @@ void initializeAllSystems(){
     initSuccess &= loraSystem->begin() == SensorStatus::OK;
     Serial.println("LoRa system initialized");
 
+    Serial.println("Initializing temperature sensors...");
+    initSuccess &= temperatureManager.begin();
+    Serial.println("Temperature sensors initialized");
+
     Serial.println("Initializing storage systems...");
     initSuccess &= storageManager.begin();
     Serial.println("Storage systems initialized");
@@ -299,6 +312,7 @@ void initializeAllSystems(){
     diagnosticManager->addTest(new StorageTest(&storageManager));
     diagnosticManager->addTest(new BatteryTest(powerManager));
     diagnosticManager->addTest(new SensorFusionTest(fusionSystem));
+    diagnosticManager->addTest(new TemperatureSensorTest(&temperatureManager));
 
     Serial.println("Diagnostic tests added");
     Serial.println("Initializing PreflightCheckSystem...");
@@ -379,6 +393,11 @@ void setup() {
     Wire1.setSDA(I2C1_SDA);
     Wire1.setSCL(I2C1_SCL);
     Wire1.begin();
+
+    SPI1.setMISO(SPI1_MISO);
+    SPI1.setMOSI(SPI1_MOSI);
+    SPI1.setSCK(SPI1_SCK);
+    SPI1.begin();
 
     // Initialize all systems
     initializeAllSystems();

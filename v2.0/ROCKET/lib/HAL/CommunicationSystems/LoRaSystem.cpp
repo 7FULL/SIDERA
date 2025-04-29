@@ -21,19 +21,35 @@ LoRaSystem::~LoRaSystem() {
 }
 
 SensorStatus LoRaSystem::begin() {
-    // Configure SPI for LoRa module
-    spi.begin();
-
     // Configure LoRa module with SPI and pins
     LoRa.setPins(csPin, resetPin, irqPin);
     LoRa.setSPI(spi);
 
-    Serial.println("LoRa: Initializing module...");
+    // We wait for the LoRa module to be ready
+    Serial.println("LoRa: Waiting for module to be ready...");
+    //Number of attempts to wait for the module
+    int maxAttempts = 10;
+    int attempts = 0;
+    //Auxiliary variable to check if the module is ready
+    bool moduleReady = false;
+    while (attempts < maxAttempts) {
+        Serial.print("Attempt ");
+        Serial.print(attempts + 1);
+        Serial.print(" of ");
+        Serial.print(maxAttempts);
 
-    // Initialize LoRa module
-    if (!LoRa.begin(915E6)) { // Default to 915 MHz
-        Serial.println("LoRa: Starting failed!");
-        status = SensorStatus::INITIALIZATION_ERROR;
+        // Check if the module is ready
+        if (LoRa.begin(868E6)) { // Default to 915 MHz for US region 868E6 for EU
+            moduleReady = true;
+            break;
+        }
+        attempts++;
+        delay(1000); // Wait before retrying
+    }
+
+    if (!moduleReady) {
+        Serial.println("LoRa: Module not found!");
+        status = SensorStatus::NOT_INITIALIZED;
         return status;
     }
 

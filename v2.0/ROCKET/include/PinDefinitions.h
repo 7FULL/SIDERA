@@ -49,7 +49,7 @@
 #define ATGM_STBY 15
 
 // 1-Wire (DS18B20)
-#define ONE_WIRE_BUS 22
+#define DS18B20_PIN 24
 
 // Pyro channels
 #define PYRO1 25

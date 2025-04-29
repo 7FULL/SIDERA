@@ -24,7 +24,8 @@ SensorStatus ADXL375Sensor::begin() {
 
     // Set default configurations
     sensor.setRange(ADXL34X_RANGE_16_G);
-    sensor.setDataRate(ADXL3XX_DATARATE_100_HZ); // Usar el valor correcto del enum
+//    sensor.setRange(RANGE);
+    sensor.setDataRate(ADXL3XX_DATARATE_100_HZ);
 
     // Configurar detección de actividad usando la API disponible
     // Habilitamos actividad en XYZ

@@ -266,6 +266,9 @@ void SensorFusionSystem::calculateConfidence() {
     float orientationConfidence = orientationFilter->getConfidence();
     float apogeeConfidence = apogeeDetector ? apogeeDetector->getConfidence() : 0.0f;
 
+    Serial.printf("Altitude Confidence: %.2f, Orientation Confidence: %.2f, Apogee Confidence: %.2f\n",
+           altitudeConfidence, orientationConfidence, apogeeConfidence);
+
     // Weight the confidences based on importance
     const float ALTITUDE_WEIGHT = 0.5f;
     const float ORIENTATION_WEIGHT = 0.3f;
