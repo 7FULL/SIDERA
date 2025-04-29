@@ -107,86 +107,19 @@ SensorFusionSystem* fusionSystem;
 // State machine
 StateMachine stateMachine;
 
-//Adafruit_MPL3115A2  mpl3115 = Adafruit_MPL3115A2();
-//Adafruit_BMP3XX bmp388 = Adafruit_BMP3XX();
 MPL3115A2Sensor mpl3115Sensor = MPL3115A2Sensor(Wire1, MPL_ADDR);
 BMP388Sensor bmp388Sensor = BMP388Sensor(Wire1, BMP_ADDR);
 
-void setup() {
-    delay(1000);
-    // Initialize serial communication
-    Serial.begin(115200);
+//Adafruit_MPL3115A2  mpl3115 = Adafruit_MPL3115A2();
+//Adafruit_BMP3XX bmp388 = Adafruit_BMP3XX();
 
-    while (!Serial) {
-        delay(10); // Wait for serial port to connect
-    }
-
-    Serial.println("Initializing system...");
-
-    pinMode(LED_RED, OUTPUT);
-    pinMode(LED_BLUE, OUTPUT);
-
-    Wire1.setSDA(I2C1_SDA);
-    Wire1.setSCL(I2C1_SCL);
-    Wire1.begin();
-
-//    mpl3115Sensor.begin();
-//    bmp388Sensor.begin();
-
-    // Initialize synchronization primitives
-    xSensorDataMutex = xSemaphoreCreateMutex();
-    xSDCardMutex = xSemaphoreCreateMutex();
-    xTelemetrySemaphore = xSemaphoreCreateBinary();
-
-    // Create tasks for both cores
-    // Core 0 (main core) - Critical tasks
-    xTaskCreateAffinitySet(
-            Core0Task,
-            "Core0Task",
-            CORE0_STACK_SIZE,
-            NULL,
-            CORE0_PRIORITY,
-            (1 << 0), // Run on core 0
-            NULL
-    );
-
-    // Core 1 - Non-critical tasks
-    xTaskCreateAffinitySet(
-            Core1Task,
-            "Core1Task",
-            CORE1_STACK_SIZE,
-            NULL,
-            CORE1_PRIORITY,
-            (1 << 1), // Run on core 1
-            NULL
-    );
-
-    // Start the scheduler - This will not return
-    vTaskStartScheduler();
-
-    // If we get here, something went wrong with FreeRTOS
-    Serial.println("ERROR: FreeRTOS scheduler failed to start!");
-    while (1) {
-        // Error loop
-        digitalWrite(LED_RED, !digitalRead(LED_RED));
-        delay(100);
-    }
-}
-
-void loop() {
-    //Ponemos el led rojo a parpadear
-//    digitalWrite(LED_RED, !digitalRead(LED_RED));
-//    delay(100);
-}
-
-// Core 0 main task - Handles critical flight operations
-void Core0Task(void *pvParameters) {
+void initializeAllSystems(){
     Serial.println("Core 0 task started");
 
     Serial.println("Adding barometric sensors...");
 
-    baroManager.addSensor(&bmp388Sensor);
     baroManager.addSensor(&mpl3115Sensor);
+    baroManager.addSensor(&bmp388Sensor);
 
     Serial.println("Barometric sensors added");
 
@@ -270,9 +203,12 @@ void Core0Task(void *pvParameters) {
     // Initialize GPS sensors
 //    Serial1.setRX(L76_RX);
 //    Serial1.setTX(L76_TX);
-//
+
 //    Serial2.setRX(ATGM_RX);
 //    Serial2.setTX(ATGM_TX);
+
+    Serial1.customSetPinsUart0();
+    Serial2.customSetPinsUart1();
 
     Serial1.begin(9600);
     Serial2.begin(9600);
@@ -289,7 +225,7 @@ void Core0Task(void *pvParameters) {
     Serial.println("Initializing LoRaSystem...");
 
     // Initialize LoRa
-    loraSystem = new LoRaSystem(SPI1, LORA_CS, LORA_RST, LORA_DIO0, -1, -1, &storageManager);
+    loraSystem = new LoRaSystem(SPI1, LORA_CS, LORA_RST, LORA_DIO0, &storageManager);
 
     Serial.println("LoRaSystem initialized");
     Serial.println("Initializing storage systems...");
@@ -335,6 +271,17 @@ void Core0Task(void *pvParameters) {
     Serial.println("Initializing storage systems...");
     initSuccess &= storageManager.begin();
     Serial.println("Storage systems initialized");
+
+    // Initialize sensor fusion
+    fusionSystem = new SensorFusionSystem(&baroManager, &imuManager, &storageManager);
+    if (!fusionSystem->begin()) {
+        Serial.println("ERROR: Failed to initialize sensor fusion system!");
+
+        // Log the error if storage is working
+        if (storageManager.isOperational()) {
+            storageManager.logMessage(LogLevel::ERROR, Subsystem::SENSORS, "Failed to initialize sensor fusion system");
+        }
+    }
 
     Serial.println("Initializing DiagnosticManager...");
 
@@ -382,22 +329,29 @@ void Core0Task(void *pvParameters) {
         if (storageManager.isOperational()) {
             storageManager.logMessage(LogLevel::ERROR, Subsystem::SYSTEM, "Failed to initialize all subsystems");
         }
+
+        //Print all the errors
+        for (const auto& result : initialResults) {
+            if (!result.passed) {
+                Serial.print("Test: ");
+                Serial.print(result.testName);
+                Serial.print(" - Error: ");
+                Serial.println(result.errorMessage);
+            }
+        }
+
+        while (1) {
+            // Error loop
+            digitalWrite(LED_RED, HIGH);
+            delay(100);
+            digitalWrite(LED_RED, LOW);
+            delay(100);
+        }
     } else {
         Serial.println("All subsystems initialized successfully");
 
         // Log success
         storageManager.logMessage(LogLevel::INFO, Subsystem::SYSTEM, "All subsystems initialized successfully");
-    }
-
-    // Initialize sensor fusion
-    fusionSystem = new SensorFusionSystem(&baroManager, &imuManager, &storageManager);
-    if (!fusionSystem->begin()) {
-        Serial.println("ERROR: Failed to initialize sensor fusion system!");
-
-        // Log the error if storage is working
-        if (storageManager.isOperational()) {
-            storageManager.logMessage(LogLevel::ERROR, Subsystem::SENSORS, "Failed to initialize sensor fusion system");
-        }
     }
 
     // Initialize and setup state machine
@@ -406,8 +360,80 @@ void Core0Task(void *pvParameters) {
 
     // Signal that sensors are initialized
     sensorsInitialized = true;
+}
 
-    // Main task loop
+void setup() {
+    delay(1000);
+    // Initialize serial communication
+    Serial.begin(115200);
+
+    while (!Serial) {
+        delay(10); // Wait for serial port to connect
+    }
+
+    Serial.println("Initializing system...");
+
+    pinMode(LED_RED, OUTPUT);
+    pinMode(LED_BLUE, OUTPUT);
+
+    Wire1.setSDA(I2C1_SDA);
+    Wire1.setSCL(I2C1_SCL);
+    Wire1.begin();
+
+    // Initialize all systems
+    initializeAllSystems();
+
+//    mpl3115Sensor.begin();
+//    bmp388Sensor.begin();
+
+    // Initialize synchronization primitives
+    xSensorDataMutex = xSemaphoreCreateMutex();
+    xSDCardMutex = xSemaphoreCreateMutex();
+    xTelemetrySemaphore = xSemaphoreCreateBinary();
+
+    // Create tasks for both cores
+    // Core 0 (main core) - Critical tasks
+    xTaskCreateAffinitySet(
+            Core0Task,
+            "Core0Task",
+            CORE0_STACK_SIZE,
+            NULL,
+            CORE0_PRIORITY,
+            (1 << 0), // Run on core 0
+            NULL
+    );
+
+    // Core 1 - Non-critical tasks
+    xTaskCreateAffinitySet(
+            Core1Task,
+            "Core1Task",
+            CORE1_STACK_SIZE,
+            NULL,
+            CORE1_PRIORITY,
+            (1 << 1), // Run on core 1
+            NULL
+    );
+
+    // Start the scheduler - This will not return
+    vTaskStartScheduler();
+
+    // If we get here, something went wrong with FreeRTOS
+    Serial.println("ERROR: FreeRTOS scheduler failed to start!");
+    while (1) {
+        // Error loop
+        digitalWrite(LED_RED, !digitalRead(LED_RED));
+        delay(100);
+    }
+}
+
+void loop() {
+    //Ponemos el led rojo a parpadear
+//    digitalWrite(LED_RED, !digitalRead(LED_RED));
+//    delay(100);
+}
+
+// Core 0 main task - Handles critical flight operations
+void Core0Task(void *pvParameters) {
     while (1) {
         // Update sensor fusion
         fusionSystem->update();

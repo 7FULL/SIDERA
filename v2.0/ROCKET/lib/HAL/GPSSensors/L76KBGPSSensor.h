@@ -41,16 +41,15 @@ private:
     TinyGPSPlus gps;
     int8_t standbyPin;
     int8_t resetPin;
-    bool lowPowerMode = false;
+    bool lowPowerMode;
 
     GPSData gpsData;
-    unsigned long lastSerialActivity = 0;
+    bool gpsInitialized;
+    unsigned long lastDataTime;
 
-    static const unsigned long RESPONSE_TIMEOUT = 1000; // 1 second timeout for commands
-    static const unsigned long CONNECTION_TIMEOUT = 5000; // 5 seconds timeout for connection
-
-    void parseGPS(char c);
-    bool waitForResponse(const char* expectedResponse, unsigned long timeout = RESPONSE_TIMEOUT);
+    // Debug function
+    void displayDebugInfo();
+    String getHDOPDescription(float hdopValue) const;
 };
 
 #endif // L76KB_GPS_SENSOR_H

@@ -46,6 +46,8 @@ TestResult BarometricSensorTest::runTest() {
         return createResult(false, errorMsg, 1004, pressure, 1013.25f, 100.0f);
     }
 
+    Serial.println("---------------- Barometric sensor test passed ----------------");
+
     return createResult(true, "", 0, altitude);
 }
 
@@ -84,6 +86,7 @@ TestResult IMUSensorTest::runTest() {
     // Check if we have any operational sensors
     int operationalCount = manager->getOperationalSensorCount();
     if (operationalCount == 0) {
+        Serial.println("No operational IMU sensors");
         return createResult(false, "No operational IMU sensors", 2002);
     }
 
@@ -93,6 +96,9 @@ TestResult IMUSensorTest::runTest() {
     // Verify acceleration magnitude is close to 1g (9.8 m/s²) when stationary
     if (accelData.magnitude < 8.0f || accelData.magnitude > 11.0f) {
         char errorMsg[64];
+        Serial.println("Failure in accelerometer readings");
+        Serial.printf("Accel magnitude: %.2f m/s²\n", accelData.magnitude);
+        Serial.printf("Accel readings: x=%.2f, y=%.2f, z=%.2f\n", accelData.x, accelData.y, accelData.z);
         snprintf(errorMsg, sizeof(errorMsg), "Acceleration not near 1g: %.2f m/s²",
                  accelData.magnitude);
         return createResult(false, errorMsg, 2003, accelData.magnitude, 9.81f, 1.5f);
@@ -109,11 +115,16 @@ TestResult IMUSensorTest::runTest() {
 
         if (gyroMagnitude > 15.0f) {  // Allow some noise, but not too much
             char errorMsg[64];
+            Serial.println("Failure in gyro readings");
+            Serial.printf("Gyro magnitude: %.2f deg/s\n", gyroMagnitude);
+            Serial.printf("Gyro readings: x=%.2f, y=%.2f, z=%.2f\n", gyroData.x, gyroData.y, gyroData.z);
             snprintf(errorMsg, sizeof(errorMsg), "Gyro not near zero when stationary: %.2f deg/s",
                      gyroMagnitude);
             return createResult(false, errorMsg, 2004, gyroMagnitude, 0.0f, 15.0f);
         }
     }
+
+    Serial.println("---------------- IMU sensor test passed ----------------");
 
     return createResult(true);
 }
@@ -178,6 +189,8 @@ TestResult GPSSensorTest::runTest() {
         return createResult(false, "Invalid GPS coordinates", 3005);
     }
 
+    Serial.println("---------------- GPS sensor test passed ----------------");
+
     return createResult(true, "", 0, gpsData.satellites);
 }
 
@@ -231,6 +244,8 @@ TestResult LoRaCommunicationTest::runTest() {
     if (!sendResult) {
         return createResult(false, "Failed to send test message", 4003);
     }
+
+    Serial.println("---------------- LoRa communication test passed ----------------");
 
     return createResult(true);
 }
@@ -299,6 +314,8 @@ TestResult StorageTest::runTest() {
         return createResult(false, "Failed to flush storage buffers", 5006);
     }
 
+    Serial.println("---------------- Storage test passed ----------------");
+
     return createResult(true, "", 0, availableSpace);
 }
 
@@ -358,6 +375,8 @@ TestResult BatteryTest::runTest() {
                  static_cast<int>(state));
         return createResult(false, errorMsg, 6004, static_cast<int>(state), 0.0f, 0.0f);
     }
+
+    Serial.println("---------------- Battery test passed ----------------");
 
     return createResult(true, "", 0, voltage);
 }
@@ -425,6 +444,8 @@ TestResult SensorFusionTest::runTest() {
                  fusedData.verticalSpeed);
         return createResult(false, errorMsg, 7005, fusedData.verticalSpeed, 0.0f, 1.0f);
     }
+
+    Serial.println("---------------- Sensor fusion test passed ----------------");
 
     return createResult(true, "", 0, fusedData.confidence);
 }

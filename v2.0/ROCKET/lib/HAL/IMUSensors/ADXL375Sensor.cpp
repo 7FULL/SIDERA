@@ -36,6 +36,33 @@ SensorStatus ADXL375Sensor::begin() {
     // La ADXL375 tiene un rango fijo de ±200g
     accelRange = 200.0f;
 
+    // Make a couple of dummy reads to stabilize the sensor
+    const int stabilizationReadings = 5;
+    for (int i = 0; i < stabilizationReadings; i++) {
+        sensors_event_t event;
+        sensor.getEvent(&event);
+        // Dummy read to stabilize the sensor
+        accelData.x = event.acceleration.x;
+        accelData.y = event.acceleration.y;
+        accelData.z = event.acceleration.z;
+        accelData.magnitude = sqrt(
+                accelData.x * accelData.x +
+                accelData.y * accelData.y +
+                accelData.z * accelData.z
+        );
+
+        Serial.print("Stabilization read: ");
+        Serial.print("X: ");
+        Serial.print(accelData.x);
+        Serial.print(", Y: ");
+        Serial.print(accelData.y);
+        Serial.print(", Z: ");
+        Serial.print(accelData.z);
+        Serial.print(", Magnitude: ");
+        Serial.println(accelData.magnitude);
+        delay(100);
+    }
+
     status = SensorStatus::OK;
     return status;
 }
@@ -44,6 +71,8 @@ SensorStatus ADXL375Sensor::update() {
     if (status == SensorStatus::NOT_INITIALIZED) {
         return status;
     }
+
+    Serial.println("Updating ADXL375 sensor...");
 
     // Get acceleration event
     sensors_event_t event;

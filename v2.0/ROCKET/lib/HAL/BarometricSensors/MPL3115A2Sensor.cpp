@@ -28,13 +28,29 @@ MPL3115A2Sensor::~MPL3115A2Sensor() {
 }
 
 SensorStatus MPL3115A2Sensor::begin() {
-    // Comprueba conexión con el sensor
+    Serial.println("MPL3115A2: Starting initialization...");
+    Serial.print("MPL3115A2: Using I2C address 0x");
+    Serial.println(address, HEX);
+
+    // Check connection with the sensor
     if (!sensor.begin(&wire)) {
-        Serial.println("¡No se encontró el sensor MPL3115A2! Verifique las conexiones.");
+        Serial.println("MPL3115A2: Initialization failed!");
         status = SensorStatus::NOT_INITIALIZED;
         return status;
     }
 
+    //Make a couple of readings to stabilize the sensor
+    const int stabilizationReadings = 5;
+    for (int i = 0; i < stabilizationReadings; ++i) {
+        if (!sensor.getAltitude()) {
+            Serial.println("MPL3115A2: Failed to perform initial reading!");
+            status = SensorStatus::READING_ERROR;
+            return status;
+        }
+        delay(100); // Wait a bit between readings
+    }
+
+    Serial.println("MPL3115A2: Initialization successful!");
     status = SensorStatus::OK;
     return status;
 }
@@ -50,33 +66,20 @@ SensorStatus MPL3115A2Sensor::update() {
     sensor.setMode(MPL3115A2_BAROMETER); // Asegúrate de que está en modo barómetro
 
     // Lecturas de presión y temperatura
-    float pressure = sensor.getPressure();       // en Pascales (Pa)
-    float temperature = sensor.getTemperature(); // en °C
-
-    // Si está en modo barómetro, convertimos Pa a hPa
-    float pressure_hpa = pressure / 100.0;
-
-    Serial.print("Temperatura: ");
-    Serial.print(temperature);
-    Serial.print(" °C\t");
-    Serial.print("Presión: ");
-    Serial.print(pressure_hpa);
-    Serial.println(" hPa");
+    newPressure = sensor.getPressure();       // en Pascales (Pa)
+    newTemperature = sensor.getTemperature(); // en °C
 
     // Si quisieras leer altitud en modo altímetro:
     sensor.setMode(MPL3115A2_ALTIMETER);
 
-    float altitude = sensor.getAltitude(); // en metros
-    Serial.print("Altitud: ");
-    Serial.print(altitude);
-    Serial.println(" m");
+    newAltitude = sensor.getAltitude();
 
     // Update sensor data
     altitude = newAltitude - referenceAltitude;
     pressure = newPressure; // Already in Pa
     temperature = newTemperature;
 
-    Serial.print("Pressure: ");
+    Serial.print("MPL3115A2: Pressure: ");
     Serial.print(pressure);
     Serial.print(" Pa, Temperature: ");
     Serial.print(temperature);

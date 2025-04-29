@@ -5,7 +5,12 @@
 #include "L76KBGPSSensor.h"
 
 L76KBGPSSensor::L76KBGPSSensor(HardwareSerial& serial, int8_t standbyPin, int8_t resetPin)
-        : serial(serial), standbyPin(standbyPin), resetPin(resetPin) {
+        : serial(serial),
+          standbyPin(standbyPin),
+          resetPin(resetPin),
+          lowPowerMode(false),
+          gpsInitialized(false),
+          lastDataTime(0) {
 
     // Initialize GPS data
     gpsData = {0};
@@ -13,111 +18,120 @@ L76KBGPSSensor::L76KBGPSSensor(HardwareSerial& serial, int8_t standbyPin, int8_t
 }
 
 L76KBGPSSensor::~L76KBGPSSensor() {
-    // No need for special cleanup
+    // No special cleanup needed
 }
 
 SensorStatus L76KBGPSSensor::begin() {
-    Serial.println("Initializing L76KB GPS sensor...");
+    Serial.println("L76KB: Starting initialization...");
 
-    // Configure pins if provided
+    // Configure standby pin if provided
     if (standbyPin >= 0) {
-        Serial.print("Configuring standby pin: ");
+        Serial.print("L76KB: Configuring standby pin ");
         Serial.println(standbyPin);
         pinMode(standbyPin, OUTPUT);
-        digitalWrite(standbyPin, HIGH); // Active mode
+        digitalWrite(standbyPin, HIGH); // Set to active mode
     }
 
+    // Configure reset pin if provided
     if (resetPin >= 0) {
-        Serial.print("Configuring reset pin: ");
+        Serial.print("L76KB: Configuring reset pin ");
         Serial.println(resetPin);
         pinMode(resetPin, OUTPUT);
-        digitalWrite(resetPin, HIGH); // Normal operation
+        digitalWrite(resetPin, HIGH); // Set to normal operation
     }
 
-    // Initialize serial communication
-    Serial.println("Starting GPS serial communication at 9600 baud");
+    // Start GPS serial communication
+    Serial.println("L76KB: Starting serial communication at 9600 baud");
     serial.begin(9600);
 
-    // Wait for the serial connection to be established
-    delay(200);  // Increased delay
+    // Small delay to ensure serial is ready
+    delay(100);
 
-    // Reset module
+    // Reset module if reset pin is available
     if (resetPin >= 0) {
-        Serial.println("Resetting GPS module...");
+        Serial.println("L76KB: Performing reset sequence");
         digitalWrite(resetPin, LOW);
-        delay(200);
+        delay(100);
         digitalWrite(resetPin, HIGH);
         delay(500);
     }
 
-    // Skip PMTK251 command to avoid baud rate change issues
-    /*
-    // Send basic configuration commands
-    sendCommand("$PMTK251,38400*27\r\n"); // Set baud rate to 38400
-    delay(100);
-
-    // Reopen serial at the new baud rate
-    serial.end();
-    delay(100);
-    serial.begin(38400);
-    delay(100);
-    */
-
     // Configure update rate
-    Serial.println("Setting GPS update rate to 1Hz...");
-    setUpdateRate(1); // 1Hz update rate
+    Serial.println("L76KB: Setting update rate to 1Hz");
+    sendCommand("$PMTK220,1000*1F\r\n");
 
-    // Enable all NMEA sentences we need
-    Serial.println("Enabling NMEA sentences...");
+    // Enable all needed NMEA sentences
+    Serial.println("L76KB: Enabling NMEA sentences");
     sendCommand("$PMTK314,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0*28\r\n");
 
-    // Initial update to check if sensor is responsive
+    Serial.println("L76KB: Waiting for GPS fix...");
+
+    // Wait until we receive a valid GPS fix or timeout after 2 minutes
     unsigned long startTime = millis();
-    Serial.println("Waiting for initial GPS data...");
     bool receivedData = false;
+    unsigned long msToWait = 300000; // 5 minutos
 
-    while (millis() - startTime < CONNECTION_TIMEOUT) {
-        if (serial.available()) {
+    while ((millis() - startTime < msToWait) && !receivedData) {
+//        Serial.print("Seconds elapsed: ");
+//        Serial.print((millis() - startTime) / 1000);
+//        Serial.print(" / ");
+//        Serial.print(msToWait / 1000);
+//        Serial.println(" seconds");
+
+        while (serial.available() > 0) {
             char c = serial.read();
-            Serial.print(c);  // Echo GPS data for debugging
-            parseGPS(c);
-            lastSerialActivity = millis();
-            receivedData = true;
-        }
+            gps.encode(c);
+            lastDataTime = millis();
 
-        if (gps.charsProcessed() > 100) {
-            // We got some data, so likely the GPS is responding
-            Serial.println("\nGPS is responding");
-            status = SensorStatus::OK;
-            return status;
-        }
+//             Serial.print(c);
 
-        // Add a short delay to prevent busy-waiting
-        delay(5);
+            // Check if we have a valid location and a valid fix and a valid HDOP
+            if (
+                    gps.location.isValid()
+                    && gps.location.age() < 2000
+                    && gps.hdop.isValid()
+                    && gps.hdop.hdop() < 20
+                    && gps.satellites.isValid()
+                    && gps.satellites.value() >= 4
+                    && gps.altitude.isValid()
+                    && gps.speed.isValid()
+                    && gps.course.isValid()
+                    && gps.date.isValid()
+                    && gps.time.isValid()
+                    && hasPositionFix()
+                    ) {
+                receivedData = true;
+                displayDebugInfo();
+                break;
+            }
+        }
     }
 
-    if (!receivedData) {
-        Serial.println("No data received from GPS");
-    } else {
-        Serial.println("Received some data but not enough");
-    }
+    // Mark as initialized
+    gpsInitialized = true;
+    lastReadingTime = millis();
+    status = SensorStatus::OK;
 
-    // If we got here, the GPS didn't respond with enough data within the timeout
-    status = SensorStatus::INITIALIZATION_ERROR;
-    Serial.println("GPS initialization failed - timeout waiting for data");
+    Serial.println("L76KB: Initialization complete");
     return status;
 }
 
 SensorStatus L76KBGPSSensor::update() {
-    unsigned long startTime = millis();
-    bool newData = false;
+    if (!gpsInitialized) {
+        status = SensorStatus::NOT_INITIALIZED;
+        return status;
+    }
 
-    // Process all available data
-    while (serial.available() && millis() - startTime < 100) { // Read for up to 100ms
+    // Read data from GPS module
+    bool newData = false;
+    unsigned long startTime = millis();
+
+    // Read for up to 100ms or until buffer is empty
+    while (serial.available() > 0 && (millis() - startTime < 100)) {
         char c = serial.read();
-        parseGPS(c);
+        gps.encode(c);
         newData = true;
-        lastSerialActivity = millis();
+        lastDataTime = millis();
     }
 
     // Update GPS data if we have a valid position
@@ -127,6 +141,7 @@ SensorStatus L76KBGPSSensor::update() {
         gpsData.valid = true;
         gpsData.age = gps.location.age();
 
+        // Update all other data
         if (gps.altitude.isValid()) {
             gpsData.altitude = gps.altitude.meters();
         }
@@ -161,18 +176,25 @@ SensorStatus L76KBGPSSensor::update() {
     }
 
     // Check if we've lost communication with the GPS
-    if (millis() - lastSerialActivity > 5000) {
+    if (millis() - lastDataTime > 5000) {
         status = SensorStatus::COMMUNICATION_ERROR;
     } else {
         status = SensorStatus::OK;
         lastReadingTime = millis();
     }
 
+    // Display debug info periodically (every 5 seconds)
+    static unsigned long lastDebugTime = 0;
+    if (millis() - lastDebugTime > 5000) {
+        lastDebugTime = millis();
+        displayDebugInfo();
+    }
+
     return status;
 }
 
 bool L76KBGPSSensor::isOperational() {
-    return status == SensorStatus::OK && (millis() - lastSerialActivity < 5000);
+    return gpsInitialized && (status == SensorStatus::OK) && (millis() - lastDataTime < 5000);
 }
 
 SensorStatus L76KBGPSSensor::getStatus() const {
@@ -192,7 +214,7 @@ GPSData L76KBGPSSensor::getGPSData() {
 }
 
 bool L76KBGPSSensor::hasPositionFix() {
-    return gpsData.valid && gpsData.age < 2000; // Valid fix less than 2 seconds old
+    return gpsData.valid;
 }
 
 unsigned long L76KBGPSSensor::getFixAge() {
@@ -238,11 +260,6 @@ bool L76KBGPSSensor::reset() {
     digitalWrite(resetPin, HIGH);
     delay(500);
 
-    // Clear any existing data
-    while (serial.available()) {
-        serial.read();
-    }
-
     // Reconfigure the module
     setUpdateRate(1); // 1Hz update rate
     sendCommand("$PMTK314,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0*28\r\n");
@@ -252,6 +269,8 @@ bool L76KBGPSSensor::reset() {
 
 bool L76KBGPSSensor::sendCommand(const char* cmd) {
     serial.print(cmd);
+    Serial.print("L76KB: Sent command: ");
+    Serial.print(cmd);
     return true; // We can't easily verify if command was accepted
 }
 
@@ -270,27 +289,78 @@ bool L76KBGPSSensor::setUpdateRate(int rateHz) {
     }
 }
 
-void L76KBGPSSensor::parseGPS(char c) {
-    gps.encode(c);
+String L76KBGPSSensor::getHDOPDescription(float hdopValue) const {
+    if (hdopValue < 1.0) {
+        return "Ideal (Highest possible confidence level)";
+    } else if (hdopValue < 2.0) {
+        return "Excellent (Position measurements are considered accurate)";
+    } else if (hdopValue < 5.0) {
+        return "Good (Position measurements suitable for navigation)";
+    } else if (hdopValue < 10.0) {
+        return "Moderate (Position measurements can be used for calculations)";
+    } else if (hdopValue < 20.0) {
+        return "Fair (Low confidence level, measurements should be discarded)";
+    } else {
+        return "Poor (Very low confidence level, measurements unreliable)";
+    }
 }
 
-bool L76KBGPSSensor::waitForResponse(const char* expectedResponse, unsigned long timeout) {
-    unsigned long startTime = millis();
-    String response = "";
+void L76KBGPSSensor::displayDebugInfo() {
+    Serial.println("\n----- L76KB GPS Status -----");
 
-    while (millis() - startTime < timeout) {
-        if (serial.available()) {
-            char c = serial.read();
-            response += c;
+    Serial.print("Fix: ");
+    Serial.println(hasPositionFix() ? "Yes" : "No");
 
-            if (response.endsWith("\r\n")) {
-                if (response.indexOf(expectedResponse) >= 0) {
-                    return true;
-                }
-                response = ""; // Reset for next line
-            }
-        }
+    Serial.print("Satellites: ");
+    if (gps.satellites.isValid()) {
+        Serial.println(gps.satellites.value());
+    } else {
+        Serial.println("Not Available");
     }
 
-    return false; // Timeout
+    Serial.print("Location: ");
+    if (gps.location.isValid()) {
+        Serial.print("Lat: ");
+        Serial.print(gps.location.lat(), 6);
+        Serial.print(", Lng: ");
+        Serial.println(gps.location.lng(), 6);
+    } else {
+        Serial.println("Not Available");
+    }
+
+    Serial.print("Altitude: ");
+    if (gps.altitude.isValid()) {
+        Serial.print(gps.altitude.meters());
+        Serial.println(" m");
+    } else {
+        Serial.println("Not Available");
+    }
+
+    Serial.print("Speed: ");
+    if (gps.speed.isValid()) {
+        Serial.print(gps.speed.kmph());
+        Serial.println(" km/h");
+    } else {
+        Serial.println("Not Available");
+    }
+
+    if (gps.hdop.isValid()) {
+        Serial.print("HDOP: ");
+        Serial.println(gps.hdop.hdop(), 1);
+        Serial.print("Meaning: ");
+        Serial.println(getHDOPDescription(gps.hdop.hdop()));
+    } else {
+        Serial.println("HDOP: Not Available");
+    }
+
+    Serial.print("Characters processed: ");
+    Serial.println(gps.charsProcessed());
+
+    Serial.print("Sentences with fix: ");
+    Serial.println(gps.sentencesWithFix());
+
+    Serial.print("Failed checksum: ");
+    Serial.println(gps.failedChecksum());
+
+    Serial.println("----------------------------");
 }

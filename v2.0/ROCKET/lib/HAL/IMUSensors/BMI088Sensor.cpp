@@ -55,6 +55,23 @@ SensorStatus BMI088Sensor::begin() {
         gyro.setRange(Bmi088Gyro::RANGE_500DPS);
     }
 
+    // Make a couple of dummy reads to stabilize the sensor
+    const int stabilizationReadings = 5;
+    for (int i = 0; i < stabilizationReadings; i++) {
+        float ax, ay, az;
+        ax = accel.getAccelX_mss();
+        ay = accel.getAccelY_mss();
+        az = accel.getAccelZ_mss();
+
+        if (gyroInitialized) {
+            float gx, gy, gz;
+            gx = gyro.getGyroX_rads();
+            gy = gyro.getGyroY_rads();
+            gz = gyro.getGyroZ_rads();
+        }
+        delay(100);
+    }
+
     status = accelInitialized ? SensorStatus::OK : SensorStatus::INITIALIZATION_ERROR;
     return status;
 }

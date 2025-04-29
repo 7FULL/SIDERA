@@ -22,6 +22,8 @@ public:
     SensorStatus getStatus() const override;
     const char* getName() const override;
     unsigned long getLastReadingTime() const override;
+    bool sendCommand(const char* cmd);
+    bool setUpdateRate(int rateHz); // 1, 2, 5, or 10 Hz
 
     // Implement GPSSensor interface
     GPSData getGPSData() override;
@@ -32,25 +34,20 @@ public:
     bool disableLowPowerMode() override;
     bool reset() override;
 
-    // ATGM336H specific methods
-    bool sendCommand(const char* cmd);
-    bool setUpdateRate(int rateHz); // 1, 5, or 10 Hz
-
 private:
     HardwareSerial& serial;
     TinyGPSPlus gps;
     int8_t standbyPin;
     int8_t resetPin;
-    bool lowPowerMode = false;
+    bool lowPowerMode;
 
+    bool gpsInitialized;
     GPSData gpsData;
-    unsigned long lastSerialActivity = 0;
+    unsigned long lastDataTime;
 
-    static const unsigned long RESPONSE_TIMEOUT = 1000; // 1 second timeout for commands
-    static const unsigned long CONNECTION_TIMEOUT = 300000; // 5 seconds timeout for connection
-
-    void parseGPS(char c);
-    bool waitForResponse(const char* expectedResponse, unsigned long timeout = RESPONSE_TIMEOUT);
+    // Debug function
+    void displayDebugInfo();
+    String getHDOPDescription(float hdopValue) const;
 };
 
 #endif // ATGM336H_GPS_SENSOR_H

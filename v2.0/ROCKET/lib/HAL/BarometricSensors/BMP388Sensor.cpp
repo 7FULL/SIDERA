@@ -13,33 +13,38 @@ BMP388Sensor::~BMP388Sensor() {
 }
 
 SensorStatus BMP388Sensor::begin() {
-//    Serial.println("Initializing BMP388...");
-//    if (!sensor.begin_I2C(address, &wire)) {
-////        Serial.println("BMP388 initialization failed!");
-//        status = SensorStatus::INITIALIZATION_ERROR;
-//        return status;
-//    }
-//
-//    // Set up sensor with default settings
-//    sensor.setTemperatureOversampling(BMP3_OVERSAMPLING_8X);
-//    sensor.setPressureOversampling(BMP3_OVERSAMPLING_4X);
-//    sensor.setIIRFilterCoeff(BMP3_IIR_FILTER_COEFF_3);
-//    sensor.setOutputDataRate(BMP3_ODR_50_HZ);
+    Serial.println("BMP388: Starting initialization...");
+    Serial.print("BMP388: Using I2C address 0x");
+    Serial.println(address, HEX);
 
-    // BMP388 (0x76 ó 0x77)
+    // Try to initialize the sensor
     if (!sensor.begin_I2C(address, &wire)) {
-        Serial.println("¡No se encontró el sensor BMP388! Revisa conexiones y direcciones.");
-        while (1) delay(10);
+        Serial.println("BMP388: Initialization failed!");
+        status = SensorStatus::INITIALIZATION_ERROR;
+        return status;
     }
 
-    // Configuración del BMP388
+    Serial.println("BMP388: Setting up parameters...");
+
+    // Set up sensor with default settings
     sensor.setTemperatureOversampling(BMP3_OVERSAMPLING_8X);
     sensor.setPressureOversampling(BMP3_OVERSAMPLING_4X);
     sensor.setIIRFilterCoeff(BMP3_IIR_FILTER_COEFF_3);
     sensor.setOutputDataRate(BMP3_ODR_50_HZ);
 
+    //Make a couple of readings to stabilize the sensor
+    const int stabilizationReadings = 5;
+    for (int i = 0; i < stabilizationReadings; ++i) {
+        if (!sensor.performReading()) {
+            Serial.println("BMP388: Failed to perform initial reading!");
+            status = SensorStatus::READING_ERROR;
+            return status;
+        }
+        delay(100); // Wait a bit between readings
+    }
+
     status = SensorStatus::OK;
-    Serial.println("BMP388 initialized successfully!");
+    Serial.println("BMP388: Initialization successful!");
     return status;
 }
 
@@ -50,12 +55,22 @@ SensorStatus BMP388Sensor::update() {
 
     if (!sensor.performReading()) {
         status = SensorStatus::READING_ERROR;
+
+        Serial.println("BMP388: Failed to perform reading!");
         return status;
     }
 
     temperature = sensor.temperature;
     pressure = sensor.pressure / 100.0F; // Convert to hPa
     altitude = sensor.readAltitude(SEA_LEVEL_PRESSURE_HPA) - referenceAltitude;
+
+    Serial.print("BMP388: Pressure: ");
+    Serial.print(pressure);
+    Serial.print(" hPa, Temperature: ");
+    Serial.print(temperature);
+    Serial.print(" °C, Altitude: ");
+    Serial.print(altitude);
+    Serial.println(" m");
 
     lastReadingTime = millis();
     status = SensorStatus::OK;
