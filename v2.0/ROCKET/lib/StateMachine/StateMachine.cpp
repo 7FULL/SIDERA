@@ -94,6 +94,8 @@ bool StateMachine::processEvent(RocketEvent event) {
             // Log the state change
             logStateChange(oldState, currentState);
 
+            Serial.printf("State changed: %d -> %d\n", static_cast<int>(oldState), static_cast<int>(currentState));
+
             return true;
         }
     }

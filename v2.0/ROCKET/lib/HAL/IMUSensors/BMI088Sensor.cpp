@@ -121,6 +121,22 @@ SensorStatus BMI088Sensor::update() {
         gyroData.z = gz * RAD_TO_DEG;
     }
 
+    Serial.print("BMI088: ");
+    Serial.print("Accel - X: ");
+    Serial.print(accelData.x);
+    Serial.print(", Y: ");
+    Serial.print(accelData.y);
+    Serial.print(", Z: ");
+    Serial.print(accelData.z);
+    Serial.print(", Magnitude: ");
+    Serial.print(accelData.magnitude);
+    Serial.print(" | Gyro - X: ");
+    Serial.print(gyroData.x);
+    Serial.print(", Y: ");
+    Serial.print(gyroData.y);
+    Serial.print(", Z: ");
+    Serial.println(gyroData.z);
+
     lastReadingTime = millis();
     status = SensorStatus::OK;
     return status;

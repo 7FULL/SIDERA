@@ -73,7 +73,7 @@ SensorStatus ADXL375Sensor::update() {
         return status;
     }
 
-    Serial.println("Updating ADXL375 sensor...");
+//    Serial.println("Updating ADXL375 sensor...");
 
     // Get acceleration event
     sensors_event_t event;
@@ -88,6 +88,16 @@ SensorStatus ADXL375Sensor::update() {
             accelData.y * accelData.y +
             accelData.z * accelData.z
     );
+
+    Serial.print("ADXL375: ");
+    Serial.print("X: ");
+    Serial.print(accelData.x);
+    Serial.print(", Y: ");
+    Serial.print(accelData.y);
+    Serial.print(", Z: ");
+    Serial.print(accelData.z);
+    Serial.print(", Magnitude: ");
+    Serial.println(accelData.magnitude);
 
     lastReadingTime = millis();
     status = SensorStatus::OK;

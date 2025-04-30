@@ -19,7 +19,7 @@ SDStorage::~SDStorage() {
 
 SensorStatus SDStorage::begin() {
     // Initialize the SD card
-    if (!sd.begin(csPin, SD_SCK_MHZ(25))) {
+    if (!sd.begin(SdSpiConfig(csPin, SHARED_SPI, SD_SCK_MHZ(25), &spi))) {
         status = SensorStatus::INITIALIZATION_ERROR;
         return status;
     }

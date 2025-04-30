@@ -149,6 +149,8 @@ bool LoRaSystem::sendMessage(const Message& message) {
         storageManager->logMessage(LogLevel::DEBUG, Subsystem::COMMUNICATION, logMsg);
     }
 
+    Serial.printf("LoRa: Sent %d byte message, type %d\n", message.length, static_cast<int>(message.type));
+
     return result;
 }
 

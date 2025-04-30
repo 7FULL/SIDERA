@@ -56,6 +56,7 @@
 // Include State Machine
 #include "../lib/StateMachine/StateMachine.h"
 #include "../lib/StateMachine/StateHandlers.h"
+#include "SensorConfig.h"
 
 // Forward declarations of core tasks
 void Core0Task(void *pvParameters);
@@ -117,8 +118,6 @@ BMP388Sensor bmp388Sensor = BMP388Sensor(Wire1, BMP_ADDR);
 //Adafruit_BMP3XX bmp388 = Adafruit_BMP3XX();
 
 void initializeAllSystems(){
-    Serial.println("Core 0 task started");
-
     Serial.println("Adding barometric sensors...");
 
     baroManager.addSensor(&mpl3115Sensor);
@@ -130,7 +129,6 @@ void initializeAllSystems(){
     BMI088Sensor* bmi088 = new BMI088Sensor(Wire1, BMIO_GYR_ADDR, BMIO_ACCEL_ADDR);
     ADXL375Sensor* adxl375 = new ADXL375Sensor(Wire1, AXL_ADDR);
 
-    digitalWrite(LED_BLUE, HIGH);
     Serial.println("Adding IMU sensors...");
 
     imuManager.addSensor(bmi088);
@@ -229,13 +227,15 @@ void initializeAllSystems(){
 
     // Initialize LoRa
     loraSystem = new LoRaSystem(SPI1, LORA_CS, LORA_RST, LORA_DIO0, &storageManager);
+    loraSystem->setNodeId(ROCKET_ID);
+    loraSystem->setDestinationId(GROUND_STATION_ID);
 
     Serial.println("LoRaSystem initialized");
     Serial.println("Initializing storage systems...");
 
     // Initialize storage
-    flashStorage = new FlashStorage(SPI1, FLASH_CS);
-    sdStorage = new SDStorage(SPI, SD_CS);
+    flashStorage = new FlashStorage(SPI, FLASH_CS);
+    sdStorage = new SDStorage(SPI1, SD_CS);
 
     Serial.println("Adding storage systems...");
 
@@ -300,10 +300,10 @@ void initializeAllSystems(){
     Serial.println("Adding diagnostic tests...");
 
     diagnosticManager->addTest(new BarometricSensorTest(&baroManager));
-//    diagnosticManager->addTest(new IMUSensorTest(&imuManager));
+    diagnosticManager->addTest(new IMUSensorTest(&imuManager));
     diagnosticManager->addTest(new GPSSensorTest(&gpsManager));
     diagnosticManager->addTest(new LoRaCommunicationTest(loraSystem));
-//    diagnosticManager->addTest(new StorageTest(&storageManager));
+    diagnosticManager->addTest(new StorageTest(&storageManager));
     diagnosticManager->addTest(new BatteryTest(powerManager));
     diagnosticManager->addTest(new SensorFusionTest(fusionSystem));
     diagnosticManager->addTest(new TemperatureSensorTest(&temperatureManager));
@@ -317,6 +317,16 @@ void initializeAllSystems(){
     Serial.println("PreflightCheckSystem initialized");
 
     Serial.println("Running initial diagnostics...");
+
+    // Double beep to indicate diagnostics start
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(100);
+    digitalWrite(BUZZER_PIN, LOW);
+    delay(100);
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(100);
+    digitalWrite(BUZZER_PIN, LOW);
+
     std::vector<TestResult> initialResults = diagnosticManager->runAllTests();
 
     int passCount = 0;
@@ -368,45 +378,35 @@ void initializeAllSystems(){
 
     // Signal that sensors are initialized
     sensorsInitialized = true;
-}
 
-void setup() {
-    // Initialize serial communication
-    Serial.begin(115200);
+    //Long beep to indicate initialization complete
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(5000);
+    digitalWrite(BUZZER_PIN, LOW);
 
-    // Wait for serial port to connect or timeout of 10 seconds
-    while (!Serial && millis() < 10000) {
-        delay(10);
+    commandHandler = new CommandHandler(
+            loraSystem,
+            &storageManager,
+            &stateMachine,
+            powerManager,
+            diagnosticManager,
+            fusionSystem,
+            &baroManager,
+            &imuManager,
+            &gpsManager
+    );
+
+    if (!commandHandler->begin()) {
+        Serial.println("ERROR: Failed to initialize command handler!");
+
+        // Log the error if storage is working
+        if (storageManager.isOperational()) {
+            storageManager.logMessage(LogLevel::ERROR, Subsystem::COMMUNICATION,
+                                      "Failed to initialize command handler");
+        }
     }
 
-    Serial.println("Initializing system...");
-
-    pinMode(LED_RED, OUTPUT);
-    pinMode(LED_BLUE, OUTPUT);
-
-    Wire1.setSDA(I2C1_SDA);
-    Wire1.setSCL(I2C1_SCL);
-    Wire1.begin();
-
-    SPI1.setMISO(SPI1_MISO);
-    SPI1.setMOSI(SPI1_MOSI);
-    SPI1.setSCK(SPI1_SCK);
-    SPI1.begin();
-
-    pinMode(LORA_CS, OUTPUT);
-    digitalWrite(LORA_CS, HIGH);
-
-    Serial1.customSetPinsUart0();
-    Serial2.customSetPinsUart1();
-
-    Serial1.begin(9600);
-    Serial2.begin(9600);
-
-    // Initialize all systems
-    initializeAllSystems();
-
-//    mpl3115Sensor.begin();
-//    bmp388Sensor.begin();
+    Serial.println("Core 1: Command handler initialized");
 
     // Initialize synchronization primitives
     xSensorDataMutex = xSemaphoreCreateMutex();
@@ -438,6 +438,51 @@ void setup() {
 
     // Start the scheduler - This will not return
     vTaskStartScheduler();
+}
+
+void setup() {
+    // Initialize serial communication
+    Serial.begin(115200);
+
+    // Wait for serial port to connect or timeout of 10 seconds
+    while (!Serial && millis() < 10000) {
+        delay(10);
+    }
+
+    // Beep from the buzzer to indicate startup
+    pinMode(BUZZER_PIN, OUTPUT);
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(100); // Beep duration
+    digitalWrite(BUZZER_PIN, LOW);
+
+    Serial.println("Initializing system...");
+
+    pinMode(LED_RED, OUTPUT);
+    pinMode(LED_BLUE, OUTPUT);
+
+    Wire1.setSDA(I2C1_SDA);
+    Wire1.setSCL(I2C1_SCL);
+    Wire1.begin();
+
+    SPI1.setMISO(SPI1_MISO);
+    SPI1.setMOSI(SPI1_MOSI);
+    SPI1.setSCK(SPI1_SCK);
+    SPI1.begin();
+
+    pinMode(LORA_CS, OUTPUT);
+    digitalWrite(LORA_CS, HIGH);
+
+    Serial1.customSetPinsUart0();
+    Serial2.customSetPinsUart1();
+
+    Serial1.begin(9600);
+    Serial2.begin(9600);
+
+    // Initialize all systems
+    initializeAllSystems();
+
+//    mpl3115Sensor.begin();
+//    bmp388Sensor.begin();
 
     // If we get here, something went wrong with FreeRTOS
     Serial.println("ERROR: FreeRTOS scheduler failed to start!");
@@ -457,6 +502,8 @@ void loop() {
 // Core 0 main task - Handles critical flight operations
 void Core0Task(void *pvParameters) {
     Serial.println("Core 0 task started");
+
+//    digitalWrite(LED_RED, HIGH);
     while (1) {
         // Update sensor fusion
         fusionSystem->update();
@@ -529,6 +576,7 @@ void Core0Task(void *pvParameters) {
 void Core1Task(void *pvParameters) {
 
 //    return;
+//    digitalWrite(LED_BLUE, HIGH);
     Serial.println("Core 1 task started");
 
     // Wait for sensors to be initialized by Core 0
@@ -541,30 +589,6 @@ void Core1Task(void *pvParameters) {
     // Signal that secondary systems are initialized
     storageInitialized = true;
     communicationInitialized = true;
-
-    commandHandler = new CommandHandler(
-            loraSystem,
-            &storageManager,
-            &stateMachine,
-            powerManager,
-            diagnosticManager,
-            fusionSystem,
-            &baroManager,
-            &imuManager,
-            &gpsManager
-    );
-
-    if (!commandHandler->begin()) {
-        Serial.println("ERROR: Failed to initialize command handler!");
-
-        // Log the error if storage is working
-        if (storageManager.isOperational()) {
-            storageManager.logMessage(LogLevel::ERROR, Subsystem::COMMUNICATION,
-                                      "Failed to initialize command handler");
-        }
-    }
-
-    Serial.println("Core 1: Command handler initialized");
 
     // Main task loop
     while (1) {

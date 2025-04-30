@@ -59,6 +59,11 @@ SensorStatus DS18B20Sensor::update() {
     // Apply offset
     temperature = temp + temperatureOffset;
 
+    Serial.print("DS18B20: ");
+    Serial.print("Temperature: ");
+    Serial.print(temperature);
+    Serial.println(" °C");
+
     lastReadingTime = millis();
     status = SensorStatus::OK;
     return status;

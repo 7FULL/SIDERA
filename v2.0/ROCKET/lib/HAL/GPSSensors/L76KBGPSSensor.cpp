@@ -183,9 +183,9 @@ SensorStatus L76KBGPSSensor::update() {
         lastReadingTime = millis();
     }
 
-    // Display debug info periodically (every 5 seconds)
+    // Display debug info periodically (every 15 seconds)
     static unsigned long lastDebugTime = 0;
-    if (millis() - lastDebugTime > 5000) {
+    if (millis() - lastDebugTime > 15000) {
         lastDebugTime = millis();
         displayDebugInfo();
     }

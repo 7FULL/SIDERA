@@ -23,4 +23,7 @@
 #define GPS_BAUD_RATE 9600
 #define GPS_UPDATE_RATE 1  // Hz
 
+#define GROUND_STATION_ID 0x01
+#define ROCKET_ID 0x02
+
 #endif // SENSOR_CONFIG_H
