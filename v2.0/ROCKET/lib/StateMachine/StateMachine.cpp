@@ -174,7 +174,7 @@ void StateMachine::initializeTransitions() {
             {RocketState::APOGEE, RocketEvent::ERROR_DETECTED, RocketState::ERROR},
 
             // Recovery from error
-            {RocketState::ERROR, RocketEvent::RECOVERY_SUCCEEDED, RocketState::GROUND_IDLE},
+            {RocketState::ERROR, RocketEvent::RECOVERY_SUCCEEDED, RocketState::INIT},
 
             // Abort handling
             {RocketState::READY, RocketEvent::ABORT_COMMAND, RocketState::GROUND_IDLE},

@@ -201,8 +201,12 @@ void StateHandlers::handleInitState(
             // Move to ERROR state if critical tests failed
             stateMachine.processEvent(RocketEvent::ERROR_DETECTED);
 
+            Serial.println("Pre-flight checks failed!");
+
             if (storageManager) {
                 String report = preflightSystem->generatePreflightReport();
+
+                Serial.println(report);
                 // Log the report in chunks if necessary
                 // (limited by log message size)
                 int chunkSize = 60;
@@ -243,6 +247,8 @@ void StateHandlers::handleGroundIdleState(
         if (baroManager) baroManager->update();
         if (imuManager) imuManager->update();
         if (gpsManager) gpsManager->update();
+
+
     }
 
     // Periodically send telemetry

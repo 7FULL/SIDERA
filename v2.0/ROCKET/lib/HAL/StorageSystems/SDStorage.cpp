@@ -303,14 +303,28 @@ bool SDStorage::listFiles(const char* path, Stream& outputStream) {
 }
 
 bool SDStorage::initializeSession() {
-    // Create a new flight identifier
-    snprintf(flightIdentifier, sizeof(flightIdentifier), "F%lu", millis());
+    // Contar archivos en la carpeta de logs
+    int flightCount = 0;
+    FatFile dir, file;
 
-    // Create file paths
+    if (dir.open("/logs")) {
+        while (file.openNext(&dir, O_READ)) {
+            if (!file.isDir()) {
+                flightCount++;
+            }
+            file.close();
+        }
+        dir.close();
+    }
+
+    // Crear un nuevo identificador de vuelo basado en el número de vuelos
+    snprintf(flightIdentifier, sizeof(flightIdentifier), "F-%d", flightCount + 1);
+
+    // Crear rutas de archivo
     snprintf(currentLogPath, sizeof(currentLogPath), "/logs/%s.csv", flightIdentifier);
     snprintf(currentTelemetryPath, sizeof(currentTelemetryPath), "/telemetry/%s.dat", flightIdentifier);
 
-    // Open log files
+    // Abrir archivos de registro
     return openLogFiles();
 }
 

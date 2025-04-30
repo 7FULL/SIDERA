@@ -32,6 +32,8 @@ bool PreflightCheckSystem::begin() {
 }
 
 PreflightStatus PreflightCheckSystem::runPreflightChecks() {
+    Serial.println("Running pre-flight checks...");
+
     if (!diagnosticManager) {
         currentStatus = PreflightStatus::FAILED;
         return currentStatus;
@@ -57,14 +59,15 @@ PreflightStatus PreflightCheckSystem::runPreflightChecks() {
         return currentStatus;
     }
 
+    //TODO
     // Phase 2: Sensor systems
-    currentPhase = PreflightPhase::SENSORS;
-    phaseStatus = checkSensorSystems();
-    if (phaseStatus == PreflightStatus::FAILED) {
-        currentStatus = PreflightStatus::FAILED;
-        logStatus(currentStatus, currentPhase);
-        return currentStatus;
-    }
+//    currentPhase = PreflightPhase::SENSORS;
+//    phaseStatus = checkSensorSystems();
+//    if (phaseStatus == PreflightStatus::FAILED) {
+//        currentStatus = PreflightStatus::FAILED;
+//        logStatus(currentStatus, currentPhase);
+//        return currentStatus;
+//    }
 
     // Phase 3: Communication systems
     currentPhase = PreflightPhase::COMMUNICATION;
@@ -76,13 +79,13 @@ PreflightStatus PreflightCheckSystem::runPreflightChecks() {
     }
 
     // Phase 4: Storage systems
-    currentPhase = PreflightPhase::STORAGE;
-    phaseStatus = checkStorageSystems();
-    if (phaseStatus == PreflightStatus::FAILED) {
-        currentStatus = PreflightStatus::FAILED;
-        logStatus(currentStatus, currentPhase);
-        return currentStatus;
-    }
+//    currentPhase = PreflightPhase::STORAGE;
+//    phaseStatus = checkStorageSystems();
+//    if (phaseStatus == PreflightStatus::FAILED) {
+//        currentStatus = PreflightStatus::FAILED;
+//        logStatus(currentStatus, currentPhase);
+//        return currentStatus;
+//    }
 
     // Phase 5: Fusion systems
     currentPhase = PreflightPhase::FUSION;

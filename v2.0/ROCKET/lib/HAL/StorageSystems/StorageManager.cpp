@@ -41,6 +41,8 @@ bool StorageManager::begin() {
 bool StorageManager::logMessage(LogLevel level, Subsystem subsystem, const char* message) {
     bool success = true;
 
+    Serial.printf("Log [%d]: %s\n", static_cast<int>(level), message);
+
     // Always log to primary storage
     if (primaryStorage) {
         success = primaryStorage->logMessage(level, subsystem, message);
