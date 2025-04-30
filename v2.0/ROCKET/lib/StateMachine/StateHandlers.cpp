@@ -266,6 +266,8 @@ void StateHandlers::handleGroundIdleState(
                     powerManager,
                     static_cast<uint8_t>(RocketState::GROUND_IDLE)
             );
+        }else{
+            Serial.println("LoRa system not available, cannot send telemetry.");
         }
     }
 
@@ -295,6 +297,7 @@ void StateHandlers::sendTelemetryData(
         uint8_t rocketState
 ) {
     if (!loraSystem) {
+        Serial.println("LoRa system not available, cannot send telemetry.");
         return;
     }
 
@@ -391,7 +394,8 @@ void StateHandlers::sendTelemetryData(
     message.acknowledged = false;
 
     // Send the message
-    loraSystem->sendMessage(message);
+    bool result = loraSystem->sendMessage(message);
+    Serial.printf("LoRa send result: %s\n", result ? "SUCCESS" : "FAILURE");
 
     // Clean up
     delete[] message.data;

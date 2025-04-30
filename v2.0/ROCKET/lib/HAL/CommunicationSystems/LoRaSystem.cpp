@@ -137,7 +137,7 @@ bool LoRaSystem::sendMessage(const Message& message) {
     }
 
     // End and send packet
-    bool result = LoRa.endPacket();
+    bool result = LoRa.endPacket(true);
 
     // Return to receive mode
     LoRa.receive();
