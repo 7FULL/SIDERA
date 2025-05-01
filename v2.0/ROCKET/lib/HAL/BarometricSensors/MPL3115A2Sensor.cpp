@@ -79,6 +79,7 @@ SensorStatus MPL3115A2Sensor::update() {
     pressure = newPressure; // Already in Pa
     temperature = newTemperature;
 
+    #ifdef ENABLE_MPL3115A2_DEBUG
     Serial.print("MPL3115A2: Pressure: ");
     Serial.print(pressure);
     Serial.print(" Pa, Temperature: ");
@@ -86,6 +87,7 @@ SensorStatus MPL3115A2Sensor::update() {
     Serial.print(" °C, Altitude: ");
     Serial.print(altitude);
     Serial.println(" m");
+    #endif
 
     lastReadingTime = millis();
     status = SensorStatus::OK;

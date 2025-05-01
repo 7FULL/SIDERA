@@ -198,7 +198,10 @@ SensorStatus ATGM336HGPSSensor::update() {
     static unsigned long lastDebugTime = 0;
     if (millis() - lastDebugTime > 15000) {
         lastDebugTime = millis();
+
+        #ifdef ENABLE_ATGM336H_DEBUG
         displayDebugInfo();
+        #endif
     }
 
     return status;

@@ -39,7 +39,7 @@
 
 //=== COMMUNICATION PARAMETERS ===//
 // Telemetry rates by state (ms)
-#define GROUND_IDLE_TELEMETRY_RATE 2000     // 0.5Hz in idle - reduced to save power
+#define GROUND_IDLE_TELEMETRY_RATE 10000     // 0.5Hz in idle - reduced to save power
 #define READY_TELEMETRY_RATE 1000           // 1Hz when ready
 #define FLIGHT_TELEMETRY_RATE 200           // 5Hz during flight
 #define COAST_TELEMETRY_RATE 200            // 5Hz during coast

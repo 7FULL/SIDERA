@@ -8,7 +8,7 @@
 enum class CommandCode : uint8_t {
     PING = 0x01,
     GET_STATUS = 0x02,
-//    GET_TELEMETRY = 0x03,
+    GET_TELEMETRY = 0x03,
     ARM_ROCKET = 0x10,
     DISARM_ROCKET = 0x11,
     START_COUNTDOWN = 0x12,

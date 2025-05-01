@@ -187,7 +187,10 @@ SensorStatus L76KBGPSSensor::update() {
     static unsigned long lastDebugTime = 0;
     if (millis() - lastDebugTime > 15000) {
         lastDebugTime = millis();
+
+        #ifdef ENABLE_L76KB_DEBUG
         displayDebugInfo();
+        #endif
     }
 
     return status;

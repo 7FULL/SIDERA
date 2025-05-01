@@ -64,6 +64,7 @@ SensorStatus BMP388Sensor::update() {
     pressure = sensor.pressure / 100.0F; // Convert to hPa
     altitude = sensor.readAltitude(SEA_LEVEL_PRESSURE_HPA) - referenceAltitude;
 
+    #ifdef ENABLE_BMP388_DEBUG
     Serial.print("BMP388: Pressure: ");
     Serial.print(pressure);
     Serial.print(" hPa, Temperature: ");
@@ -71,6 +72,7 @@ SensorStatus BMP388Sensor::update() {
     Serial.print(" °C, Altitude: ");
     Serial.print(altitude);
     Serial.println(" m");
+    #endif
 
     lastReadingTime = millis();
     status = SensorStatus::OK;

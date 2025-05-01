@@ -86,6 +86,8 @@ SensorStatus LoRaSystem::begin() {
 }
 
 void LoRaSystem::onReceiveStatic(int packetSize) {
+
+    Serial.println("LoRa: Packet received!");
     if (instance) {
         instance->processPacket(packetSize);
     }
@@ -151,6 +153,12 @@ bool LoRaSystem::sendMessage(const Message& message) {
     }
 
     Serial.println("LoRa: Packet sent successfully");
+
+    // Añade un pequeño retraso para garantizar que la transmisión se complete
+    delay(10);
+
+    Serial.println("LoRa: Switching to receive mode...");
+    LoRa.receive();
 
     // Log sent message
     if (storageManager) {
@@ -287,6 +295,9 @@ void LoRaSystem::processPacket(int packetSize) {
     if (packetSize == 0 || status != SensorStatus::OK) {
         return;
     }
+
+    Serial.print("LoRa: Received packet of size: ");
+    Serial.println(packetSize);
 
     // Store RSSI and SNR
     lastRssi = LoRa.packetRssi();

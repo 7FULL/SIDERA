@@ -89,6 +89,7 @@ SensorStatus ADXL375Sensor::update() {
             accelData.z * accelData.z
     );
 
+    #ifdef ENABLE_ADXL375_DEBUG
     Serial.print("ADXL375: ");
     Serial.print("X: ");
     Serial.print(accelData.x);
@@ -98,6 +99,7 @@ SensorStatus ADXL375Sensor::update() {
     Serial.print(accelData.z);
     Serial.print(", Magnitude: ");
     Serial.println(accelData.magnitude);
+    #endif
 
     lastReadingTime = millis();
     status = SensorStatus::OK;

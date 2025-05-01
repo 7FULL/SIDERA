@@ -95,6 +95,14 @@
  * in the standard Arduino setup/loop structure.
  */
 
+//#define ENABLE_BMP388_DEBUG
+//#define ENABLE_MPL3115A2_DEBUG
+//#define ENABLE_ATGM336H_DEBUG
+//#define ENABLE_L76KB_DEBUG
+//#define ENABLE_ADXL375_DEBUG
+//#define ENABLE_BMIO88_DEBUG
+//#define ENABLE_DS18B20_DEBUG
+
 #include <Arduino.h>
 #include "Config.h"
 #include "PinDefinitions.h"
