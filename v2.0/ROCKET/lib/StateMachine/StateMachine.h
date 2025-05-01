@@ -8,6 +8,7 @@
 #define STATE_MACHINE_H
 
 #include "States.h"
+#include "SensorFusionSystem.h"
 #include <functional>
 #include <vector>
 #include <Arduino.h>
@@ -48,7 +49,8 @@ public:
             IMUSensorManager* imuManager,
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
-            StorageManager* storageManager
+            StorageManager* storageManager,
+            SensorFusionSystem* fusionSystem = nullptr
     );
 
     // Update the state machine (called in each loop iteration)
@@ -105,6 +107,7 @@ private:
     GPSSensorManager* gpsManager;
     LoRaSystem* loraSystem;
     StorageManager* storageManager;
+    SensorFusionSystem* fusionSystem;
 
     // Timekeeping
     unsigned long lastStateChangeTime;

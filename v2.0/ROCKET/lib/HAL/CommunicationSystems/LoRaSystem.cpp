@@ -65,6 +65,7 @@ SensorStatus LoRaSystem::begin() {
     }
 
     // Set parameters for better performance
+    LoRa.setFrequency(868E6); // Set frequency to 868 MHz (EU)
     LoRa.setSpreadingFactor(7);      // 7 is default
     LoRa.setSignalBandwidth(125E3);  // 125 kHz is typical
     LoRa.setCodingRate4(5);          // 4/5 coding rate
@@ -75,7 +76,7 @@ SensorStatus LoRaSystem::begin() {
     LoRa.onReceive(onReceiveStatic);
 
     // Start listening for packets
-    LoRa.receive();
+//    LoRa.receive();
 
     Serial.println("LoRa: Module initialized successfully!");
 
@@ -119,39 +120,47 @@ unsigned long LoRaSystem::getLastReadingTime() const {
 
 bool LoRaSystem::sendMessage(const Message& message) {
     if (status != SensorStatus::OK) {
+        Serial.println("LoRa: System not operational");
         return false;
     }
 
-    // Start LoRa packet
-    LoRa.beginPacket();
+    Serial.println("LoRa: Starting packet...");
+    if (!LoRa.beginPacket()) {
+        Serial.println("LoRa: Failed to start packet");
+        return false;
+    }
 
-    // Add header with destination and source IDs
+    Serial.println("LoRa: Writing header...");
     LoRa.write(destinationId);
     LoRa.write(nodeId);
     LoRa.write(packetCounter++);
     LoRa.write(static_cast<uint8_t>(message.type));
 
-    // Add message data if available
     if (message.data != nullptr && message.length > 0) {
+        Serial.printf("LoRa: Writing %d bytes of data...\n", message.length);
         LoRa.write(message.data, message.length);
+    } else {
+        Serial.println("LoRa: No data to send");
+        return false;
     }
 
-    // End and send packet
-    bool result = LoRa.endPacket(true);
+    Serial.println("LoRa: Ending packet...");
+    if (LoRa.endPacket(true) != 1) { // Check if the packet was sent successfully
+        Serial.println("LoRa: Failed to send packet");
+        return false;
+    }
 
-    // Return to receive mode
-    LoRa.receive();
+    Serial.println("LoRa: Packet sent successfully");
 
-    if (storageManager && result) {
+    // Log sent message
+    if (storageManager) {
         char logMsg[64];
-        snprintf(logMsg, sizeof(logMsg), "LoRa: Sent %d byte message, type %d",
-                 message.length, static_cast<int>(message.type));
+        snprintf(logMsg, sizeof(logMsg),
+                 "LoRa: Sent %d byte message to ID %d, type %d",
+                 message.length, destinationId, static_cast<uint8_t>(message.type));
         storageManager->logMessage(LogLevel::DEBUG, Subsystem::COMMUNICATION, logMsg);
     }
-
-    Serial.printf("LoRa: Sent %d byte message, type %d\n", message.length, static_cast<int>(message.type));
-
-    return result;
+    return true;
 }
 
 bool LoRaSystem::hasReceivedMessages() {

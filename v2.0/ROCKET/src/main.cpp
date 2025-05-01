@@ -1,3 +1,92 @@
+//#include <Arduino.h>
+//#include <SPI.h>
+//#include <LoRa.h>
+//#include "../lib/HAL/CommunicationSystems/LoRaSystem.h"
+//#include "PinDefinitions.h"
+//#include "CommunicationSystems/TelemetrySerializer.h"
+//
+//LoRaSystem* loraSystem;
+//
+//void setup() {
+//    // Initialize serial communication
+//    Serial.begin(115200);
+//    while (!Serial && millis() < 5000) {
+//        // Wait for serial port to connect (max 5 seconds)
+//        delay(10);
+//    }
+//
+//    Serial.println("LoRa Transmitter Test");
+//
+//    // Set up status LEDs
+//    pinMode(LED_BLUE, OUTPUT);
+//    pinMode(LED_RED, OUTPUT);
+//
+//    // Initialize SPI for LoRa
+//    SPI1.setRX(8);
+//    SPI1.setTX(11);
+//    SPI1.setSCK(10);
+//    SPI1.begin();
+//
+//    loraSystem = new LoRaSystem(SPI1, LORA_CS, LORA_RST, LORA_DIO0, nullptr);
+//    if (loraSystem->begin() != SensorStatus::OK) {
+//        Serial.println("LoRa initialization failed!");
+//        digitalWrite(LED_RED, HIGH);
+//        // Error loop with LED blinking
+//        while (1) {
+//            digitalWrite(LED_RED, !digitalRead(LED_RED));
+//            delay(200);
+//        }
+//    }
+//
+//    //Dummy packet for testing
+//    TelemetryPacket packet;
+//
+//    packet.timestamp = millis();
+//    packet.rocketState = 0;
+//    packet.altitude = 100.0f;
+//    packet.verticalSpeed = 10.0f;
+//    packet.acceleration = 0.5f;
+//    packet.temperature = 25.0f;
+//    packet.pressure = 101325.0f;
+//    packet.gpsSatellites = 5;
+//    packet.gpsLatitude = 37.7749f;
+//    packet.gpsLongitude = -122.4194f;
+//    packet.gpsAltitude = 10.0f;
+//    packet.sensorStatus = 0;
+//    packet.flags = 0;
+//    packet.batteryVoltage = 4.2f;
+//    packet.flags |= TelemetryPacket::FLAG_PARACHUTE_DEPLOYED;  // Example flag
+//
+//    // Now serialize and send the packet
+//    TelemetrySerializer serializer;
+//    std::vector<uint8_t> packetData = serializer.serialize(packet);
+//
+//    // Create LoRa message
+//    Message message;
+//    message.type = MessageType::TELEMETRY;
+//    message.priority = 100;  // Medium priority for telemetry
+//    message.timestamp = millis();
+//    message.length = packetData.size();
+//    message.data = new uint8_t[message.length];
+//    memcpy(message.data, packetData.data(), message.length);
+//    message.acknowledged = false;
+//
+//    Serial.printf("Sending telemetry packet of size %d bytes\n", message.length);
+//
+//    bool result = loraSystem->sendMessage(message);
+//    Serial.printf("LoRa send result: %s\n", result ? "SUCCESS" : "FAILURE");
+//
+//    // Clean up
+//    delete[] message.data;
+//
+//    // Indicate we're ready to transmit
+//    digitalWrite(LED_BLUE, HIGH);
+//    digitalWrite(LED_RED, LOW);
+//}
+//
+//void loop() {
+//}
+
 /**
  * Rocket Control System - RP2040 Version
  * Main entry point - Single-threaded implementation
@@ -179,8 +268,9 @@ void initializeAllSystems() {
     ATGM336HGPSSensor* atgm336h = new ATGM336HGPSSensor(Serial2, ATGM_STBY);
 
     Serial.println("Adding GPS sensors...");
-    gpsManager.addSensor(l76kb, 0);  // Priority 0 (primary)
-    gpsManager.addSensor(atgm336h, 1);  // Priority 1 (secondary)
+    //TODO
+//    gpsManager.addSensor(l76kb, 0);  // Priority 0 (primary)
+//    gpsManager.addSensor(atgm336h, 1);  // Priority 1 (secondary)
     Serial.println("GPS sensors added");
 
     Serial.println("Initializing LoRaSystem...");

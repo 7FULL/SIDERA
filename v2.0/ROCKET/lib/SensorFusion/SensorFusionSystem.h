@@ -14,6 +14,7 @@
 #include "../HAL/BarometricSensors/BarometricSensorManager.h"
 #include "../HAL/IMUSensors/IMUSensorManager.h"
 #include "../HAL/StorageSystems/StorageManager.h"
+#include "States.h"
 
 // Structure to hold all fused flight data
 struct FusedFlightData {
@@ -75,7 +76,11 @@ public:
     float getOrientationConfidence() const;
     float getOverallConfidence() const;
 
+    void setCurrentState(RocketState state);
+
 private:
+    RocketState currentState;
+
     // Subsystem references
     BarometricSensorManager* baroManager;
     IMUSensorManager* imuManager;

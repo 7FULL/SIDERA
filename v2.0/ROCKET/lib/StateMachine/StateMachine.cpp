@@ -32,7 +32,8 @@ void StateMachine::begin(
         IMUSensorManager* imuManager,
         GPSSensorManager* gpsManager,
         LoRaSystem* loraSystem,
-        StorageManager* storageManager
+        StorageManager* storageManager,
+        SensorFusionSystem* fusionSystem
 ) {
     // Store subsystem references
     this->barometricManager = baroManager;
@@ -40,6 +41,7 @@ void StateMachine::begin(
     this->gpsManager = gpsManager;
     this->loraSystem = loraSystem;
     this->storageManager = storageManager;
+    this->fusionSystem = fusionSystem;
 
     // Initialize state transition table
     initializeTransitions();
@@ -90,6 +92,8 @@ bool StateMachine::processEvent(RocketEvent event) {
         if (transition.fromState == currentState && transition.event == event) {
             RocketState oldState = currentState;
             changeState(transition.toState);
+
+            fusionSystem->setCurrentState(currentState);
 
             // Log the state change
             logStateChange(oldState, currentState);

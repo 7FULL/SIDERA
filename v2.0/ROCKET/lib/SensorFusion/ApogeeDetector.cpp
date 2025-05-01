@@ -38,6 +38,8 @@ bool ApogeeDetector::begin() {
 
     lastUpdateTime = millis();
 
+    setMinimumAltitude(50.0f);
+
     return true;
 }
 

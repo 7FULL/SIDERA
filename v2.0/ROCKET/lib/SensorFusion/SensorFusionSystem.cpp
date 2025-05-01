@@ -210,6 +210,10 @@ float SensorFusionSystem::getOverallConfidence() const {
     return fusedData.confidence;
 }
 
+void SensorFusionSystem::setCurrentState(RocketState state) {
+    currentState = state;
+}
+
 void SensorFusionSystem::updateAltitudeEstimation() {
     if (!baroManager || !altitudeFilter) {
         return;
@@ -252,7 +256,10 @@ void SensorFusionSystem::detectFlightEvents() {
     }
 
     // Update apogee detector
-    apogeeDetector->update();
+    if (currentState == RocketState::COASTING ||
+        currentState == RocketState::POWERED_FLIGHT) {
+        apogeeDetector->update();
+    }
 }
 
 void SensorFusionSystem::calculateConfidence() {

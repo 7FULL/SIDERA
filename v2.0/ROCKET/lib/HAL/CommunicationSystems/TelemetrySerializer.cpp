@@ -6,7 +6,7 @@
 
 std::vector<uint8_t> TelemetrySerializer::serialize(const TelemetryPacket& packet) {
     std::vector<uint8_t> buffer;
-    buffer.reserve(50); // Approximate size needed
+    buffer.reserve(sizeof(TelemetryPacket));
 
     // Write all fields to the buffer
     writeUint32(buffer, packet.timestamp);

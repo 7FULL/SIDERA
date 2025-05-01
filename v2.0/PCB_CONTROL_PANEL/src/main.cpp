@@ -248,6 +248,11 @@ void initLoRa() {
     LoRa.setTxPower(LORA_TX_POWER);
     LoRa.enableCrc();
 
+    LoRa.onReceive(processLoRaPacket);
+
+    // Start listening for packets
+    LoRa.receive();
+
     Serial.println("SUCCESS!");
 }
 
@@ -611,6 +616,9 @@ bool parseInt(int& value) {
 }
 
 void processLoRaPacket(int packetSize) {
+//    Serial.print("Received packet of size: ");
+//    Serial.println(packetSize);
+
     // Capture RSSI and SNR
     lastRssi = LoRa.packetRssi();
     lastSnr = LoRa.packetSnr();
@@ -628,199 +636,204 @@ void processLoRaPacket(int packetSize) {
         return; // Not for us
     }
 
+//    Serial.print("Source: ");
+//    Serial.print(source);
+
     // Update connection status
     rocketConnectionActive = true;
 
     digitalWrite(LED_BLUE, HIGH); // Flash blue LED for received packet
 
     // Handle different response types
-    switch (static_cast<ResponseCode>(type)) {
-        case ResponseCode::ACK:
-            Serial.println("Received ACK");
-            if (packetSize > 4) {
-                // ACK with timestamp (ping response)
-                uint32_t timestamp = 0;
-                for (int i = 0; i < 4 && LoRa.available(); i++) {
-                    timestamp = (timestamp << 8) | LoRa.read();
-                }
-                // Calculate round-trip time
-                unsigned long rtt = millis() - lastPingTime;
-                Serial.print("Ping RTT: ");
-                Serial.print(rtt);
-                Serial.println(" ms");
-                lastPingResponseTime = millis();
-            }
-            break;
+    if (type == 0x00 || type == static_cast<uint8_t>(ResponseCode::TELEMETRY_DATA)) {
+        // Parse telemetry packet - Handle both the MessageType::TELEMETRY (0x00)
+        // and ResponseCode::TELEMETRY_DATA (0x10)
+//        Serial.println("Received telemetry data");
 
-        case ResponseCode::NACK:
-            Serial.println("Received NACK - Command failed");
-            break;
+        if (packetSize >= 30) { // Min size for valid telemetry packet
+            // Simple parsing
+            lastTelemetry.timestamp = readUint32();
+            lastTelemetry.rocketState = LoRa.read();
+            lastTelemetry.altitude = readFloat();
+            lastTelemetry.verticalSpeed = readFloat();
+            lastTelemetry.acceleration = readFloat();
+            lastTelemetry.temperature = readFloat();
+            lastTelemetry.pressure = readFloat();
+            lastTelemetry.batteryVoltage = readFloat();
+            lastTelemetry.gpsSatellites = LoRa.read();
+            lastTelemetry.gpsLatitude = readFloat();
+            lastTelemetry.gpsLongitude = readFloat();
+            lastTelemetry.gpsAltitude = readFloat();
+            lastTelemetry.sensorStatus = LoRa.read();
+            lastTelemetry.flags = LoRa.read();
 
-        case ResponseCode::TELEMETRY_DATA:
-            // Parse telemetry packet
-            if (packetSize >= 30) { // Min size for valid telemetry packet
-                // Simple parsing
-                lastTelemetry.timestamp = readUint32();
-                lastTelemetry.rocketState = LoRa.read();
-                lastTelemetry.altitude = readFloat();
-                lastTelemetry.verticalSpeed = readFloat();
-                lastTelemetry.acceleration = readFloat();
-                lastTelemetry.temperature = readFloat();
-                lastTelemetry.pressure = readFloat();
-                lastTelemetry.batteryVoltage = readFloat();
-                lastTelemetry.gpsSatellites = LoRa.read();
-                lastTelemetry.gpsLatitude = readFloat();
-                lastTelemetry.gpsLongitude = readFloat();
-                lastTelemetry.gpsAltitude = readFloat();
-                lastTelemetry.sensorStatus = LoRa.read();
-                lastTelemetry.flags = LoRa.read();
+            lastTelemetryTime = millis();
 
-                lastTelemetryTime = millis();
-
-                // Print and log the telemetry
-                printTelemetry();
-                logTelemetry();
-            }
-            break;
-
-        case ResponseCode::STATUS_DATA:
-            if (packetSize >= 14) {
-                rocketStatus = LoRa.read(); // Status code
-
-                // Parse battery info
-                uint16_t batteryVoltage = (LoRa.read() << 8) | LoRa.read();
-                uint8_t batteryPercentage = LoRa.read();
-
-                // Parse uptime
-                uint32_t uptime = 0;
-                for (int i = 0; i < 4; i++) {
-                    uptime = (uptime << 8) | LoRa.read();
-                }
-
-                // Parse storage
-                uint32_t freeSpace = 0;
-                for (int i = 0; i < 4; i++) {
-                    freeSpace = (freeSpace << 8) | LoRa.read();
-                }
-
-                // Parse GPS fix and other flags
-                bool gpsFix = LoRa.read() > 0;
-                uint8_t sensorFlags = LoRa.read();
-
-                // Display the status
-                Serial.println("\n----- Rocket Status -----");
-                Serial.print("State: ");
-                printRocketState(rocketStatus);
-                Serial.print("Battery: ");
-                Serial.print(batteryVoltage / 100.0f, 2);
-                Serial.print("V (");
-                Serial.print(batteryPercentage);
-                Serial.println("%)");
-                Serial.print("Uptime: ");
-                printFormattedTime(uptime);
-                Serial.print("Free Space: ");
-                Serial.print(freeSpace / 1024);
-                Serial.println("KB");
-                Serial.print("GPS Fix: ");
-                Serial.println(gpsFix ? "YES" : "NO");
-                Serial.print("Sensor Status: 0x");
-                Serial.println(sensorFlags, HEX);
-                Serial.print("Signal: RSSI ");
-                Serial.print(lastRssi);
-                Serial.print("dBm, SNR ");
-                Serial.print(lastSnr, 1);
-                Serial.println("dB");
-                Serial.println("------------------------");
-            }
-            break;
-
-        case ResponseCode::DIAGNOSTIC_RESULT:
-            if (packetSize > 5) {
-                uint8_t testCount = LoRa.read();
-                Serial.println("\n----- Diagnostic Results -----");
-                Serial.print("Tests run: ");
-                Serial.println(testCount);
-
-                for (int i = 0; i < testCount && LoRa.available(); i++) {
-                    bool passed = LoRa.read() > 0;
-                    uint8_t nameLength = LoRa.read();
-
-                    String testName = "";
-                    for (int j = 0; j < nameLength && LoRa.available(); j++) {
-                        testName += (char)LoRa.read();
-                    }
-
-                    Serial.print(i+1);
-                    Serial.print(". ");
-                    Serial.print(testName);
-                    Serial.print(": ");
-                    Serial.println(passed ? "PASS" : "FAIL");
-
-                    if (!passed) {
-                        // Read error message
-                        uint8_t errorLength = LoRa.read();
-                        String errorMsg = "";
-                        for (int j = 0; j < errorLength && LoRa.available(); j++) {
-                            errorMsg += (char)LoRa.read();
-                        }
-                        Serial.print("   Error: ");
-                        Serial.println(errorMsg);
-                    }
-                }
-                Serial.println("-----------------------------");
-            }
-            break;
-
-        case ResponseCode::EVENT_NOTIFICATION:
-            if (packetSize > 5) {
-                uint8_t eventCode = LoRa.read();
-
-                String eventDescription = "";
-                while (LoRa.available()) {
-                    eventDescription += (char)LoRa.read();
-                }
-
-                Serial.println("\n!!! EVENT NOTIFICATION !!!");
-                Serial.print("Event Code: 0x");
-                Serial.println(eventCode, HEX);
-                Serial.print("Description: ");
-                Serial.println(eventDescription);
-                Serial.println("!!!!!!!!!!!!!!!!!!!!!!!!!");
-            }
-            break;
-
-        case ResponseCode::ERROR_MESSAGE:
-        {
-            String errorMsg = "";
-            while (LoRa.available()) {
-                errorMsg += (char)LoRa.read();
-            }
-
-            Serial.println("\n!!! ERROR MESSAGE !!!");
-            Serial.println(errorMsg);
-            Serial.println("!!!!!!!!!!!!!!!!!!!!");
+            // Print and log the telemetry
+            printTelemetry();
+            logTelemetry();
         }
-            break;
-
-        case ResponseCode::PARAMETER_VALUE:
-            if (packetSize > 7) {
-                uint8_t paramId = LoRa.read();
-                uint16_t paramValue = (LoRa.read() << 8) | LoRa.read();
-
-                Serial.println("\n----- Parameter Value -----");
-                Serial.print("Parameter ID: ");
-                Serial.println(paramId);
-                Serial.print("Value: ");
-                Serial.println(paramValue);
-                Serial.println("--------------------------");
-            }
-            break;
-
-        default:
-            Serial.print("Unknown packet type: 0x");
-            Serial.println(type, HEX);
-            break;
     }
+    else switch (static_cast<ResponseCode>(type)) {
+            case ResponseCode::ACK:
+                Serial.println("Received ACK");
+                if (packetSize > 4) {
+                    // ACK with timestamp (ping response)
+                    uint32_t timestamp = 0;
+                    for (int i = 0; i < 4 && LoRa.available(); i++) {
+                        timestamp = (timestamp << 8) | LoRa.read();
+                    }
+                    // Calculate round-trip time
+                    unsigned long rtt = millis() - lastPingTime;
+                    Serial.print("Ping RTT: ");
+                    Serial.print(rtt);
+                    Serial.println(" ms");
+                    lastPingResponseTime = millis();
+                }
+                break;
+
+            case ResponseCode::NACK:
+                Serial.println("Received NACK - Command failed");
+                break;
+
+            case ResponseCode::STATUS_DATA:
+                if (packetSize >= 14) {
+                    rocketStatus = LoRa.read(); // Status code
+
+                    // Parse battery info
+                    uint16_t batteryVoltage = (LoRa.read() << 8) | LoRa.read();
+                    uint8_t batteryPercentage = LoRa.read();
+
+                    // Parse uptime
+                    uint32_t uptime = 0;
+                    for (int i = 0; i < 4; i++) {
+                        uptime = (uptime << 8) | LoRa.read();
+                    }
+
+                    // Parse storage
+                    uint32_t freeSpace = 0;
+                    for (int i = 0; i < 4; i++) {
+                        freeSpace = (freeSpace << 8) | LoRa.read();
+                    }
+
+                    // Parse GPS fix and other flags
+                    bool gpsFix = LoRa.read() > 0;
+                    uint8_t sensorFlags = LoRa.read();
+
+                    // Display the status
+                    Serial.println("\n----- Rocket Status -----");
+                    Serial.print("State: ");
+                    printRocketState(rocketStatus);
+                    Serial.print("Battery: ");
+                    Serial.print(batteryVoltage / 100.0f, 2);
+                    Serial.print("V (");
+                    Serial.print(batteryPercentage);
+                    Serial.println("%)");
+                    Serial.print("Uptime: ");
+                    printFormattedTime(uptime);
+                    Serial.print("Free Space: ");
+                    Serial.print(freeSpace / 1024);
+                    Serial.println("KB");
+                    Serial.print("GPS Fix: ");
+                    Serial.println(gpsFix ? "YES" : "NO");
+                    Serial.print("Sensor Status: 0x");
+                    Serial.println(sensorFlags, HEX);
+                    Serial.print("Signal: RSSI ");
+                    Serial.print(lastRssi);
+                    Serial.print("dBm, SNR ");
+                    Serial.print(lastSnr, 1);
+                    Serial.println("dB");
+                    Serial.println("------------------------");
+                }
+                break;
+
+            case ResponseCode::DIAGNOSTIC_RESULT:
+                if (packetSize > 5) {
+                    uint8_t testCount = LoRa.read();
+                    Serial.println("\n----- Diagnostic Results -----");
+                    Serial.print("Tests run: ");
+                    Serial.println(testCount);
+
+                    for (int i = 0; i < testCount && LoRa.available(); i++) {
+                        bool passed = LoRa.read() > 0;
+                        uint8_t nameLength = LoRa.read();
+
+                        String testName = "";
+                        for (int j = 0; j < nameLength && LoRa.available(); j++) {
+                            testName += (char)LoRa.read();
+                        }
+
+                        Serial.print(i+1);
+                        Serial.print(". ");
+                        Serial.print(testName);
+                        Serial.print(": ");
+                        Serial.println(passed ? "PASS" : "FAIL");
+
+                        if (!passed) {
+                            // Read error message
+                            uint8_t errorLength = LoRa.read();
+                            String errorMsg = "";
+                            for (int j = 0; j < errorLength && LoRa.available(); j++) {
+                                errorMsg += (char)LoRa.read();
+                            }
+                            Serial.print("   Error: ");
+                            Serial.println(errorMsg);
+                        }
+                    }
+                    Serial.println("-----------------------------");
+                }
+                break;
+
+            case ResponseCode::EVENT_NOTIFICATION:
+                if (packetSize > 5) {
+                    uint8_t eventCode = LoRa.read();
+
+                    String eventDescription = "";
+                    while (LoRa.available()) {
+                        eventDescription += (char)LoRa.read();
+                    }
+
+                    Serial.println("\n!!! EVENT NOTIFICATION !!!");
+                    Serial.print("Event Code: 0x");
+                    Serial.println(eventCode, HEX);
+                    Serial.print("Description: ");
+                    Serial.println(eventDescription);
+                    Serial.println("!!!!!!!!!!!!!!!!!!!!!!!!!");
+                }
+                break;
+
+            case ResponseCode::ERROR_MESSAGE:
+            {
+                String errorMsg = "";
+                while (LoRa.available()) {
+                    errorMsg += (char)LoRa.read();
+                }
+
+                Serial.println("\n!!! ERROR MESSAGE !!!");
+                Serial.println(errorMsg);
+                Serial.println("!!!!!!!!!!!!!!!!!!!!");
+            }
+                break;
+
+            case ResponseCode::PARAMETER_VALUE:
+                if (packetSize > 7) {
+                    uint8_t paramId = LoRa.read();
+                    uint16_t paramValue = (LoRa.read() << 8) | LoRa.read();
+
+                    Serial.println("\n----- Parameter Value -----");
+                    Serial.print("Parameter ID: ");
+                    Serial.println(paramId);
+                    Serial.print("Value: ");
+                    Serial.println(paramValue);
+                    Serial.println("--------------------------");
+                }
+                break;
+
+            default:
+                Serial.print("Unknown packet type: 0x");
+                Serial.println(type, HEX);
+                break;
+        }
 
     // Read any remaining bytes
     while (LoRa.available()) {
