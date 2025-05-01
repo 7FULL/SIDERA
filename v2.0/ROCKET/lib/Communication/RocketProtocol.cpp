@@ -95,12 +95,14 @@ std::vector<uint8_t> RocketProtocol::createResponsePacket(ResponseCode code,
 bool RocketProtocol::parsePacket(const uint8_t* data, uint16_t length, ProtocolPacket& packet) {
     // Check minimum packet size (header + version + type + sequence + length + checksum = 10 bytes)
     if (length < 10) {
+        Serial.println("Packet too short");
         return false;
     }
 
     // Check magic header
     uint16_t header = (data[0] << 8) | data[1];
     if (header != ProtocolPacket::HEADER_MAGIC) {
+        Serial.println("Invalid packet header");
         return false;
     }
 
@@ -113,6 +115,7 @@ bool RocketProtocol::parsePacket(const uint8_t* data, uint16_t length, ProtocolP
 
     // Validate total packet length
     if (length != 8 + packet.length + 2) {  // Header + payload + checksum
+        Serial.println("Invalid packet length");
         return false;
     }
 

@@ -137,7 +137,6 @@
 
 #include "../lib/HAL/CommunicationSystems/LoRaSystem.h"
 #include "../lib/HAL/CommunicationSystems/TelemetrySerializer.h"
-#include "../lib/HAL/CommunicationSystems/CommandSerializer.h"
 
 #include "../lib/HAL/StorageSystems/StorageManager.h"
 #include "../lib/HAL/StorageSystems/FlashStorage.h"

@@ -293,12 +293,9 @@ bool LoRaSystem::disableCrc() {
 
 void LoRaSystem::processPacket(int packetSize) {
     if (packetSize == 0 || status != SensorStatus::OK) {
+        Serial.println("LoRa: Invalid packet or system not operational");
         return;
     }
-
-    Serial.print("LoRa: Received packet of size: ");
-    Serial.println(packetSize);
-
     // Store RSSI and SNR
     lastRssi = LoRa.packetRssi();
     lastSnr = LoRa.packetSnr();
@@ -311,6 +308,7 @@ void LoRaSystem::processPacket(int packetSize) {
 
     // Check if this packet is for us
     if (destination != nodeId && destination != 0) {
+        Serial.println("LoRa: Packet not addressed to us, ignoring");
         return; // Not for us
     }
 
@@ -323,17 +321,27 @@ void LoRaSystem::processPacket(int packetSize) {
     // Read payload data (remaining bytes)
     message.length = packetSize - 4; // Subtract header size
 
+    Serial.print("LoRa: Payload length: ");
+    Serial.println(message.length);
+
     if (message.length > 0) {
         message.data = new uint8_t[message.length];
+        Serial.print("LoRa: Payload data: ");
         for (int i = 0; i < message.length && LoRa.available(); i++) {
             message.data[i] = LoRa.read();
+            Serial.print(message.data[i], HEX);
+            Serial.print(" ");
         }
+        Serial.println();
     } else {
         message.data = nullptr;
+        Serial.println("LoRa: No payload data");
     }
 
     // Add to received messages queue
     receivedMessages.push(message);
+    Serial.print("LoRa: Message added to queue, queue size now: ");
+    Serial.println(receivedMessages.size());
 
     // Log received message
     if (storageManager) {
@@ -343,4 +351,6 @@ void LoRaSystem::processPacket(int packetSize) {
                  message.length, source, type, lastRssi);
         storageManager->logMessage(LogLevel::DEBUG, Subsystem::COMMUNICATION, logMsg);
     }
+
+    Serial.println("LoRa: Packet processing complete");
 }

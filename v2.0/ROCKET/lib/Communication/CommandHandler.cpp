@@ -46,10 +46,13 @@ void CommandHandler::update() {
         Message message;
         while (loraSystem->getNextMessage(message)) {
             // Try to parse as protocol packet
+            Serial.printf("Received message of type %d, length %d\n", message.type, message.length);
             ProtocolPacket packet;
             if (RocketProtocol::parsePacket(message.data, message.length, packet)) {
                 // Handle command based on type
                 bool success = false;
+
+                Serial.printf("Handling command of type %d\n", packet.type);
 
                 switch (static_cast<CommandCode>(packet.type)) {
                     case CommandCode::PING:
@@ -112,6 +115,7 @@ void CommandHandler::update() {
                     delete[] packet.payload;
                 }
             } else {
+                Serial.println("Invalid packet received");
                 // Invalid or corrupt packet
                 if (storageManager) {
                     storageManager->logMessage(LogLevel::WARNING, Subsystem::COMMUNICATION,
@@ -364,13 +368,22 @@ bool CommandHandler::handleDisarmCommand(const ProtocolPacket& packet) {
 }
 
 bool CommandHandler::handleStartCountdownCommand(const ProtocolPacket& packet) {
+    Serial.println("DEBUG: Processing START_COUNTDOWN command");
+
     if (!stateMachine) {
+        Serial.println("DEBUG: State machine is NULL!");
         return sendResponse(ResponseCode::NACK, nullptr, 0, packet.sequenceNumber);
     }
 
+    // Check current state
+    RocketState currentState = stateMachine->getCurrentState();
+    Serial.print("DEBUG: Current state is: ");
+    Serial.println(static_cast<int>(currentState));
+
     // Check if in appropriate state
-    if (stateMachine->getCurrentState() != RocketState::READY) {
+    if (currentState != RocketState::READY) {
         // Can only start countdown in READY state
+        Serial.println("DEBUG: Countdown command rejected - not in READY state");
         if (storageManager) {
             storageManager->logMessage(LogLevel::WARNING, Subsystem::COMMUNICATION,
                                        "Countdown command rejected - not in READY state");
@@ -379,13 +392,17 @@ bool CommandHandler::handleStartCountdownCommand(const ProtocolPacket& packet) {
     }
 
     // Process LAUNCH event
-    stateMachine->processEvent(RocketEvent::LAUNCH_COMMAND);
+    Serial.println("DEBUG: Sending LAUNCH_COMMAND event to state machine");
+    bool result = stateMachine->processEvent(RocketEvent::LAUNCH_COMMAND);
+    Serial.print("DEBUG: Event processing result: ");
+    Serial.println(result ? "SUCCESS" : "FAILED");
 
     if (storageManager) {
         storageManager->logMessage(LogLevel::INFO, Subsystem::COMMUNICATION,
                                    "Countdown started via command");
     }
 
+    Serial.println("DEBUG: Sending ACK response");
     return sendResponse(ResponseCode::ACK, nullptr, 0, packet.sequenceNumber);
 }
 

@@ -899,9 +899,13 @@ bool StateHandlers::handleGroundIdleEvents(
         StorageManager* storageManager,
         SensorFusionSystem* fusionSystem
 ) {
+    Serial.print("DEBUG: Ground Idle processing event: ");
+    Serial.println(static_cast<int>(event));
+
     // Handle ground idle-specific events
     switch (event) {
         case RocketEvent::WAKE_UP_COMMAND:
+            Serial.println("DEBUG: Processing WAKE_UP_COMMAND");
             // Change substate to receiving commands
             auto subState = static_cast<GroundIdleSubState*>(stateMachine.getCurrentSubState());
             if (subState) {
@@ -911,11 +915,13 @@ bool StateHandlers::handleGroundIdleEvents(
                     storageManager->logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE, "Received wake up command");
                 }
 
+                Serial.println("DEBUG: Wake up command processed successfully");
                 return true;
             }
             break;
     }
 
+    Serial.println("DEBUG: Event not handled by Ground Idle handler");
     return false;  // Event not handled
 }
 
