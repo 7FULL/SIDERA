@@ -296,60 +296,81 @@ void LoRaSystem::processPacket(int packetSize) {
         Serial.println("LoRa: Invalid packet or system not operational");
         return;
     }
+
     // Store RSSI and SNR
     lastRssi = LoRa.packetRssi();
     lastSnr = LoRa.packetSnr();
 
-    // Read packet header
-    uint8_t destination = LoRa.read();
-    uint8_t source = LoRa.read();
-    uint8_t counter = LoRa.read();
-    uint8_t type = LoRa.read();
+    // Check if this is a simple format packet from the control panel
+    if (packetSize >= 4 && packetSize < 10) {
+        // Read the simple packet format
+        uint8_t destination = LoRa.read();
+        uint8_t source = LoRa.read();
+        uint8_t counter = LoRa.read();
+        uint8_t cmdType = LoRa.read();
 
-    // Check if this packet is for us
-    if (destination != nodeId && destination != 0) {
-        Serial.println("LoRa: Packet not addressed to us, ignoring");
-        return; // Not for us
-    }
-
-    // Create message structure
-    Message message;
-    message.type = static_cast<MessageType>(type);
-    message.priority = 0; // Default priority
-    message.timestamp = millis();
-
-    // Read payload data (remaining bytes)
-    message.length = packetSize - 4; // Subtract header size
-
-    Serial.print("LoRa: Payload length: ");
-    Serial.println(message.length);
-
-    if (message.length > 0) {
-        message.data = new uint8_t[message.length];
-        Serial.print("LoRa: Payload data: ");
-        for (int i = 0; i < message.length && LoRa.available(); i++) {
-            message.data[i] = LoRa.read();
-            Serial.print(message.data[i], HEX);
-            Serial.print(" ");
+        // Check if this packet is for us
+        if (destination != nodeId && destination != 0) {
+            Serial.println("LoRa: Packet not addressed to us, ignoring");
+            return; // Not for us
         }
-        Serial.println();
-    } else {
-        message.data = nullptr;
-        Serial.println("LoRa: No payload data");
+
+        Serial.printf("LoRa: Received simple command packet - Type: %d\n", cmdType);
+
+        // Create a message with the command data
+        Message message;
+        message.type = MessageType::COMMAND_RESPONSE;
+        message.priority = 200; // High priority for commands
+        message.timestamp = millis();
+
+        // Create a simple payload with just the command type
+        // This allows the CommandHandler to process it
+        message.length = 1;
+        message.data = new uint8_t[1];
+        message.data[0] = cmdType;
+
+        // Add to received messages queue
+        receivedMessages.push(message);
+
+        Serial.print("LoRa: Command added to queue, queue size now: ");
+        Serial.println(receivedMessages.size());
+
+        // Log received command
+        if (storageManager) {
+            char logMsg[64];
+            snprintf(logMsg, sizeof(logMsg),
+                     "LoRa: Received simple command %d from ID %d",
+                     cmdType, source);
+            storageManager->logMessage(LogLevel::INFO, Subsystem::COMMUNICATION, logMsg);
+        }
     }
+    else {
+        // This could be a standard protocol packet
+        // Read the full packet into a buffer
+        std::vector<uint8_t> buffer;
 
-    // Add to received messages queue
-    receivedMessages.push(message);
-    Serial.print("LoRa: Message added to queue, queue size now: ");
-    Serial.println(receivedMessages.size());
+        while (LoRa.available()) {
+            buffer.push_back(LoRa.read());
+        }
 
-    // Log received message
-    if (storageManager) {
-        char logMsg[64];
-        snprintf(logMsg, sizeof(logMsg),
-                 "LoRa: Received %d byte message from ID %d, type %d, RSSI %d",
-                 message.length, source, type, lastRssi);
-        storageManager->logMessage(LogLevel::DEBUG, Subsystem::COMMUNICATION, logMsg);
+        // Create message structure
+        Message message;
+        message.type = MessageType::COMMAND_RESPONSE;
+        message.priority = 100;
+        message.timestamp = millis();
+        message.length = buffer.size();
+
+        if (!buffer.empty()) {
+            message.data = new uint8_t[buffer.size()];
+            memcpy(message.data, buffer.data(), buffer.size());
+        }
+        else {
+            message.data = nullptr;
+            message.length = 0;
+        }
+
+        // Add to received messages queue
+        receivedMessages.push(message);
     }
 
     Serial.println("LoRa: Packet processing complete");

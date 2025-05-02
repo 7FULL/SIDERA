@@ -54,18 +54,10 @@ private:
     // Handle specific commands
     bool handlePingCommand(const ProtocolPacket& packet);
     bool handleGetStatusCommand(const ProtocolPacket& packet);
-    bool handleArmCommand(const ProtocolPacket& packet);
-    bool handleDisarmCommand(const ProtocolPacket& packet);
-    bool handleStartCountdownCommand(const ProtocolPacket& packet);
-    bool handleAbortCountdownCommand(const ProtocolPacket& packet);
-    bool handleForceDeployParachuteCommand(const ProtocolPacket& packet);
+    bool handleWakeUpCommand(const ProtocolPacket& packet);
     bool handleCalibrateSensorsCommand(const ProtocolPacket& packet);
     bool handleRunDiagnosticsCommand(const ProtocolPacket& packet);
-    bool handleSetParameterCommand(const ProtocolPacket& packet);
-    bool handleGetParameterCommand(const ProtocolPacket& packet);
-    bool handleEnterLowPowerCommand(const ProtocolPacket& packet);
-    bool handleExitLowPowerCommand(const ProtocolPacket& packet);
-    bool handleResetSystemCommand(const ProtocolPacket& packet);
+    bool handleAbortCommand(const ProtocolPacket& packet);
 };
 
 #endif // COMMAND_HANDLER_H

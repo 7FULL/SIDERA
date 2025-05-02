@@ -46,18 +46,10 @@
 enum class CommandCode : uint8_t {
     PING = 0x01,
     GET_STATUS = 0x02,
-    ARM_ROCKET = 0x10,
-    DISARM_ROCKET = 0x11,
-    START_COUNTDOWN = 0x12,
-    ABORT_COUNTDOWN = 0x13,
-    FORCE_DEPLOY_PARACHUTE = 0x20,
-    CALIBRATE_SENSORS = 0x30,
-    RUN_DIAGNOSTICS = 0x31,
-    SET_PARAMETER = 0x40,
-    GET_PARAMETER = 0x41,
-    ENTER_LOW_POWER = 0x50,
-    EXIT_LOW_POWER = 0x51,
-    RESET_SYSTEM = 0xF0
+    WAKE_UP_COMMAND = 0x03,
+    ABORT_COMMAND = 0x04,
+    CALIBRATE_SENSORS = 0x05,
+    RUN_DIAGNOSTICS = 0x06,
 };
 
 enum class ResponseCode : uint8_t {
@@ -306,13 +298,13 @@ void handleSerialCommands() {
             case 'a':
                 // Arm rocket
                 Serial.println("Arming rocket...");
-                sendCommand(CommandCode::ARM_ROCKET);
+//                sendCommand(CommandCode::ARM_ROCKET);
                 break;
 
             case 'd':
                 // Disarm rocket
                 Serial.println("Disarming rocket...");
-                sendCommand(CommandCode::DISARM_ROCKET);
+//                sendCommand(CommandCode::DISARM_ROCKET);
                 break;
 
             case 'l':
@@ -322,7 +314,7 @@ void handleSerialCommands() {
                 while (!Serial.available());
                 if (Serial.read() == 'y') {
                     Serial.println("SENDING LAUNCH COMMAND");
-                    sendCommand(CommandCode::START_COUNTDOWN);
+                    sendCommand(CommandCode::WAKE_UP_COMMAND);
                 } else {
                     Serial.println("Launch aborted");
                 }
@@ -331,7 +323,7 @@ void handleSerialCommands() {
             case 'x':
                 // Abort command
                 Serial.println("Sending ABORT command...");
-                sendCommand(CommandCode::ABORT_COUNTDOWN);
+                sendCommand(CommandCode::ABORT_COMMAND);
                 break;
 
             case 'c':
@@ -353,7 +345,7 @@ void handleSerialCommands() {
                 while (!Serial.available());
                 if (Serial.read() == 'y') {
                     Serial.println("DEPLOYING PARACHUTE");
-                    sendCommand(CommandCode::FORCE_DEPLOY_PARACHUTE);
+//                    sendCommand(CommandCode::FORCE_DEPLOY_PARACHUTE);
                 } else {
                     Serial.println("Deployment aborted");
                 }
@@ -387,7 +379,7 @@ void handleSerialCommands() {
                 payload[2] = parameterValue & 0xFF;
 
                 Serial.println("Setting parameter...");
-                sendCommand(CommandCode::SET_PARAMETER, payload, 3);
+//                sendCommand(CommandCode::SET_PARAMETER, payload, 3);
             }
                 break;
 
@@ -405,7 +397,7 @@ void handleSerialCommands() {
                 payload[0] = (uint8_t)parameterId;
 
                 Serial.println("Getting parameter...");
-                sendCommand(CommandCode::GET_PARAMETER, payload, 1);
+//                sendCommand(CommandCode::GET_PARAMETER, payload, 1);
             }
                 break;
 
@@ -416,7 +408,7 @@ void handleSerialCommands() {
                 while (!Serial.available());
                 if (Serial.read() == 'y') {
                     Serial.println("RESETTING ROCKET SYSTEM");
-                    sendCommand(CommandCode::RESET_SYSTEM);
+//                    sendCommand(CommandCode::RESET_SYSTEM);
                 } else {
                     Serial.println("Reset aborted");
                 }

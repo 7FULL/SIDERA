@@ -411,13 +411,6 @@ void StateHandlers::handleReadyState(
         DiagnosticManager* diagnosticManager,
         PowerManager* powerManager
 ) {
-    // Check the current substate
-    auto subState = static_cast<ReadySubState*>(stateMachine.getCurrentSubState());
-    if (!subState) {
-        // Default to ARMED if no substate
-        subState = new ReadySubState(ReadySubState::ARMED);
-    }
-
     // Update sensors at a higher rate now that we're armed
     unsigned long currentTime = millis();
     if (currentTime - lastSensorUpdateTime >= READY_SENSOR_RATE) {  // 10Hz updates when ready
@@ -427,10 +420,11 @@ void StateHandlers::handleReadyState(
         if (imuManager) imuManager->update();
         if (gpsManager) gpsManager->update();
 
-        // Check for launch (if in ARMED state)
-        if (*subState == ReadySubState::ARMED && detectLaunch(imuManager, fusionSystem)) {
+        // Check for launch based on acceleration
+        if (detectLaunch(imuManager, fusionSystem)) {
             if (storageManager) {
-                storageManager->logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE, "Launch detected!");
+                storageManager->logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE,
+                                           "Launch detected from acceleration!");
             }
 
             // Record flight start time
@@ -456,34 +450,6 @@ void StateHandlers::handleReadyState(
                     powerManager,
                     static_cast<uint8_t>(RocketState::READY)
             );
-        }
-    }
-
-    switch (*subState) {
-        case ReadySubState::ARMED:
-            // Armed and waiting for launch command or detection
-            break;
-
-        case ReadySubState::COUNTDOWN:
-            // In countdown to launch
-            break;
-    }
-
-    if (stateMachine.isInSubState(ReadySubState::COUNTDOWN)) {
-        // Run critical tests only
-        if (diagnosticManager) {
-            bool criticalTestsPassed = diagnosticManager->checkCriticalSystems();
-
-            if (!criticalTestsPassed) {
-                // Abort countdown if critical tests fail
-                if (storageManager) {
-                    storageManager->logMessage(LogLevel::ERROR, Subsystem::SYSTEM,
-                                               "Critical tests failed during countdown - aborting!");
-                }
-
-                // Move back to GROUND_IDLE
-                stateMachine.processEvent(RocketEvent::ABORT_COMMAND);
-            }
         }
     }
 }
@@ -758,7 +724,7 @@ void StateHandlers::handleLandedState(
     }
 
     // Send telemetry at reduced rate to save power but allow tracking
-    if (currentTime - lastTelemetryTime >= LANDED_TELEMETRY_RATE) {  // 0.2Hz telemetry after landing
+    if (currentTime - lastTelemetryTime >= LANDED_TELEMETRY_RATE) {  // 1Hz telemetry after landing
         lastTelemetryTime = currentTime;
 
         if (loraSystem) {
@@ -770,7 +736,7 @@ void StateHandlers::handleLandedState(
                     gpsManager,
                     fusionSystem,
                     powerManager,
-                    static_cast<uint8_t>(RocketState::GROUND_IDLE)
+                    static_cast<uint8_t>(RocketState::LANDED)
             );
         }
     }
@@ -781,6 +747,18 @@ void StateHandlers::handleLandedState(
         dataTransferred = true;
         storageManager->transferData();
         storageManager->logMessage(LogLevel::INFO, Subsystem::STORAGE, "Flight data transferred to SD card");
+    }
+
+    // Automatically enter low power mode after landing
+    static bool lowPowerEnabled = false;
+    if (!lowPowerEnabled && powerManager) {
+        lowPowerEnabled = true;
+        powerManager->enterPowerState(PowerState::LOW_POWER);
+
+        if (storageManager) {
+            storageManager->logMessage(LogLevel::INFO, Subsystem::SYSTEM,
+                                       "Automatically entering low power mode after landing");
+        }
     }
 }
 
@@ -946,8 +924,13 @@ bool StateHandlers::detectLaunch(IMUSensorManager* imuManager, SensorFusionSyste
     // Get accelerometer data
     AccelerometerData accelData = imuManager->getAccelerometerData();
 
-    // Check if acceleration exceeds threshold
-    return accelData.magnitude > LAUNCH_ACCELERATION_THRESHOLD;
+    // Check if acceleration exceeds threshold and calculate vertical component
+    // Assuming Z is vertical in rocket frame
+    float verticalAccel = accelData.z;
+
+    // For more robust detection, check both magnitude and vertical component
+    return (accelData.magnitude > LAUNCH_ACCELERATION_THRESHOLD &&
+            verticalAccel > 0.8f * LAUNCH_ACCELERATION_THRESHOLD);
 }
 
 bool StateHandlers::detectApogee(BarometricSensorManager* baroManager, SensorFusionSystem* fusionSystem) {

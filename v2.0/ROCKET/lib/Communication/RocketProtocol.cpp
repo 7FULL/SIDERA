@@ -96,6 +96,7 @@ bool RocketProtocol::parsePacket(const uint8_t* data, uint16_t length, ProtocolP
     // Check minimum packet size (header + version + type + sequence + length + checksum = 10 bytes)
     if (length < 10) {
         Serial.println("Packet too short");
+        Serial.println(length);
         return false;
     }
 

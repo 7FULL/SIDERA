@@ -8,19 +8,10 @@
 enum class CommandCode : uint8_t {
     PING = 0x01,
     GET_STATUS = 0x02,
-    GET_TELEMETRY = 0x03,
-    ARM_ROCKET = 0x10,
-    DISARM_ROCKET = 0x11,
-    START_COUNTDOWN = 0x12,
-    ABORT_COUNTDOWN = 0x13,
-    FORCE_DEPLOY_PARACHUTE = 0x20,
-    CALIBRATE_SENSORS = 0x30,
-    RUN_DIAGNOSTICS = 0x31,
-    SET_PARAMETER = 0x40,
-    GET_PARAMETER = 0x41,
-    ENTER_LOW_POWER = 0x50,
-    EXIT_LOW_POWER = 0x51,
-    RESET_SYSTEM = 0xF0
+    WAKE_UP_COMMAND = 0x03,
+    ABORT_COMMAND = 0x04,
+    CALIBRATE_SENSORS = 0x05,
+    RUN_DIAGNOSTICS = 0x06,
 };
 
 // Response types for rocket to ground station

@@ -276,8 +276,8 @@ void initializeAllSystems() {
 
     Serial.println("Adding GPS sensors...");
     //TODO
-//    gpsManager.addSensor(l76kb, 0);  // Priority 0 (primary)
-//    gpsManager.addSensor(atgm336h, 1);  // Priority 1 (secondary)
+    gpsManager.addSensor(l76kb, 0);  // Priority 0 (primary)
+    gpsManager.addSensor(atgm336h, 1);  // Priority 1 (secondary)
     Serial.println("GPS sensors added");
 
     Serial.println("Initializing LoRaSystem...");

@@ -82,10 +82,11 @@ void StateMachine::update() {
 
 bool StateMachine::processEvent(RocketEvent event) {
     // First, let the current state's event handler try to handle it
-    int stateIndex = static_cast<int>(currentState);
-    if (stateIndex >= 0 && stateIndex < 10 && eventHandlers[stateIndex](event)) {
-        return true;  // Event was handled by the state handler
-    }
+//    int stateIndex = static_cast<int>(currentState);
+//    if (stateIndex >= 0 && stateIndex < 10 && eventHandlers[stateIndex](event)) {
+//        Serial.printf("Event %d handled by state %d\n", static_cast<int>(event), stateIndex);
+//        return true;  // Event was handled by the state handler
+//    }
 
     // Otherwise, check the transition table
     for (const auto& transition : transitions) {
@@ -239,6 +240,8 @@ void StateMachine::changeState(RocketState newState) {
     if (newState == currentState) {
         return;  // No change needed
     }
+
+    Serial.printf("Changing state from %d to %d\n", static_cast<int>(currentState), static_cast<int>(newState));
 
     RocketState oldState = currentState;
     currentState = newState;

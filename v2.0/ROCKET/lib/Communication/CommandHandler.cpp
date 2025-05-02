@@ -45,81 +45,54 @@ void CommandHandler::update() {
     if (loraSystem && loraSystem->hasReceivedMessages()) {
         Message message;
         while (loraSystem->getNextMessage(message)) {
-            // Try to parse as protocol packet
-            Serial.printf("Received message of type %d, length %d\n", message.type, message.length);
-            ProtocolPacket packet;
-            if (RocketProtocol::parsePacket(message.data, message.length, packet)) {
-                // Handle command based on type
+            // Check if this is a simple command (length == 1)
+            if (message.length == 1) {
+                // This is a simple command from the control panel
+                uint8_t commandType = message.data[0];
+                Serial.printf("Received simple command: %d\n", commandType);
+
+                // Process simple command directly
                 bool success = false;
 
-                Serial.printf("Handling command of type %d\n", packet.type);
-
-                switch (static_cast<CommandCode>(packet.type)) {
+                switch (static_cast<CommandCode>(commandType)) {
                     case CommandCode::PING:
-                        success = handlePingCommand(packet);
+                        success = handlePingCommand(ProtocolPacket());
                         break;
                     case CommandCode::GET_STATUS:
-                        success = handleGetStatusCommand(packet);
+                        success = handleGetStatusCommand(ProtocolPacket());
                         break;
-                    case CommandCode::ARM_ROCKET:
-                        success = handleArmCommand(packet);
+                    case CommandCode::WAKE_UP_COMMAND:
+                        success = handleWakeUpCommand(ProtocolPacket());
                         break;
-                    case CommandCode::DISARM_ROCKET:
-                        success = handleDisarmCommand(packet);
-                        break;
-                    case CommandCode::START_COUNTDOWN:
-                        success = handleStartCountdownCommand(packet);
-                        break;
-                    case CommandCode::ABORT_COUNTDOWN:
-                        success = handleAbortCountdownCommand(packet);
-                        break;
-                    case CommandCode::FORCE_DEPLOY_PARACHUTE:
-                        success = handleForceDeployParachuteCommand(packet);
+                    case CommandCode::ABORT_COMMAND:
+                        success = handleAbortCommand(ProtocolPacket());
                         break;
                     case CommandCode::CALIBRATE_SENSORS:
-                        success = handleCalibrateSensorsCommand(packet);
+                        success = handleCalibrateSensorsCommand(ProtocolPacket());
                         break;
                     case CommandCode::RUN_DIAGNOSTICS:
-                        success = handleRunDiagnosticsCommand(packet);
-                        break;
-                    case CommandCode::SET_PARAMETER:
-                        success = handleSetParameterCommand(packet);
-                        break;
-                    case CommandCode::GET_PARAMETER:
-                        success = handleGetParameterCommand(packet);
-                        break;
-                    case CommandCode::ENTER_LOW_POWER:
-                        success = handleEnterLowPowerCommand(packet);
-                        break;
-                    case CommandCode::EXIT_LOW_POWER:
-                        success = handleExitLowPowerCommand(packet);
-                        break;
-                    case CommandCode::RESET_SYSTEM:
-                        success = handleResetSystemCommand(packet);
+                        success = handleRunDiagnosticsCommand(ProtocolPacket());
                         break;
                     default:
                         // Unknown command
                         if (storageManager) {
                             char msg[50];
-                            snprintf(msg, sizeof(msg), "Unknown command received: 0x%02X", packet.type);
+                            snprintf(msg, sizeof(msg), "Unknown simple command received: 0x%02X", commandType);
                             storageManager->logMessage(LogLevel::WARNING, Subsystem::COMMUNICATION, msg);
                         }
-
-                        // Send NACK
-                        sendResponse(ResponseCode::NACK, nullptr, 0, packet.sequenceNumber);
                         break;
                 }
 
-                // Clean up packet payload if needed
-                if (packet.payload) {
-                    delete[] packet.payload;
+                // Clean up message data
+                if (message.data) {
+                    delete[] message.data;
                 }
-            } else {
-                Serial.println("Invalid packet received");
-                // Invalid or corrupt packet
-                if (storageManager) {
-                    storageManager->logMessage(LogLevel::WARNING, Subsystem::COMMUNICATION,
-                                               "Received invalid packet");
+            }
+                // Handle other message formats if needed
+            else {
+                // Clean up message data
+                if (message.data) {
+                    delete[] message.data;
                 }
             }
         }
@@ -314,61 +287,8 @@ bool CommandHandler::handleGetStatusCommand(const ProtocolPacket& packet) {
     return sendResponse(ResponseCode::STATUS_DATA, payload, sizeof(payload), packet.sequenceNumber);
 }
 
-bool CommandHandler::handleArmCommand(const ProtocolPacket& packet) {
-    if (!stateMachine) {
-        return sendResponse(ResponseCode::NACK, nullptr, 0, packet.sequenceNumber);
-    }
-
-    // Check if in appropriate state
-    if (stateMachine->getCurrentState() != RocketState::READY) {
-        // Can only arm in READY state
-        if (storageManager) {
-            storageManager->logMessage(LogLevel::WARNING, Subsystem::COMMUNICATION,
-                                       "Arm command rejected - not in READY state");
-        }
-        return sendResponse(ResponseCode::NACK, nullptr, 0, packet.sequenceNumber);
-    }
-
-    // Process ARM event
-    stateMachine->processEvent(RocketEvent::ARM_COMMAND);
-
-    if (storageManager) {
-        storageManager->logMessage(LogLevel::INFO, Subsystem::COMMUNICATION,
-                                   "Rocket armed via command");
-    }
-
-    return sendResponse(ResponseCode::ACK, nullptr, 0, packet.sequenceNumber);
-}
-
-bool CommandHandler::handleDisarmCommand(const ProtocolPacket& packet) {
-    if (!stateMachine) {
-        return sendResponse(ResponseCode::NACK, nullptr, 0, packet.sequenceNumber);
-    }
-
-    // Check if in appropriate state
-    if (stateMachine->getCurrentState() != RocketState::READY) {
-        // Can only disarm in READY state
-        if (storageManager) {
-            storageManager->logMessage(LogLevel::WARNING, Subsystem::COMMUNICATION,
-                                       "Disarm command rejected - not in READY state");
-        }
-        return sendResponse(ResponseCode::NACK, nullptr, 0, packet.sequenceNumber);
-    }
-
-    // Process ARM event (should switch to disarmed state)
-    // You may need to define a DISARM_COMMAND event
-    stateMachine->processEvent(RocketEvent::ABORT_COMMAND);
-
-    if (storageManager) {
-        storageManager->logMessage(LogLevel::INFO, Subsystem::COMMUNICATION,
-                                   "Rocket disarmed via command");
-    }
-
-    return sendResponse(ResponseCode::ACK, nullptr, 0, packet.sequenceNumber);
-}
-
-bool CommandHandler::handleStartCountdownCommand(const ProtocolPacket& packet) {
-    Serial.println("DEBUG: Processing START_COUNTDOWN command");
+bool CommandHandler::handleWakeUpCommand(const ProtocolPacket& packet) {
+    Serial.println("DEBUG: Processing WAKE_UP_COMMAND");
 
     if (!stateMachine) {
         Serial.println("DEBUG: State machine is NULL!");
@@ -380,75 +300,51 @@ bool CommandHandler::handleStartCountdownCommand(const ProtocolPacket& packet) {
     Serial.print("DEBUG: Current state is: ");
     Serial.println(static_cast<int>(currentState));
 
-    // Check if in appropriate state
-    if (currentState != RocketState::READY) {
-        // Can only start countdown in READY state
-        Serial.println("DEBUG: Countdown command rejected - not in READY state");
+    // Only allow wake-up from GROUND_IDLE state
+    if (currentState != RocketState::GROUND_IDLE) {
+        Serial.println("DEBUG: Wake-up command rejected - not in GROUND_IDLE state");
         if (storageManager) {
             storageManager->logMessage(LogLevel::WARNING, Subsystem::COMMUNICATION,
-                                       "Countdown command rejected - not in READY state");
+                                       "Wake-up command rejected - not in GROUND_IDLE state");
         }
         return sendResponse(ResponseCode::NACK, nullptr, 0, packet.sequenceNumber);
     }
 
-    // Process LAUNCH event
-    Serial.println("DEBUG: Sending LAUNCH_COMMAND event to state machine");
-    bool result = stateMachine->processEvent(RocketEvent::LAUNCH_COMMAND);
+    // Process WAKE_UP event
+    Serial.println("DEBUG: Sending WAKE_UP_COMMAND event to state machine");
+    bool result = stateMachine->processEvent(RocketEvent::WAKE_UP_COMMAND);
     Serial.print("DEBUG: Event processing result: ");
     Serial.println(result ? "SUCCESS" : "FAILED");
 
     if (storageManager) {
         storageManager->logMessage(LogLevel::INFO, Subsystem::COMMUNICATION,
-                                   "Countdown started via command");
+                                   "Rocket awakened from idle state via command");
     }
 
     Serial.println("DEBUG: Sending ACK response");
     return sendResponse(ResponseCode::ACK, nullptr, 0, packet.sequenceNumber);
 }
 
-bool CommandHandler::handleAbortCountdownCommand(const ProtocolPacket& packet) {
+bool CommandHandler::handleAbortCommand(const ProtocolPacket& packet) {
+    Serial.println("DEBUG: Processing ABORT_COMMAND");
+
     if (!stateMachine) {
+        Serial.println("DEBUG: State machine is NULL!");
         return sendResponse(ResponseCode::NACK, nullptr, 0, packet.sequenceNumber);
     }
 
-    // Process ABORT event
-    stateMachine->processEvent(RocketEvent::ABORT_COMMAND);
-
-    if (storageManager) {
-        storageManager->logMessage(LogLevel::INFO, Subsystem::COMMUNICATION,
-                                   "Countdown aborted via command");
-    }
-
-    return sendResponse(ResponseCode::ACK, nullptr, 0, packet.sequenceNumber);
-}
-
-bool CommandHandler::handleForceDeployParachuteCommand(const ProtocolPacket& packet) {
-    if (!stateMachine) {
-        return sendResponse(ResponseCode::NACK, nullptr, 0, packet.sequenceNumber);
-    }
-
-    // Only allow if in flight phases
-    RocketState currentState = stateMachine->getCurrentState();
-    if (currentState != RocketState::POWERED_FLIGHT &&
-        currentState != RocketState::COASTING &&
-        currentState != RocketState::APOGEE &&
-        currentState != RocketState::DESCENT) {
-
-        if (storageManager) {
-            storageManager->logMessage(LogLevel::WARNING, Subsystem::COMMUNICATION,
-                                       "Deploy parachute command rejected - not in flight");
-        }
-        return sendResponse(ResponseCode::NACK, nullptr, 0, packet.sequenceNumber);
-    }
-
-    // Force transition to parachute descent
-    stateMachine->processEvent(RocketEvent::PARACHUTE_DEPLOYED);
+    // Process ABORT event - works in any state
+    Serial.println("DEBUG: Sending ABORT_COMMAND event to state machine");
+    bool result = stateMachine->processEvent(RocketEvent::ABORT_COMMAND);
+    Serial.print("DEBUG: Event processing result: ");
+    Serial.println(result ? "SUCCESS" : "FAILED");
 
     if (storageManager) {
         storageManager->logMessage(LogLevel::WARNING, Subsystem::COMMUNICATION,
-                                   "Parachute manually deployed via command");
+                                   "Abort command received");
     }
 
+    Serial.println("DEBUG: Sending ACK response");
     return sendResponse(ResponseCode::ACK, nullptr, 0, packet.sequenceNumber);
 }
 
@@ -517,147 +413,4 @@ bool CommandHandler::handleRunDiagnosticsCommand(const ProtocolPacket& packet) {
 
     return sendResponse(ResponseCode::DIAGNOSTIC_RESULT, payload.data(), payload.size(),
                         packet.sequenceNumber);
-}
-
-bool CommandHandler::handleSetParameterCommand(const ProtocolPacket& packet) {
-    if (!packet.payload || packet.length < 3) {
-        return sendResponse(ResponseCode::NACK, nullptr, 0, packet.sequenceNumber);
-    }
-
-    // Extract parameter ID and value
-    uint8_t paramId = packet.payload[0];
-    uint16_t paramValue = (packet.payload[1] << 8) | packet.payload[2];
-
-    // Handle different parameters
-    switch (paramId) {
-        case ParameterId::SENSOR_UPDATE_RATE:
-            // Set sensor update rate
-            break;
-
-        case ParameterId::LORA_POWER:
-            if (loraSystem) {
-                loraSystem->setTxPower(paramValue);
-            }
-            break;
-
-        case ParameterId::PARAM_APOGEE_DETECTION:
-            // Set apogee detection threshold
-            break;
-
-        case ParameterId::LANDING_DETECTION_THRESHOLD:
-            // Set landing detection threshold
-            break;
-
-        case ParameterId::LOGGING_LEVEL:
-            // Set logging level
-            break;
-
-        default:
-            // Unknown parameter
-            return sendResponse(ResponseCode::NACK, nullptr, 0, packet.sequenceNumber);
-    }
-
-    if (storageManager) {
-        char msg[50];
-        snprintf(msg, sizeof(msg), "Parameter %d set to %d", paramId, paramValue);
-        storageManager->logMessage(LogLevel::INFO, Subsystem::COMMUNICATION, msg);
-    }
-
-    return sendResponse(ResponseCode::ACK, nullptr, 0, packet.sequenceNumber);
-}
-
-bool CommandHandler::handleGetParameterCommand(const ProtocolPacket& packet) {
-    if (!packet.payload || packet.length < 1) {
-        return sendResponse(ResponseCode::NACK, nullptr, 0, packet.sequenceNumber);
-    }
-
-    // Extract parameter ID
-    uint8_t paramId = packet.payload[0];
-    uint16_t paramValue = 0;
-
-    // Get parameter value
-    switch (paramId) {
-        case ParameterId::SENSOR_UPDATE_RATE:
-            // Get sensor update rate
-            break;
-
-        case ParameterId::LORA_POWER:
-            // Get LoRa TX power
-            break;
-
-        case ParameterId::PARAM_APOGEE_DETECTION:
-            // Get apogee detection threshold
-            break;
-
-        case ParameterId::LANDING_DETECTION_THRESHOLD:
-            // Get landing detection threshold
-            break;
-
-        case ParameterId::LOGGING_LEVEL:
-            // Get logging level
-            break;
-
-        default:
-            // Unknown parameter
-            return sendResponse(ResponseCode::NACK, nullptr, 0, packet.sequenceNumber);
-    }
-
-    // Prepare response
-    uint8_t payload[3];
-    payload[0] = paramId;
-    payload[1] = (paramValue >> 8) & 0xFF;
-    payload[2] = paramValue & 0xFF;
-
-    return sendResponse(ResponseCode::PARAMETER_VALUE, payload, 3, packet.sequenceNumber);
-}
-
-bool CommandHandler::handleEnterLowPowerCommand(const ProtocolPacket& packet) {
-    if (!powerManager) {
-        return sendResponse(ResponseCode::NACK, nullptr, 0, packet.sequenceNumber);
-    }
-
-    // Enter low power mode
-    powerManager->enterPowerState(PowerState::LOW_POWER);
-
-    if (storageManager) {
-        storageManager->logMessage(LogLevel::INFO, Subsystem::COMMUNICATION,
-                                   "Entering low power mode via command");
-    }
-
-    return sendResponse(ResponseCode::ACK, nullptr, 0, packet.sequenceNumber);
-}
-
-bool CommandHandler::handleExitLowPowerCommand(const ProtocolPacket& packet) {
-    if (!powerManager) {
-        return sendResponse(ResponseCode::NACK, nullptr, 0, packet.sequenceNumber);
-    }
-
-    // Exit low power mode
-    powerManager->enterPowerState(PowerState::NORMAL);
-
-    if (storageManager) {
-        storageManager->logMessage(LogLevel::INFO, Subsystem::COMMUNICATION,
-                                   "Exiting low power mode via command");
-    }
-
-    return sendResponse(ResponseCode::ACK, nullptr, 0, packet.sequenceNumber);
-}
-
-bool CommandHandler::handleResetSystemCommand(const ProtocolPacket& packet) {
-    if (storageManager) {
-        storageManager->logMessage(LogLevel::WARNING, Subsystem::COMMUNICATION,
-                                   "System reset commanded");
-    }
-
-    // Send ACK before reset
-    sendResponse(ResponseCode::ACK, nullptr, 0, packet.sequenceNumber);
-
-    // Wait for message to be sent
-    delay(500);
-
-    // Reset processor
-    //TODO
-//    NVIC_SystemReset();
-
-    return true;
 }
