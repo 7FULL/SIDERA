@@ -306,6 +306,8 @@ void StateHandlers::sendTelemetryData(
     packet.timestamp = millis();
     packet.rocketState = rocketState;
 
+    Serial.println("State: " + String(rocketState));
+
     // Get sensor data from fusion system if available, otherwise from individual sensors
     if (fusionSystem) {
         FusedFlightData fusedData = fusionSystem->getFusedData();
@@ -345,6 +347,7 @@ void StateHandlers::sendTelemetryData(
         packet.gpsLongitude = gpsData.longitude;
         packet.gpsAltitude = gpsData.altitude;
     } else {
+        Serial.println("GPS data not available, using default values.");
         packet.gpsSatellites = 0;
         packet.gpsLatitude = 0.0f;
         packet.gpsLongitude = 0.0f;

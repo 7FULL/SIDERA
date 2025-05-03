@@ -1,0 +1,659 @@
+/* Rocket Ground Control Dashboard Styles
+ * Modern dark theme with data visualization focus
+ */
+
+/* ---- Base Styles ---- */
+:root {
+    --bg-primary: #0f1420;
+    --bg-secondary: #1a1f2e;
+    --bg-tertiary: #242c3d;
+    --text-primary: #ffffff;
+    --text-secondary: #9ba5b8;
+    --accent-primary: #0084ff;
+    --accent-secondary: #00aaff;
+    --accent-success: #00c853;
+    --accent-warning: #ffc107;
+    --accent-danger: #ff3d00;
+    --accent-emergency: #d50000;
+    --border-color: #303848;
+    --panel-header: #1d273a;
+    --panel-bg: #21293c;
+    --transition-speed: 0.3s;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+    padding: 0.5rem;
+    gap: 0.5rem;
+}
+
+/* ---- Header ---- */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.logo i {
+    font-size: 1.8rem;
+    color: var(--accent-primary);
+}
+
+.logo h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 0.25rem;
+}
+
+.offline {
+    background-color: #d32f2f;
+    box-shadow: 0 0 5px #d32f2f;
+}
+
+.connecting {
+    background-color: #ffc107;
+    box-shadow: 0 0 5px #ffc107;
+    animation: pulse 1s infinite;
+}
+
+.online {
+    background-color: #4caf50;
+    box-shadow: 0 0 5px #4caf50;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.5;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.5;
+    }
+}
+
+select, .btn {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+}
+
+select:hover, .btn:hover {
+    background-color: var(--accent-primary);
+}
+
+select:focus, .btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 132, 255, 0.5);
+}
+
+.btn.small {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* ---- Main Dashboard ---- */
+main {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    gap: 0.5rem;
+    overflow-y: auto;
+}
+
+.dashboard-row {
+    display: flex;
+    gap: 0.5rem;
+    min-height: 200px;
+}
+
+.panel {
+    background-color: var(--panel-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+.panel-header {
+    background-color: var(--panel-header);
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.panel-header h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.panel-body {
+    flex-grow: 1;
+    padding: 1rem;
+    overflow: auto;
+}
+
+/* ---- Status Panel ---- */
+.status-panel .panel-body {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.status-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.status-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.status-label {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.status-value {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.status-value.highlight {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--accent-primary);
+}
+
+.mission-time {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    font-weight: 600;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.battery-indicator, .signal-indicator {
+    height: 8px;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin-top: 0.25rem;
+    overflow: hidden;
+}
+
+#battery-level {
+    height: 100%;
+    background-color: var(--accent-success);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+#battery-level.warning {
+    background-color: var(--accent-warning);
+}
+
+#battery-level.critical {
+    background-color: var(--accent-danger);
+}
+
+#signal-bars {
+    display: flex;
+    height: 100%;
+}
+
+.signal-bar {
+    flex: 1;
+    margin-right: 1px;
+    height: 100%;
+    background-color: var(--accent-primary);
+    border-radius: 1px;
+}
+
+.signal-bar.inactive {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ---- Model Panel ---- */
+.model-panel .panel-body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+}
+
+#rocket-model-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+#rocket-model {
+    width: 100%;
+    height: 100%;
+}
+
+.orientation-values {
+    display: flex;
+    gap: 1rem;
+}
+
+.orientation-item {
+    font-size: 0.85rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.orientation-item span:first-child {
+    color: var(--text-secondary);
+    margin-right: 0.25rem;
+}
+
+/* ---- Graph Panel ---- */
+.graph-panel {
+    flex: 1;
+}
+
+.graph-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.graph-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 1rem;
+}
+
+.graph-wrapper {
+    flex: 1;
+    position: relative;
+    min-height: 150px;
+}
+
+/* ---- Command Panel ---- */
+.command-panel .panel-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.command-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.command-group h3 {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.25rem;
+}
+
+.command-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.command-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+    font-size: 0.9rem;
+}
+
+.command-btn:hover {
+    background-color: var(--accent-primary);
+}
+
+.command-btn.important {
+    border-color: var(--accent-primary);
+}
+
+.command-btn.critical {
+    border-color: var(--accent-danger);
+}
+
+.command-btn.emergency {
+    border-color: var(--accent-emergency);
+    background-color: rgba(213, 0, 0, 0.2);
+}
+
+.command-btn.emergency:hover {
+    background-color: var(--accent-emergency);
+}
+
+.command-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.command-status span:first-child {
+    color: var(--text-secondary);
+}
+
+/* ---- GPS Panel ---- */
+.gps-panel .panel-body {
+    padding: 0;
+}
+
+#map-container {
+    width: 100%;
+    height: 100%;
+    background-color: #1e2a3a;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+    background-image: radial-gradient(circle, #2c3e50 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.gps-coords {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.gps-coord {
+    font-size: 0.85rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.gps-coord span:first-child {
+    color: var(--text-secondary);
+    margin-right: 0.25rem;
+}
+
+/* ---- Footer/Console ---- */
+footer {
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 0;
+    box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
+    min-height: 150px;
+    max-height: 200px;
+    display: flex;
+    flex-direction: column;
+}
+
+.console-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.console-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: var(--panel-header);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.console-header h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.console-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.console-log {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.85rem;
+    overflow-y: auto;
+    color: var(--text-secondary);
+    background-color: var(--bg-secondary);
+}
+
+.log-entry {
+    margin-bottom: 0.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 0.25rem;
+}
+
+.log-time {
+    color: #607d8b;
+    margin-right: 0.5rem;
+}
+
+.log-info {
+    color: #2196f3;
+}
+
+.log-command {
+    color: #9c27b0;
+}
+
+.log-telemetry {
+    color: #4caf50;
+}
+
+.log-warning {
+    color: #ff9800;
+}
+
+.log-error {
+    color: #f44336;
+}
+
+/* ---- Modal ---- */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background-color: var(--panel-bg);
+    border-radius: 8px;
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h3 {
+    margin-bottom: 1rem;
+    color: var(--accent-primary);
+}
+
+.modal-content p {
+    margin-bottom: 1.5rem;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.btn.critical {
+    background-color: var(--accent-danger);
+}
+
+/* ---- Responsive Design ---- */
+@media (max-width: 1200px) {
+    .dashboard-row {
+        flex-direction: column;
+    }
+
+    .status-panel .panel-body {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .status-group {
+        gap: 0.5rem;
+    }
+
+    .logo h1 {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.5rem;
+    }
+
+    .connection-status {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .panel-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .graph-controls, .console-controls, .command-status, .orientation-values, .gps-coords {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .mission-time, .orientation-item, .gps-coord {
+        font-size: 0.75rem;
+    }
+}
+
+/* ---- States ---- */
+.state-idle {
+    color: var(--text-secondary);
+}
+
+.state-ready {
+    color: var(--accent-success);
+}
+
+.state-armed {
+    color: var(--accent-primary);
+}
+
+.state-countdown {
+    color: var(--accent-warning);
+    animation: blink 1s infinite;
+}
+
+.state-flight {
+    color: var(--accent-danger);
+}
+
+.state-descent {
+    color: var(--accent-secondary);
+}
+
+.state-landed {
+    color: var(--accent-success);
+}
+
+.state-error {
+    color: var(--accent-emergency);
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.6;
+    }
+}

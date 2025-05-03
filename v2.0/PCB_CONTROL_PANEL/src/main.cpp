@@ -64,19 +64,18 @@ enum class ResponseCode : uint8_t {
 };
 
 enum class RocketStatusCode : uint8_t {
-    INITIALIZING = 0x01,
-    IDLE = 0x02,
-    READY = 0x03,
-    ARMED = 0x04,
-    COUNTDOWN = 0x05,
-    POWERED_FLIGHT = 0x10,
-    COASTING = 0x11,
-    APOGEE = 0x12,
-    DESCENT = 0x13,
-    PARACHUTE_DEPLOYED = 0x14,
-    LANDED = 0x20,
-    ERROR = 0xE0
+    INIT,               // Initial state during boot
+    GROUND_IDLE,        // On ground, waiting for commands
+    READY,              // Ready for launch, all systems go
+    POWERED_FLIGHT,     // Engine burning, accelerating
+    COASTING,           // Engine off, still ascending
+    APOGEE,             // At highest point
+    DESCENT,            // Falling, no parachute
+    PARACHUTE_DESCENT,  // Falling with parachute deployed
+    LANDED,             // On ground after flight
+    ERROR               // Error condition
 };
+
 
 // SD card for logging
 SdFat sd;
@@ -311,13 +310,7 @@ void handleSerialCommands() {
                 // Launch command
                 Serial.println("WARNING: SENDING LAUNCH COMMAND!");
                 Serial.println("Are you sure? (y/n)");
-                while (!Serial.available());
-                if (Serial.read() == 'y') {
-                    Serial.println("SENDING LAUNCH COMMAND");
-                    sendCommand(CommandCode::WAKE_UP_COMMAND);
-                } else {
-                    Serial.println("Launch aborted");
-                }
+                sendCommand(CommandCode::WAKE_UP_COMMAND);
                 break;
 
             case 'x':
@@ -456,20 +449,14 @@ void checkConnection() {
 // Helper function to print rocket state in human-readable form
 void printRocketState(uint8_t state) {
     switch (static_cast<RocketStatusCode>(state)) {
-        case RocketStatusCode::INITIALIZING:
+        case RocketStatusCode::INIT:
             Serial.println("INITIALIZING");
             break;
-        case RocketStatusCode::IDLE:
+        case RocketStatusCode::GROUND_IDLE:
             Serial.println("IDLE");
             break;
         case RocketStatusCode::READY:
             Serial.println("READY");
-            break;
-        case RocketStatusCode::ARMED:
-            Serial.println("ARMED");
-            break;
-        case RocketStatusCode::COUNTDOWN:
-            Serial.println("COUNTDOWN");
             break;
         case RocketStatusCode::POWERED_FLIGHT:
             Serial.println("POWERED FLIGHT");
@@ -483,7 +470,7 @@ void printRocketState(uint8_t state) {
         case RocketStatusCode::DESCENT:
             Serial.println("DESCENT");
             break;
-        case RocketStatusCode::PARACHUTE_DEPLOYED:
+        case RocketStatusCode::PARACHUTE_DESCENT:
             Serial.println("PARACHUTE DEPLOYED");
             break;
         case RocketStatusCode::LANDED:
@@ -640,7 +627,7 @@ void processLoRaPacket(int packetSize) {
     if (type == 0x00 || type == static_cast<uint8_t>(ResponseCode::TELEMETRY_DATA)) {
         // Parse telemetry packet - Handle both the MessageType::TELEMETRY (0x00)
         // and ResponseCode::TELEMETRY_DATA (0x10)
-//        Serial.println("Received telemetry data");
+        Serial.println("Received telemetry data");
 
         if (packetSize >= 30) { // Min size for valid telemetry packet
             // Simple parsing
@@ -997,15 +984,6 @@ void updateLeds() {
 
     if (lastTelemetryTime > 0) {
         switch (lastTelemetry.rocketState) {
-            case static_cast<uint8_t>(RocketStatusCode::ARMED):
-            case static_cast<uint8_t>(RocketStatusCode::COUNTDOWN):
-                // Fast blink for armed/countdown
-                if (millis() - lastRedToggle > 200) {
-                    lastRedToggle = millis();
-                    digitalWrite(LED_RED, !digitalRead(LED_RED));
-                }
-                break;
-
             case static_cast<uint8_t>(RocketStatusCode::POWERED_FLIGHT):
             case static_cast<uint8_t>(RocketStatusCode::COASTING):
                 // Solid on for flight
