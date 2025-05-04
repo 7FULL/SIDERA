@@ -423,19 +423,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- EVENT LISTENERS ----
 
+    // ---- EVENT LISTENERS ACTUALIZADOS ----
+
     function setupEventListeners() {
         // Connection button
         elements.connectButton.addEventListener('click', toggleConnection);
 
-        // Command buttons
+        // Command buttons - Actualizados sin despertar y armar
         elements.cmdPing.addEventListener('click', () => sendCommand('PING'));
         elements.cmdStatus.addEventListener('click', () => sendCommand('GET_STATUS'));
         elements.cmdDiagnostics.addEventListener('click', () => sendCommand('RUN_DIAGNOSTICS'));
         elements.cmdCalibrate.addEventListener('click', () => sendCommand('CALIBRATE_SENSORS'));
-        elements.cmdWake.addEventListener('click', () => sendCommand('WAKE_UP_COMMAND'));
 
         // Critical commands with confirmation
-        elements.cmdArm.addEventListener('click', () => showConfirmation('Armar Cohete', '¿Estás seguro de que deseas armar el cohete?', () => sendCommand('ARM_ROCKET')));
         elements.cmdLaunch.addEventListener('click', () => showConfirmation('INICIAR LANZAMIENTO', '¡ADVERTENCIA! Estás a punto de iniciar la secuencia de lanzamiento. ¿Estás COMPLETAMENTE seguro?', () => sendCommand('LAUNCH_COMMAND')));
         elements.cmdAbort.addEventListener('click', () => showConfirmation('ABORTAR MISIÓN', '¡ADVERTENCIA! Estás a punto de abortar la misión. ¿Estás COMPLETAMENTE seguro?', () => sendCommand('ABORT_COMMAND')));
         elements.cmdDeployParachute.addEventListener('click', () => showConfirmation('DESPLIEGUE DE EMERGENCIA', '¡ADVERTENCIA! Estás a punto de desplegar el paracaídas manualmente. ¿Estás COMPLETAMENTE seguro?', () => sendCommand('FORCE_DEPLOY_PARACHUTE')));
@@ -545,9 +545,9 @@ document.addEventListener('DOMContentLoaded', () => {
         updateConnectionStatus('online');
         logToConsole('Conectado al cohete', 'info');
         elements.connectButton.textContent = 'Desconectar';
-
-        // Send an initial status request
-        setTimeout(() => sendCommand('GET_STATUS'), 500);
+        //
+        // // Send an initial status request
+        // setTimeout(() => sendCommand('GET_STATUS'), 500);
     }
 
     function handleDisconnect() {
@@ -709,6 +709,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---- UI UPDATES ----
 
     function updateTelemetryDisplay(telemetry) {
+        console.log(telemetry);
+
         // Update numeric values
         elements.altitude.textContent = `${telemetry.altitude.toFixed(1)} m`;
         elements.verticalSpeed.textContent = `${telemetry.verticalSpeed.toFixed(1)} m/s`;

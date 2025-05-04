@@ -1,16 +1,10 @@
-/**
- * Serial Bridge
- *
- * Maneja la comunicación entre el dashboard web y el PCB CONTROL PANEL a través del puerto serie.
- * Utiliza la Web Serial API para conectarse al dispositivo y enviar/recibir datos.
- */
-
 const SerialBridge = (function() {
     // Variables privadas
     let port = null;
     let reader = null;
     let writer = null;
     let readingTask = null;
+    let lastCommandSent = null;
     let callbacks = {
         onPortsDiscovered: () => {},
         onConnect: () => {},
@@ -32,7 +26,6 @@ const SerialBridge = (function() {
         ABORT_COMMAND: 0x04,
         CALIBRATE_SENSORS: 0x05,
         RUN_DIAGNOSTICS: 0x06,
-        ARM_ROCKET: 0x07,
         LAUNCH_COMMAND: 0x08,
         FORCE_DEPLOY_PARACHUTE: 0x09
     };
@@ -258,20 +251,45 @@ const SerialBridge = (function() {
 
     // Procesar datos recibidos
     const processReceivedData = (data) => {
+        console.log("Datos recibidos:", data);
+
         // Intentar parsear como JSON primero
         try {
+            //If it starts with __telemetry__ then parse it as JSON
+            if (data.startsWith('__telemetry__')) {
+                data = data.substring('__telemetry__'.length);
+            }else{
+                // Si no es JSON, continuar
+                return;
+            }
+
+            console.log("Parsing JSON data:", data);
+
             const jsonData = JSON.parse(data);
-            callbacks.onData(data);
+            callbacks.onData(jsonData);
             return;
         } catch (e) {
             // No es JSON, seguir procesando
         }
 
+        return;
+
         // Procesar respuestas del formato del PCB CONTROL PANEL
         if (data.startsWith('Received telemetry')) {
             // Extraer datos de telemetría (formato: "Received telemetry [Alt: 123.4m, V: 45.6m/s]")
-            const altMatch = data.match(/Alt: ([\d.]+)m/);
-            const speedMatch = data.match(/V: ([\d.-]+)m\/s/);
+            const altMatch = data.match(/Altitude: ([\d.]+)m/);
+            const speedMatch = data.match(/Vertical Speed: ([\d.-]+)m\/s/);
+            const accelMatch = data.match(/Acceleration: ([\d.-]+)m\/s²/);
+            const tempMatch = data.match(/Temperature: ([\d.-]+)°C/);
+            const pressureMatch = data.match(/Pressure: ([\d.-]+)hPa/);
+            const batteryMatch = data.match(/Battery: ([\d.-]+)V/);
+            const gpsMatch = data.match(/GPS: Lat: ([\d.-]+), Lon: ([\d.-]+)/);
+            const pitchMatch = data.match(/Pitch: ([\d.-]+)°/);
+            const rollMatch = data.match(/Roll: ([\d.-]+)°/);
+            const yawMatch = data.match(/Yaw: ([\d.-]+)°/);
+            const rssiMatch = data.match(/RSSI: ([-\d]+)dBm/);
+            const snrMatch = data.match(/SNR: ([-\d.]+)dB/);
+            const stateMatch = data.match(/State: ([\w\s]+)/);
 
             if (altMatch && speedMatch) {
                 const telemetryData = {
@@ -280,27 +298,59 @@ const SerialBridge = (function() {
                         timestamp: Date.now(),
                         altitude: parseFloat(altMatch[1]),
                         verticalSpeed: parseFloat(speedMatch[1]),
-                        // Datos estimados para completar la telemetría
-                        acceleration: 0,
-                        temperature: 20,
-                        pressure: 1013,
-                        batteryVoltage: 4.0,
-                        gpsSatellites: 0,
-                        gpsLatitude: 0,
-                        gpsLongitude: 0,
-                        gpsAltitude: 0,
-                        pitch: 0,
-                        roll: 0,
-                        yaw: 0,
-                        rssi: -70,
-                        snr: 10,
-                        rocketState: 0x02 // IDLE por defecto
+                        acceleration: accelMatch ? parseFloat(accelMatch[1]) : 0,
+                        temperature: tempMatch ? parseFloat(tempMatch[1]) : 0,
+                        pressure: pressureMatch ? parseFloat(pressureMatch[1]) : 0,
+                        batteryVoltage: batteryMatch ? parseFloat(batteryMatch[1]) : 4.0,
+                        gpsSatellites: gpsMatch ? parseInt(gpsMatch[1]) : 0,
+                        gpsLatitude: gpsMatch ? parseFloat(gpsMatch[1]) : 0,
+                        gpsLongitude: gpsMatch ? parseFloat(gpsMatch[2]) : 0,
+                        gpsAltitude: gpsMatch ? parseFloat(gpsMatch[3]) : 0,
+                        pitch: pitchMatch ? parseFloat(pitchMatch[1]) : 0,
+                        roll: rollMatch ? parseFloat(rollMatch[1]) : 0,
+                        yaw: yawMatch ? parseFloat(yawMatch[1]) : 0,
+                        rssi: rssiMatch ? parseInt(rssiMatch[1]) : -70,
+                        snr: snrMatch ? parseFloat(snrMatch[1]) : 10,
+                        rocketState: stateMatch ? stateMatch[1] : 'UNKNOWN',
                     }
                 };
 
                 callbacks.onData(JSON.stringify(telemetryData));
             }
-        } else if (data.includes('SUCCESS')) {
+        }
+        // Mejorado: Detectar respuestas a comandos Lanzar/Abortar
+        else if (data.includes('Are you sure?') || data.includes('WARNING:')) {
+            // No hacer nada aquí, esto es la confirmación que está esperando el "y"
+            console.log("Confirmación solicitada para comando crítico");
+        }
+        // Procesar confirmaciones de comandos enviados
+        else if (data.includes('Launching') || data.includes('DESPEGUE') ||
+            data.includes('iniciando secuencia') || data.includes('cuenta regresiva')) {
+            // Confirmación de lanzamiento
+            const responseData = {
+                type: 'command_response',
+                data: {
+                    success: true,
+                    message: 'Lanzamiento iniciado'
+                }
+            };
+            callbacks.onData(JSON.stringify(responseData));
+        }
+        else if (data.includes('abortada') || data.includes('Aborting') ||
+            data.includes('Abort command')) {
+            // Confirmación de aborto
+            const responseData = {
+                type: 'command_response',
+                data: {
+                    success: true,
+                    message: 'Misión abortada'
+                }
+            };
+            callbacks.onData(JSON.stringify(responseData));
+        }
+        else if (data.includes('SUCCESS') || data.includes('executed') ||
+            data.includes('successfully') || data.includes('OK') ||
+            data.includes('received') || data.includes('pong') || data.includes('Pong')) {
             // Respuesta de comando exitoso
             const responseData = {
                 type: 'command_response',
@@ -310,7 +360,9 @@ const SerialBridge = (function() {
                 }
             };
             callbacks.onData(JSON.stringify(responseData));
-        } else if (data.includes('ERROR') || data.includes('FAILED')) {
+        }
+        else if (data.includes('ERROR') || data.includes('FAILED') ||
+            data.includes('error') || data.includes('failed')) {
             // Respuesta de comando fallido
             const responseData = {
                 type: 'command_response',
@@ -320,18 +372,21 @@ const SerialBridge = (function() {
                 }
             };
             callbacks.onData(JSON.stringify(responseData));
-        } else if (data.includes('State:')) {
+        }
+        else if (data.includes('State:')) {
             // Datos de estado del cohete
             let stateCode = 0x02; // IDLE por defecto
 
             if (data.includes('INITIALIZING')) stateCode = 0x01;
-            else if (data.includes('GROUND_IDLE')) stateCode = 0x02;
+            else if (data.includes('IDLE')) stateCode = 0x02;
             else if (data.includes('READY')) stateCode = 0x03;
-            else if (data.includes('POWERED_FLIGHT')) stateCode = 0x05;
+            else if (data.includes('ARMED')) stateCode = 0x04;
+            else if (data.includes('COUNTDOWN')) stateCode = 0x05;
+            else if (data.includes('POWERED FLIGHT')) stateCode = 0x10;
             else if (data.includes('COASTING')) stateCode = 0x11;
             else if (data.includes('APOGEE')) stateCode = 0x12;
             else if (data.includes('DESCENT')) stateCode = 0x13;
-            else if (data.includes('PARACHUTE_DESCENT')) stateCode = 0x14;
+            else if (data.includes('PARACHUTE')) stateCode = 0x14;
             else if (data.includes('LANDED')) stateCode = 0x20;
             else if (data.includes('ERROR')) stateCode = 0xE0;
 
@@ -357,7 +412,28 @@ const SerialBridge = (function() {
             };
 
             callbacks.onData(JSON.stringify(statusData));
-        } else {
+        }
+        // Como último recurso para los comandos críticos que pudieron no ser detectados
+        else if (lastCommandSent &&
+            (lastCommandSent === 'LAUNCH_COMMAND' ||
+                lastCommandSent === 'ABORT_COMMAND' ||
+                lastCommandSent === 'FORCE_DEPLOY_PARACHUTE') &&
+            data.includes('y')) {
+            // El usuario ha confirmado un comando crítico
+            setTimeout(() => {
+                // Generar una respuesta sintética
+                const responseData = {
+                    type: 'command_response',
+                    data: {
+                        success: true,
+                        message: `Comando ${lastCommandSent} ejecutado con éxito`
+                    }
+                };
+                callbacks.onData(JSON.stringify(responseData));
+                lastCommandSent = null;
+            }, 500);
+        }
+        else {
             // Otros datos, enviar como texto plano
             callbacks.onData(data);
         }
@@ -372,6 +448,7 @@ const SerialBridge = (function() {
 
         try {
             let commandChar = '';
+            lastCommandSent = command.command;
 
             // Convertir comando a carácter correspondiente según el protocolo del PCB CONTROL PANEL
             switch (command.command) {
@@ -393,9 +470,6 @@ const SerialBridge = (function() {
                 case 'RUN_DIAGNOSTICS':
                     commandChar = 'r';
                     break;
-                case 'ARM_ROCKET':
-                    commandChar = 'a';
-                    break;
                 case 'LAUNCH_COMMAND':
                     commandChar = 'l';
                     break;
@@ -407,6 +481,7 @@ const SerialBridge = (function() {
             }
 
             // Enviar comando
+            console.log(`Enviando comando: ${command.command} (char: ${commandChar})`);
             await writer.write(commandChar);
 
             // Para comandos que requieren confirmación, enviar 'y' después
@@ -418,6 +493,7 @@ const SerialBridge = (function() {
                 await new Promise(resolve => setTimeout(resolve, 500));
 
                 // Enviar confirmación
+                console.log("Enviando confirmación 'y'");
                 await writer.write('y');
             }
 
