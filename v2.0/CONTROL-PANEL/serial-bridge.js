@@ -256,8 +256,8 @@ const SerialBridge = (function() {
         // Intentar parsear como JSON primero
         try {
             //If it starts with __telemetry__ then parse it as JSON
-            if (data.startsWith('__telemetry__')) {
-                data = data.substring('__telemetry__'.length);
+            if (data.startsWith('__tl__')) {
+                data = data.substring('__tl__'.length);
             }else{
                 // Si no es JSON, continuar
                 return;
@@ -265,178 +265,14 @@ const SerialBridge = (function() {
 
             console.log("Parsing JSON data:", data);
 
-            const jsonData = JSON.parse(data);
-            callbacks.onData(jsonData);
+            // const jsonData = JSON.parse(data);
+            callbacks.onData(data);
             return;
         } catch (e) {
             // No es JSON, seguir procesando
         }
 
         return;
-
-        // Procesar respuestas del formato del PCB CONTROL PANEL
-        if (data.startsWith('Received telemetry')) {
-            // Extraer datos de telemetría (formato: "Received telemetry [Alt: 123.4m, V: 45.6m/s]")
-            const altMatch = data.match(/Altitude: ([\d.]+)m/);
-            const speedMatch = data.match(/Vertical Speed: ([\d.-]+)m\/s/);
-            const accelMatch = data.match(/Acceleration: ([\d.-]+)m\/s²/);
-            const tempMatch = data.match(/Temperature: ([\d.-]+)°C/);
-            const pressureMatch = data.match(/Pressure: ([\d.-]+)hPa/);
-            const batteryMatch = data.match(/Battery: ([\d.-]+)V/);
-            const gpsMatch = data.match(/GPS: Lat: ([\d.-]+), Lon: ([\d.-]+)/);
-            const pitchMatch = data.match(/Pitch: ([\d.-]+)°/);
-            const rollMatch = data.match(/Roll: ([\d.-]+)°/);
-            const yawMatch = data.match(/Yaw: ([\d.-]+)°/);
-            const rssiMatch = data.match(/RSSI: ([-\d]+)dBm/);
-            const snrMatch = data.match(/SNR: ([-\d.]+)dB/);
-            const stateMatch = data.match(/State: ([\w\s]+)/);
-
-            if (altMatch && speedMatch) {
-                const telemetryData = {
-                    type: 'telemetry',
-                    data: {
-                        timestamp: Date.now(),
-                        altitude: parseFloat(altMatch[1]),
-                        verticalSpeed: parseFloat(speedMatch[1]),
-                        acceleration: accelMatch ? parseFloat(accelMatch[1]) : 0,
-                        temperature: tempMatch ? parseFloat(tempMatch[1]) : 0,
-                        pressure: pressureMatch ? parseFloat(pressureMatch[1]) : 0,
-                        batteryVoltage: batteryMatch ? parseFloat(batteryMatch[1]) : 4.0,
-                        gpsSatellites: gpsMatch ? parseInt(gpsMatch[1]) : 0,
-                        gpsLatitude: gpsMatch ? parseFloat(gpsMatch[1]) : 0,
-                        gpsLongitude: gpsMatch ? parseFloat(gpsMatch[2]) : 0,
-                        gpsAltitude: gpsMatch ? parseFloat(gpsMatch[3]) : 0,
-                        pitch: pitchMatch ? parseFloat(pitchMatch[1]) : 0,
-                        roll: rollMatch ? parseFloat(rollMatch[1]) : 0,
-                        yaw: yawMatch ? parseFloat(yawMatch[1]) : 0,
-                        rssi: rssiMatch ? parseInt(rssiMatch[1]) : -70,
-                        snr: snrMatch ? parseFloat(snrMatch[1]) : 10,
-                        rocketState: stateMatch ? stateMatch[1] : 'UNKNOWN',
-                    }
-                };
-
-                callbacks.onData(JSON.stringify(telemetryData));
-            }
-        }
-        // Mejorado: Detectar respuestas a comandos Lanzar/Abortar
-        else if (data.includes('Are you sure?') || data.includes('WARNING:')) {
-            // No hacer nada aquí, esto es la confirmación que está esperando el "y"
-            console.log("Confirmación solicitada para comando crítico");
-        }
-        // Procesar confirmaciones de comandos enviados
-        else if (data.includes('Launching') || data.includes('DESPEGUE') ||
-            data.includes('iniciando secuencia') || data.includes('cuenta regresiva')) {
-            // Confirmación de lanzamiento
-            const responseData = {
-                type: 'command_response',
-                data: {
-                    success: true,
-                    message: 'Lanzamiento iniciado'
-                }
-            };
-            callbacks.onData(JSON.stringify(responseData));
-        }
-        else if (data.includes('abortada') || data.includes('Aborting') ||
-            data.includes('Abort command')) {
-            // Confirmación de aborto
-            const responseData = {
-                type: 'command_response',
-                data: {
-                    success: true,
-                    message: 'Misión abortada'
-                }
-            };
-            callbacks.onData(JSON.stringify(responseData));
-        }
-        else if (data.includes('SUCCESS') || data.includes('executed') ||
-            data.includes('successfully') || data.includes('OK') ||
-            data.includes('received') || data.includes('pong') || data.includes('Pong')) {
-            // Respuesta de comando exitoso
-            const responseData = {
-                type: 'command_response',
-                data: {
-                    success: true,
-                    message: data
-                }
-            };
-            callbacks.onData(JSON.stringify(responseData));
-        }
-        else if (data.includes('ERROR') || data.includes('FAILED') ||
-            data.includes('error') || data.includes('failed')) {
-            // Respuesta de comando fallido
-            const responseData = {
-                type: 'command_response',
-                data: {
-                    success: false,
-                    message: data
-                }
-            };
-            callbacks.onData(JSON.stringify(responseData));
-        }
-        else if (data.includes('State:')) {
-            // Datos de estado del cohete
-            let stateCode = 0x02; // IDLE por defecto
-
-            if (data.includes('INITIALIZING')) stateCode = 0x01;
-            else if (data.includes('IDLE')) stateCode = 0x02;
-            else if (data.includes('READY')) stateCode = 0x03;
-            else if (data.includes('ARMED')) stateCode = 0x04;
-            else if (data.includes('COUNTDOWN')) stateCode = 0x05;
-            else if (data.includes('POWERED FLIGHT')) stateCode = 0x10;
-            else if (data.includes('COASTING')) stateCode = 0x11;
-            else if (data.includes('APOGEE')) stateCode = 0x12;
-            else if (data.includes('DESCENT')) stateCode = 0x13;
-            else if (data.includes('PARACHUTE')) stateCode = 0x14;
-            else if (data.includes('LANDED')) stateCode = 0x20;
-            else if (data.includes('ERROR')) stateCode = 0xE0;
-
-            // Extraer datos de batería
-            const batteryMatch = data.match(/Battery: ([\d.]+)V/);
-            const batteryVoltage = batteryMatch ? parseFloat(batteryMatch[1]) : 4.0;
-
-            // Extraer datos de señal
-            const rssiMatch = data.match(/RSSI ([-\d]+)dBm/);
-            const snrMatch = data.match(/SNR ([-\d.]+)dB/);
-            const rssi = rssiMatch ? parseInt(rssiMatch[1]) : -70;
-            const snr = snrMatch ? parseFloat(snrMatch[1]) : 10;
-
-            const statusData = {
-                type: 'status',
-                data: {
-                    rocketState: stateCode,
-                    batteryVoltage: batteryVoltage,
-                    batteryPercentage: ((batteryVoltage - 3.0) / 1.2) * 100,
-                    rssi: rssi,
-                    snr: snr
-                }
-            };
-
-            callbacks.onData(JSON.stringify(statusData));
-        }
-        // Como último recurso para los comandos críticos que pudieron no ser detectados
-        else if (lastCommandSent &&
-            (lastCommandSent === 'LAUNCH_COMMAND' ||
-                lastCommandSent === 'ABORT_COMMAND' ||
-                lastCommandSent === 'FORCE_DEPLOY_PARACHUTE') &&
-            data.includes('y')) {
-            // El usuario ha confirmado un comando crítico
-            setTimeout(() => {
-                // Generar una respuesta sintética
-                const responseData = {
-                    type: 'command_response',
-                    data: {
-                        success: true,
-                        message: `Comando ${lastCommandSent} ejecutado con éxito`
-                    }
-                };
-                callbacks.onData(JSON.stringify(responseData));
-                lastCommandSent = null;
-            }, 500);
-        }
-        else {
-            // Otros datos, enviar como texto plano
-            callbacks.onData(data);
-        }
     };
 
     // Enviar comando

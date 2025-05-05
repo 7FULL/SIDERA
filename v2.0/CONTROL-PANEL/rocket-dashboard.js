@@ -34,7 +34,10 @@ document.addEventListener('DOMContentLoaded', () => {
         rocketTrajectory: [],
         telemetryLog: [],
         graphsPaused: false,
-        commandHistory: []
+        commandHistory: [],
+        mapInitialized: false,
+        homeLocation: null,
+        rocketPath: []
     };
 
     // DOM Elements
@@ -120,7 +123,11 @@ document.addEventListener('DOMContentLoaded', () => {
         camera: null,
         renderer: null,
         rocket: null,
-        animate: null
+        animate: null,
+        map: null,
+        rocketMarker: null,
+        homeMarker: null,
+        pathLine: null
     };
 
     // ---- INITIALIZATION FUNCTIONS ----
@@ -392,22 +399,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initMap() {
-        // For a real implementation, we would use a mapping library like Leaflet or Google Maps
-        // For now, just display a placeholder
-        const mapContainer = elements.map;
+        // Check if Leaflet is available
+        if (typeof L === 'undefined') {
+            logToConsole('Leaflet library not available - Map will not be rendered', 'warning');
+            return;
+        }
 
-        // Create rocket marker
-        const marker = document.createElement('div');
-        marker.className = 'rocket-marker';
-        marker.innerHTML = '<i class="fas fa-rocket"></i>';
-        marker.style.position = 'absolute';
-        marker.style.top = '50%';
-        marker.style.left = '50%';
-        marker.style.transform = 'translate(-50%, -50%)';
-        marker.style.color = '#ff3d00';
-        marker.style.fontSize = '24px';
+        try {
+            // Initialize Leaflet map
+            const map = L.map('map', {
+                attributionControl: false,
+                zoomControl: true,
+                dragging: true,
+                doubleClickZoom: true
+            }).setView([40.7128, -74.006], 13); // Default view (New York)
 
-        mapContainer.appendChild(marker);
+            // Add dark mode tile layer
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Create custom rocket icon
+            const rocketIcon = L.divIcon({
+                className: 'rocket-marker',
+                html: '<i class="fas fa-rocket"></i>',
+                iconSize: [20, 20]
+            });
+
+            // Create custom home/launch site icon
+            const homeIcon = L.divIcon({
+                className: 'home-marker',
+                html: '<i class="fas fa-home"></i>',
+                iconSize: [20, 20]
+            });
+
+            // Initialize markers (not yet added to map)
+            const rocketMarker = L.marker([0, 0], { icon: rocketIcon });
+            const homeMarker = L.marker([0, 0], { icon: homeIcon });
+
+            // Initialize path line (empty)
+            const pathLine = L.polyline([], {
+                className: 'rocket-path',
+                color: '#ff3d00',
+                weight: 3,
+                opacity: 0.7
+            });
+
+            // Store map objects for later use
+            appState.mapInitialized = true;
+            rocketModel.map = map;
+            rocketModel.rocketMarker = rocketMarker;
+            rocketModel.homeMarker = homeMarker;
+            rocketModel.pathLine = pathLine;
+
+            // Log success
+            logToConsole('Map initialized successfully', 'info');
+        } catch (error) {
+            logToConsole(`Error initializing map: ${error.message}`, 'error');
+        }
     }
 
     function initSignalStrengthIndicator() {
@@ -603,7 +654,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     processEventNotification(packet.data);
                     break;
                 default:
-                    logToConsole(`Paquete desconocido: ${data}`, 'warning');
+                    // logToConsole(`Paquete desconocido: ${data} asumiendo que es telemtria`, 'warning');
+                    processTelemetryData(packet);
             }
         } catch (error) {
             // Not JSON, handle as raw data
@@ -621,7 +673,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // If this is the first telemetry after connection, set mission start time
         if (!appState.missionStartTime) {
-            appState.missionStartTime = Date.now() - (telemetry.timestamp || 0);
+            appState.missionStartTime = Date.now() - (telemetry.ts || 0);
         }
 
         // Update UI
@@ -634,7 +686,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Update GPS if available
-        if (telemetry.gpsSatellites > 0) {
+        if (telemetry.gpsS > 0) {
             updateGPSDisplay(telemetry);
         }
 
@@ -645,7 +697,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Log the telemetry packet
-        logToConsole(`Telemetría recibida [Alt: ${telemetry.altitude.toFixed(1)}m, V: ${telemetry.verticalSpeed.toFixed(1)}m/s]`, 'telemetry');
+        logToConsole(`Telemetría recibida [Alt: ${telemetry.alt.toFixed(1)}m, V: ${telemetry.vS.toFixed(1)}m/s]`, 'telemetry');
     }
 
     function processStatusData(status) {
@@ -709,14 +761,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---- UI UPDATES ----
 
     function updateTelemetryDisplay(telemetry) {
-        console.log(telemetry);
+        // console.log(telemetry);
 
         // Update numeric values
-        elements.altitude.textContent = `${telemetry.altitude.toFixed(1)} m`;
-        elements.verticalSpeed.textContent = `${telemetry.verticalSpeed.toFixed(1)} m/s`;
-        elements.acceleration.textContent = `${telemetry.acceleration.toFixed(2)} m/s²`;
-        elements.temperature.textContent = `${telemetry.temperature.toFixed(1)} °C`;
-        elements.pressure.textContent = `${telemetry.pressure.toFixed(1)} hPa`;
+        elements.altitude.textContent = `${telemetry.alt.toFixed(1)} m`;
+        elements.verticalSpeed.textContent = `${telemetry.vS.toFixed(1)} m/s`;
+        elements.acceleration.textContent = `${telemetry.acc.toFixed(2)} m/s²`;
+        elements.temperature.textContent = `${telemetry.tem.toFixed(1)} °C`;
+        elements.pressure.textContent = `${telemetry.pres.toFixed(1)} hPa`;
 
         // Update last packet time
         const now = new Date();
@@ -726,13 +778,13 @@ document.addEventListener('DOMContentLoaded', () => {
         updateMissionTime();
 
         // Update state if included
-        if (telemetry.rocketState !== undefined) {
-            updateRocketStateDisplay(telemetry.rocketState);
+        if (telemetry.state !== undefined) {
+            updateRocketStateDisplay(telemetry.state);
         }
 
         // Update battery if included
-        if (telemetry.batteryVoltage !== undefined) {
-            updateBatteryDisplay(telemetry.batteryVoltage);
+        if (telemetry.bV !== undefined) {
+            updateBatteryDisplay(telemetry.bV);
         }
 
         // Update signal if included
@@ -773,6 +825,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateRocketStateDisplay(stateCode) {
+        //Parse the String to an integer
+        stateCode = parseInt(stateCode);
+
         const stateName = getRocketStateName(stateCode);
         const stateClass = getRocketStateClass(stateCode);
 
@@ -828,19 +883,62 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateGPSDisplay(telemetry) {
-        // Update GPS coordinates
-        elements.gpsLat.textContent = `${telemetry.gpsLatitude.toFixed(6)}°`;
-        elements.gpsLon.textContent = `${telemetry.gpsLongitude.toFixed(6)}°`;
-        elements.gpsAlt.textContent = `${telemetry.gpsAltitude.toFixed(1)} m`;
-        elements.gpsSats.textContent = telemetry.gpsSatellites;
+        // Update GPS coordinates text
+        elements.gpsLat.textContent = `${telemetry.gpsLat.toFixed(6)}°`;
+        elements.gpsLon.textContent = `${telemetry.gpsLong.toFixed(6)}°`;
+        elements.gpsAlt.textContent = `${telemetry.gpsAlt.toFixed(1)} m`;
+        elements.gpsSats.textContent = telemetry.gpsS;
 
         // Update GPS status text
-        elements.gpsStatus.textContent = telemetry.gpsSatellites > 0
-            ? `Fix (${telemetry.gpsSatellites} satélites)`
+        elements.gpsStatus.textContent = telemetry.gpsS > 0
+            ? `Fix (${telemetry.gpsS} satélites)`
             : 'Sin Señal';
 
-        // Update map (this would be more sophisticated with a real map library)
-        // For this demo, we'll just show the coordinates
+        // If Leaflet map is initialized and we have valid coordinates, update the map
+        if (appState.mapInitialized &&
+            telemetry.gpsLat !== 0 &&
+            telemetry.gpsLong !== 0 &&
+            telemetry.gpsS > 0) {
+
+            const position = [telemetry.gpsLat, telemetry.gpsLong];
+
+            // Set home position if not set yet
+            if (!appState.homeLocation && telemetry.gpsAlt < 10) {
+                appState.homeLocation = position;
+                rocketModel.homeMarker.setLatLng(position).addTo(rocketModel.map);
+                logToConsole(`Home location set: ${position[0].toFixed(6)}, ${position[1].toFixed(6)}`, 'info');
+            }
+
+            // Update rocket marker position
+            rocketModel.rocketMarker.setLatLng(position);
+            if (!rocketModel.map.hasLayer(rocketModel.rocketMarker)) {
+                rocketModel.rocketMarker.addTo(rocketModel.map);
+            }
+
+            // Add point to path and update line
+            appState.rocketPath.push(position);
+            rocketModel.pathLine.setLatLngs(appState.rocketPath);
+            if (!rocketModel.map.hasLayer(rocketModel.pathLine)) {
+                rocketModel.pathLine.addTo(rocketModel.map);
+            }
+
+            // Center map on rocket if following is enabled
+            // (You could add a "follow" button to toggle this behavior)
+            rocketModel.map.setView(position);
+
+            // Update tooltip with altitude information
+            rocketModel.rocketMarker.bindTooltip(`Altitude: ${telemetry.alt.toFixed(1)}m<br>Speed: ${telemetry.vS.toFixed(1)}m/s`).openTooltip();
+        }
+    }
+
+    function clearMapTrajectory() {
+        if (appState.mapInitialized) {
+            appState.rocketPath = [];
+            if (rocketModel.pathLine) {
+                rocketModel.pathLine.setLatLngs([]);
+            }
+            logToConsole('Map trajectory cleared', 'info');
+        }
     }
 
     function updateMissionTime() {
@@ -857,13 +955,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---- CHART FUNCTIONS ----
 
     function addDataToCharts(telemetry) {
-        const timestamp = telemetry.timestamp ? new Date(appState.missionStartTime + telemetry.timestamp) : new Date();
+        const timestamp = telemetry.ts ? new Date(appState.missionStartTime + telemetry.ts) : new Date();
 
         // Add data to altitude chart
         if (charts.altitude) {
             charts.altitude.data.datasets[0].data.push({
                 x: timestamp,
-                y: telemetry.altitude
+                y: telemetry.alt
             });
 
             // Limit data points to avoid performance issues
@@ -879,13 +977,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add vertical speed
             charts.speedAccel.data.datasets[0].data.push({
                 x: timestamp,
-                y: telemetry.verticalSpeed
+                y: telemetry.vS
             });
 
             // Add acceleration
             charts.speedAccel.data.datasets[1].data.push({
                 x: timestamp,
-                y: telemetry.acceleration
+                y: telemetry.acc
             });
 
             // Limit data points
@@ -1052,7 +1150,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const timestamp = new Date(log.timestamp).toISOString();
             const telemetry = log.data;
 
-            csv += `${timestamp},telemetry,"Alt: ${telemetry.altitude.toFixed(1)}m, Speed: ${telemetry.verticalSpeed.toFixed(1)}m/s, Accel: ${telemetry.acceleration.toFixed(2)}m/s²"\n`;
+            csv += `${timestamp},telemetry,State: ${getRocketStateName(telemetry.state)},Altitude: ${telemetry.alt.toFixed(1)}m, VerticalSpeed: ${telemetry.vS.toFixed(1)}m/s, Acceleration: ${telemetry.acc.toFixed(2)}m/s²,Temperature: ${telemetry.tem.toFixed(1)}°C,Pressure: ${telemetry.pres.toFixed(1)}hPa,BatteryVoltage: ${telemetry.bV.toFixed(2)}V,GPSLat: ${telemetry.gpsLat.toFixed(6)}°,GPSLong: ${telemetry.gpsLong.toFixed(6)}°,GPSAlt: ${telemetry.gpsAlt.toFixed(1)}m,GPSSat: ${telemetry.gpsS},RSSI: ${telemetry.rssi}dBm,SNR: ${telemetry.snr.toFixed(1)}dB",Flags: ${telemetry.flgs.join(',')}\n`;
         });
 
         appState.commandHistory.forEach(log => {
@@ -1125,6 +1223,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (charts.speedAccel) {
             charts.speedAccel.resize();
+        }
+
+        if (appState.mapInitialized && rocketModel.map) {
+            rocketModel.map.invalidateSize();
         }
     }
 

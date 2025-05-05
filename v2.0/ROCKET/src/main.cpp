@@ -278,7 +278,7 @@ void initializeAllSystems() {
     //TODO
     gpsManager.addSensor(l76kb, 0);  // Priority 0 (primary)
     gpsManager.addSensor(atgm336h, 1);  // Priority 1 (secondary)
-    Serial.println("GPS sensors added");
+    Serial .println("GPS sensors added");
 
     Serial.println("Initializing LoRaSystem...");
     loraSystem = new LoRaSystem(SPI1, LORA_CS, LORA_RST, LORA_DIO0, &storageManager);

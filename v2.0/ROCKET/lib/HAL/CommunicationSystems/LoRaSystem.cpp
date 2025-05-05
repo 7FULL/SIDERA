@@ -147,10 +147,13 @@ bool LoRaSystem::sendMessage(const Message& message) {
     }
 
     Serial.println("LoRa: Ending packet...");
-    if (LoRa.endPacket(true) != 1) { // Check if the packet was sent successfully
-        Serial.println("LoRa: Failed to send packet");
-        return false;
-    }
+
+    LoRa.endPacket();
+
+//    if (LoRa.endPacket(true) != 1) { // Check if the packet was sent successfully
+//        Serial.println("LoRa: Failed to send packet");
+//        return false;
+//    }
 
     Serial.println("LoRa: Packet sent successfully");
 

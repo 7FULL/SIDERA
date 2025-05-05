@@ -5,12 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d1ca9a27-336a-4e31-a514-cb52368ef075" name="Changes" comment="V2.0">
+      <change beforePath="$PROJECT_DIR$/.idea/jsLibraryMappings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/jsLibraryMappings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/rocket-dashboard.js" beforeDir="false" afterPath="$PROJECT_DIR$/rocket-dashboard.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/serial-bridge.js" beforeDir="false" afterPath="$PROJECT_DIR$/serial-bridge.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/styles.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../PCB_CONTROL_PANEL/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../PCB_CONTROL_PANEL/src/main.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ROCKET/include/Config.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/include/Config.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/CommunicationSystems/LoRaSystem.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/CommunicationSystems/LoRaSystem.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ROCKET/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -104,7 +108,8 @@
       <workItem from="1746211709241" duration="10174000" />
       <workItem from="1746314238807" duration="7001000" />
       <workItem from="1746355061198" duration="186000" />
-      <workItem from="1746387660406" duration="739000" />
+      <workItem from="1746387660406" duration="3604000" />
+      <workItem from="1746435476742" duration="4652000" />
     </task>
     <task id="LOCAL-00001" summary="V2.0">
       <option name="closed" value="true" />

@@ -130,7 +130,7 @@ bool parseInt(int& value);
 void setup() {
     // Initialize serial for debugging and user interface
     Serial.begin(115200);
-    while (!Serial && millis() < 5000);
+    while (!Serial && millis() < 10000);
 
     delay(1000); // Wait for serial to stabilize
 
@@ -849,54 +849,39 @@ void sendCommand(CommandCode code, uint8_t* payload, size_t length) {
     digitalWrite(LED_RED, LOW);
 }
 
+// Update the printTelemetry function to send data in chunks
 void printTelemetry() {
-    // Solo imprimir si se han recibido datos de telemetría
     if (lastTelemetryTime == 0) {
         Serial.println("No telemetry data received yet");
         return;
     }
 
-    // Crear el JSON con los datos de telemetría
-    String telemetryJson = "__telemetry__{";
-    telemetryJson += "\"timestamp\":" + String(lastTelemetry.timestamp) + ",";
+    // Create JSON with telemetry data
+    String telemetryJson = "__tl__{";
+    telemetryJson += "\"ts\":" + String(lastTelemetry.timestamp) + ",";
     telemetryJson += "\"age\":" + String((millis() - lastTelemetryTime) / 1000.0f, 1) + ",";
-    telemetryJson += "\"state\":\"";
-    switch (static_cast<RocketStatusCode>(lastTelemetry.rocketState)) {
-        case RocketStatusCode::INIT: telemetryJson += "INITIALIZING"; break;
-        case RocketStatusCode::GROUND_IDLE: telemetryJson += "IDLE"; break;
-        case RocketStatusCode::READY: telemetryJson += "READY"; break;
-        case RocketStatusCode::POWERED_FLIGHT: telemetryJson += "POWERED_FLIGHT"; break;
-        case RocketStatusCode::COASTING: telemetryJson += "COASTING"; break;
-        case RocketStatusCode::APOGEE: telemetryJson += "APOGEE"; break;
-        case RocketStatusCode::DESCENT: telemetryJson += "DESCENT"; break;
-        case RocketStatusCode::PARACHUTE_DESCENT: telemetryJson += "PARACHUTE_DEPLOYED"; break;
-        case RocketStatusCode::LANDED: telemetryJson += "LANDED"; break;
-        case RocketStatusCode::ERROR: telemetryJson += "ERROR"; break;
-        default: telemetryJson += "UNKNOWN"; break;
-    }
-    telemetryJson += "\",";
-    telemetryJson += "\"altitude\":" + String(lastTelemetry.altitude, 1) + ",";
-    telemetryJson += "\"verticalSpeed\":" + String(lastTelemetry.verticalSpeed, 1) + ",";
-    telemetryJson += "\"acceleration\":" + String(lastTelemetry.acceleration, 2) + ",";
-    telemetryJson += "\"temperature\":" + String(lastTelemetry.temperature, 1) + ",";
-    telemetryJson += "\"pressure\":" + String(lastTelemetry.pressure, 1) + ",";
-    telemetryJson += "\"batteryVoltage\":" + String(lastTelemetry.batteryVoltage, 2) + ",";
-    telemetryJson += "\"gpsSatellites\":" + String(lastTelemetry.gpsSatellites) + ",";
-    telemetryJson += "\"gpsLatitude\":" + String(lastTelemetry.gpsLatitude, 6) + ",";
-    telemetryJson += "\"gpsLongitude\":" + String(lastTelemetry.gpsLongitude, 6) + ",";
-    telemetryJson += "\"gpsAltitude\":" + String(lastTelemetry.gpsAltitude, 1) + ",";
+    telemetryJson += "\"state\":" + String(static_cast<uint8_t>(lastTelemetry.rocketState)) + ",";
+    telemetryJson += "\"alt\":" + String(lastTelemetry.altitude, 1) + ",";
+    telemetryJson += "\"vS\":" + String(lastTelemetry.verticalSpeed, 1) + ",";
+    telemetryJson += "\"acc\":" + String(lastTelemetry.acceleration, 2) + ",";
+    telemetryJson += "\"tem\":" + String(lastTelemetry.temperature, 1) + ",";
+    telemetryJson += "\"pres\":" + String(lastTelemetry.pressure, 1) + ",";
+    telemetryJson += "\"bV\":" + String(lastTelemetry.batteryVoltage, 2) + ",";
+    telemetryJson += "\"gpsS\":" + String(lastTelemetry.gpsSatellites) + ",";
+    telemetryJson += "\"gpsLat\":" + String(lastTelemetry.gpsLatitude, 6) + ",";
+    telemetryJson += "\"gpsLong\":" + String(lastTelemetry.gpsLongitude, 6) + ",";
+    telemetryJson += "\"gpsAlt\":" + String(lastTelemetry.gpsAltitude, 1) + ",";
     telemetryJson += "\"rssi\":" + String(lastRssi) + ",";
     telemetryJson += "\"snr\":" + String(lastSnr, 1) + ",";
-    telemetryJson += "\"flags\":[";
 
-    // Agregar las banderas al JSON
-    if (lastTelemetry.flags & 0x01) telemetryJson += "\"PARACHUTE_DEPLOYED\",";
-    if (lastTelemetry.flags & 0x02) telemetryJson += "\"APOGEE_DETECTED\",";
-    if (lastTelemetry.flags & 0x04) telemetryJson += "\"LANDED\",";
-    if (lastTelemetry.flags & 0x08) telemetryJson += "\"LOW_BATTERY\",";
-    if (lastTelemetry.flags & 0x10) telemetryJson += "\"ERROR_CONDITION\",";
-    if (telemetryJson.endsWith(",")) telemetryJson.remove(telemetryJson.length() - 1); // Eliminar la última coma
-
+    // Fix flags array formatting
+    telemetryJson += "\"flgs\":[";
+    bool hasFlag = false;
+    if (lastTelemetry.flags & 0x01) { telemetryJson += "\"PARACHUTE\""; hasFlag = true; }
+    if (lastTelemetry.flags & 0x02) { if(hasFlag) telemetryJson += ","; telemetryJson += "\"APOGEE\""; hasFlag = true; }
+    if (lastTelemetry.flags & 0x04) { if(hasFlag) telemetryJson += ","; telemetryJson += "\"LAND\""; hasFlag = true; }
+    if (lastTelemetry.flags & 0x08) { if(hasFlag) telemetryJson += ","; telemetryJson += "\"LOW_BAT\""; hasFlag = true; }
+    if (lastTelemetry.flags & 0x10) { if(hasFlag) telemetryJson += ","; telemetryJson += "\"ERROR\""; hasFlag = true; }
     telemetryJson += "]}";
 
     Serial.println(telemetryJson);
