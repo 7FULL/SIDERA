@@ -148,9 +148,27 @@ main {
 }
 
 .dashboard-row {
-    display: flex;
+    display: grid;
     gap: 0.5rem;
-    min-height: 200px;
+    width: 100%;
+}
+
+.top-row{
+    grid-template-columns: 1fr 2fr 1fr;
+}
+
+.command-row{
+    grid-template-columns: 2fr 1fr;
+}
+
+.bottom-row{
+    grid-template-columns: 1fr 1fr;
+    /*height: 500px;*/
+}
+
+/* Make GPS panel take full width */
+.full-width {
+    width: 100%;
 }
 
 .panel {
@@ -172,7 +190,7 @@ main {
     border-bottom: 1px solid var(--border-color);
 }
 
-.panel-header h2 {
+.panel-header h2, .panel-header h3 {
     font-size: 1.1rem;
     font-weight: 600;
 }
@@ -180,7 +198,8 @@ main {
 .panel-body {
     flex-grow: 1;
     padding: 1rem;
-    overflow: auto;
+    overflow: hidden;
+    position: relative;
 }
 
 /* ---- Status Panel ---- */
@@ -291,6 +310,8 @@ main {
 .orientation-values {
     display: flex;
     gap: 1rem;
+    justify-content: space-between;
+    width: 100%;
 }
 
 .orientation-item {
@@ -308,7 +329,7 @@ main {
 
 /* ---- Graph Panel ---- */
 .graph-panel {
-    flex: 1;
+    height: 500px;
 }
 
 .graph-controls {
@@ -317,23 +338,16 @@ main {
     align-items: center;
 }
 
-.graph-container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    gap: 1rem;
-}
-
 .graph-wrapper {
-    flex: 1;
+    width: 100%;
+    height: 100%;
     position: relative;
-    min-height: 150px;
 }
 
 /* ---- Command Panel ---- */
 .command-panel .panel-body {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 1rem;
 }
 
@@ -341,6 +355,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    width: fit-content;
 }
 
 .command-group h3 {
@@ -416,8 +431,7 @@ main {
 #map {
     width: 100%;
     height: 100%;
-    background-image: radial-gradient(circle, #2c3e50 1px, transparent 1px);
-    background-size: 20px 20px;
+    z-index: 1;
 }
 
 .gps-coords {
@@ -438,36 +452,11 @@ main {
     margin-right: 0.25rem;
 }
 
-/* ---- Footer/Console ---- */
-footer {
-    background-color: var(--bg-secondary);
-    border-radius: 8px;
-    padding: 0;
-    box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
-    min-height: 150px;
-    max-height: 200px;
-    display: flex;
-    flex-direction: column;
-}
-
-.console-container {
-    display: flex;
-    flex-direction: column;
+/* ---- Console Panel ---- */
+.console-panel {
     flex: 1;
-}
-
-.console-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 1rem;
-    background-color: var(--panel-header);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.console-header h3 {
-    font-size: 0.9rem;
-    font-weight: 600;
+    flex-direction: column;
 }
 
 .console-controls {
@@ -484,6 +473,8 @@ footer {
     overflow-y: auto;
     color: var(--text-secondary);
     background-color: var(--bg-secondary);
+    height: 100%;
+    max-height: 100px;
 }
 
 .log-entry {
@@ -563,52 +554,37 @@ footer {
     background-color: var(--accent-danger);
 }
 
-/* ---- Responsive Design ---- */
-@media (max-width: 1200px) {
-    .dashboard-row {
-        flex-direction: column;
-    }
-
-    .status-panel .panel-body {
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .status-group {
-        gap: 0.5rem;
-    }
-
-    .logo h1 {
-        font-size: 1.2rem;
-    }
+/* ---- Rocket Map Markers ---- */
+.rocket-marker {
+    width: 20px;
+    height: 20px;
+    margin-top: -10px;
+    margin-left: -10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #ff3d00;
+    font-size: 20px;
+    animation: pulse 1.5s infinite;
 }
 
-@media (max-width: 768px) {
-    header {
-        flex-direction: column;
-        gap: 0.5rem;
-        padding: 0.5rem;
-    }
+.home-marker {
+    width: 20px;
+    height: 20px;
+    margin-top: -10px;
+    margin-left: -10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #0084ff;
+    font-size: 20px;
+}
 
-    .connection-status {
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .panel-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-
-    .graph-controls, .console-controls, .command-status, .orientation-values, .gps-coords {
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .mission-time, .orientation-item, .gps-coord {
-        font-size: 0.75rem;
-    }
+.rocket-path {
+    stroke: #ff3d00;
+    stroke-width: 3;
+    stroke-opacity: 0.7;
+    fill: none;
 }
 
 /* ---- States ---- */
@@ -658,52 +634,50 @@ footer {
     }
 }
 
-/* ---- GPS Panel ---- */
-.gps-panel .panel-body {
-    padding: 0;
-    position: relative;
+/* ---- Responsive Design ---- */
+@media (max-width: 1200px) {
+    .dashboard-row {
+        flex-direction: column;
+    }
+
+    .status-panel .panel-body {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .status-group {
+        gap: 0.5rem;
+    }
+
+    .logo h1 {
+        font-size: 1.2rem;
+    }
 }
 
-#map-container {
-    width: 100%;
-    height: 100%;
-    position: relative;
-}
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.5rem;
+    }
 
-#map {
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-}
+    .connection-status {
+        width: 100%;
+        justify-content: space-between;
+    }
 
-.rocket-marker {
-    width: 20px;
-    height: 20px;
-    margin-top: -10px;
-    margin-left: -10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #ff3d00;
-    font-size: 20px;
-    animation: pulse 1.5s infinite;
-}
+    .panel-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
 
-.home-marker {
-    width: 20px;
-    height: 20px;
-    margin-top: -10px;
-    margin-left: -10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #0084ff;
-    font-size: 20px;
-}
+    .graph-controls, .console-controls, .command-status, .orientation-values, .gps-coords {
+        width: 100%;
+        justify-content: space-between;
+    }
 
-.rocket-path {
-    stroke: #ff3d00;
-    stroke-width: 3;
-    stroke-opacity: 0.7;
-    fill: none;
+    .mission-time, .orientation-item, .gps-coord {
+        font-size: 0.75rem;
+    }
 }

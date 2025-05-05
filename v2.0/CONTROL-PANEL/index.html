@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,25 +15,25 @@
   <header>
     <div class="logo">
       <i class="fas fa-rocket"></i>
-      <h1>Rocket Ground Control System</h1>
+      <h1>SIDERA</h1>
     </div>
     <div class="connection-status">
       <div id="connection-indicator" class="indicator offline"></div>
-      <span id="connection-text">Desconectado</span>
+      <span id="connection-text">Disconnected</span>
       <select id="port-selector">
-        <option value="">Seleccionar Puerto</option>
+        <option value="">Select Port</option>
       </select>
-      <button id="connect-button" class="btn">Conectar</button>
+      <button id="connect-button" class="btn">Connect</button>
     </div>
   </header>
 
   <!-- Main Dashboard -->
   <main>
-    <!-- Top row - Status panel and 3D model -->
-    <div class="dashboard-row">
+    <!-- Top row - Status panel and Orientation -->
+    <div class="dashboard-row top-row">
       <div class="panel status-panel">
         <div class="panel-header">
-          <h2>Estado del Cohete</h2>
+          <h2>Rocket Status</h2>
           <div class="mission-time">
             <span>T+</span>
             <span id="mission-time">00:00:00</span>
@@ -42,33 +42,33 @@
         <div class="panel-body">
           <div class="status-group">
             <div class="status-item">
-              <div class="status-label">Estado:</div>
-              <div id="rocket-state" class="status-value highlight">DESCONOCIDO</div>
+              <div class="status-label">Status:</div>
+              <div id="rocket-state" class="status-value highlight">UNKNOWN</div>
             </div>
             <div class="status-item">
-              <div class="status-label">Altitud:</div>
+              <div class="status-label">Altitude:</div>
               <div id="altitude" class="status-value">0.0 m</div>
             </div>
             <div class="status-item">
-              <div class="status-label">Velocidad Vertical:</div>
+              <div class="status-label">Vertical Speed:</div>
               <div id="vertical-speed" class="status-value">0.0 m/s</div>
             </div>
             <div class="status-item">
-              <div class="status-label">Aceleración:</div>
+              <div class="status-label">Acceleration:</div>
               <div id="acceleration" class="status-value">0.0 m/s²</div>
             </div>
             <div class="status-item">
-              <div class="status-label">Temperatura:</div>
+              <div class="status-label">Temperature:</div>
               <div id="temperature" class="status-value">0.0 °C</div>
-            </div>
-            <div class="status-item">
-              <div class="status-label">Presión:</div>
-              <div id="pressure" class="status-value">0.0 hPa</div>
             </div>
           </div>
           <div class="status-group">
             <div class="status-item">
-              <div class="status-label">Batería:</div>
+              <div class="status-label">Pressure:</div>
+              <div id="pressure" class="status-value">0.0 hPa</div>
+            </div>
+            <div class="status-item">
+              <div class="status-label">Battery:</div>
               <div id="battery" class="status-value">0.0 V</div>
               <div class="battery-indicator">
                 <div id="battery-level" style="width: 0%"></div>
@@ -76,10 +76,10 @@
             </div>
             <div class="status-item">
               <div class="status-label">GPS:</div>
-              <div id="gps-status" class="status-value">Sin Señal</div>
+              <div id="gps-status" class="status-value">No Signal</div>
             </div>
             <div class="status-item">
-              <div class="status-label">Señal LoRa:</div>
+              <div class="status-label">LoRa Signal:</div>
               <div id="signal-strength" class="status-value">
                 <span id="rssi-value">-- dBm</span>,
                 <span id="snr-value">-- dB</span>
@@ -89,129 +89,15 @@
               </div>
             </div>
             <div class="status-item">
-              <div class="status-label">Último Paquete:</div>
+              <div class="status-label">Last Packet:</div>
               <div id="last-packet-time" class="status-value">--:--:--</div>
             </div>
           </div>
         </div>
       </div>
-
-      <div class="panel model-panel">
-        <div class="panel-header">
-          <h2>Orientación</h2>
-          <div class="orientation-values">
-            <div class="orientation-item">
-              <span>Cabeceo:</span>
-              <span id="pitch-value">0.0°</span>
-            </div>
-            <div class="orientation-item">
-              <span>Balanceo:</span>
-              <span id="roll-value">0.0°</span>
-            </div>
-            <div class="orientation-item">
-              <span>Guiñada:</span>
-              <span id="yaw-value">0.0°</span>
-            </div>
-          </div>
-        </div>
-        <div class="panel-body">
-          <div id="rocket-model-container">
-            <canvas id="rocket-model"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Middle row - Telemetry graphs -->
-    <div class="dashboard-row">
-      <div class="panel graph-panel">
-        <div class="panel-header">
-          <h2>Telemetría en Tiempo Real</h2>
-          <div class="graph-controls">
-            <select id="graph-timespan">
-              <option value="60">Último Minuto</option>
-              <option value="300" selected>Últimos 5 Minutos</option>
-              <option value="600">Últimos 10 Minutos</option>
-              <option value="1800">Últimos 30 Minutos</option>
-            </select>
-            <button id="pause-graphs" class="btn small">
-              <i class="fas fa-pause"></i>
-            </button>
-            <button id="clear-graphs" class="btn small">
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
-        </div>
-        <div class="panel-body">
-          <div class="graph-container">
-            <div class="graph-wrapper">
-              <canvas id="altitude-chart"></canvas>
-            </div>
-            <div class="graph-wrapper">
-              <canvas id="speed-accel-chart"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom row - Command center and GPS map -->
-    <div class="dashboard-row">
-      <!-- Sección de comandos actualizada -->
-      <div class="panel command-panel">
-        <div class="panel-header">
-          <h2>Centro de Comandos</h2>
-          <div class="command-status">
-            <span>Último comando:</span>
-            <span id="last-command">Ninguno</span>
-            <span id="command-status">-</span>
-          </div>
-        </div>
-        <div class="panel-body">
-          <div class="command-group">
-            <h3>Monitoreo</h3>
-            <div class="command-buttons">
-              <button id="cmd-ping" class="command-btn">
-                <i class="fas fa-satellite-dish"></i>
-                Ping
-              </button>
-              <button id="cmd-status" class="command-btn">
-                <i class="fas fa-info-circle"></i>
-                Estado
-              </button>
-              <button id="cmd-diagnostics" class="command-btn">
-                <i class="fas fa-stethoscope"></i>
-                Diagnóstico
-              </button>
-              <button id="cmd-calibrate" class="command-btn">
-                <i class="fas fa-sliders-h"></i>
-                Calibrar
-              </button>
-            </div>
-          </div>
-          <div class="command-group">
-            <h3>Control de Vuelo</h3>
-            <div class="command-buttons">
-              <button id="cmd-launch" class="command-btn critical">
-                <i class="fas fa-rocket"></i>
-                Lanzar
-              </button>
-              <button id="cmd-abort" class="command-btn emergency">
-                <i class="fas fa-exclamation-triangle"></i>
-                Abortar
-              </button>
-              <button id="cmd-deploy-parachute" class="command-btn emergency">
-                <i class="fas fa-parachute-box"></i>
-                Desplegar Paracaídas
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div class="panel gps-panel">
         <div class="panel-header">
-          <h2>Posición GPS</h2>
+          <h2>GPS Position</h2>
           <div class="gps-coords">
             <div class="gps-coord">
               <span>Lat:</span>
@@ -226,7 +112,7 @@
               <span id="gps-alt">-- m</span>
             </div>
             <div class="gps-coord">
-              <span>Satélites:</span>
+              <span>Satellites:</span>
               <span id="gps-sats">0</span>
             </div>
           </div>
@@ -237,40 +123,153 @@
           </div>
         </div>
       </div>
-    </div>
-  </main>
-
-  <!-- Footer with log console and data export -->
-  <footer>
-    <div class="console-container">
-      <div class="console-header">
-        <h3>Consola de Eventos</h3>
-        <div class="console-controls">
-          <select id="log-level">
-            <option value="all">Todos</option>
-            <option value="info">Info</option>
-            <option value="command">Comandos</option>
-            <option value="telemetry">Telemetría</option>
-            <option value="warning">Advertencias</option>
-            <option value="error">Errores</option>
-          </select>
-          <button id="clear-console" class="btn small">Limpiar</button>
-          <button id="export-logs" class="btn small">Exportar</button>
+      <div class="panel model-panel">
+        <div class="panel-header">
+          <div class="orientation-values">
+            <div class="orientation-item">
+              <span>Pitch:</span>
+              <span id="pitch-value">0.0°</span>
+            </div>
+            <div class="orientation-item">
+              <span>Roll:</span>
+              <span id="roll-value">0.0°</span>
+            </div>
+            <div class="orientation-item">
+              <span>Yaw:</span>
+              <span id="yaw-value">0.0°</span>
+            </div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div id="rocket-model-container">
+            <canvas id="rocket-model"></canvas>
+          </div>
         </div>
       </div>
-      <div id="console-log" class="console-log"></div>
     </div>
-  </footer>
+
+    <!-- Command row - Command center and event console -->
+    <div class="dashboard-row command-row">
+      <!-- Command Center Updated -->
+      <div class="panel command-panel">
+        <div class="panel-header">
+          <h2>Command Center</h2>
+          <div class="command-status">
+            <span>Last command:</span>
+            <span id="last-command">None</span>
+            <span id="command-status">-</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="command-group">
+            <h3>Monitoring</h3>
+            <div class="command-buttons">
+              <button id="cmd-ping" class="command-btn">
+                <i class="fas fa-satellite-dish"></i>
+                Ping
+              </button>
+              <button id="cmd-diagnostics" class="command-btn">
+                <i class="fas fa-stethoscope"></i>
+                Diagnostics
+              </button>
+              <button id="cmd-calibrate" class="command-btn">
+                <i class="fas fa-sliders-h"></i>
+                Calibrate
+              </button>
+            </div>
+          </div>
+          <div class="command-group">
+            <h3>Flight Control</h3>
+            <div class="command-buttons">
+              <button id="cmd-launch" class="command-btn critical">
+                <i class="fas fa-rocket"></i>
+                Launch
+              </button>
+              <button id="cmd-abort" class="command-btn emergency">
+                <i class="fas fa-exclamation-triangle"></i>
+                Abort
+              </button>
+              <button id="cmd-deploy-parachute" class="command-btn emergency">
+                <i class="fas fa-parachute-box"></i>
+                Deploy Parachute
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel console-panel">
+        <div class="panel-header">
+          <h3>Event Console</h3>
+          <div class="console-controls">
+            <select id="log-level">
+              <option value="all">All</option>
+              <option value="info">Info</option>
+              <option value="command">Commands</option>
+              <option value="telemetry">Telemetry</option>
+              <option value="warning">Warnings</option>
+              <option value="error">Errors</option>
+            </select>
+            <button id="clear-console" class="btn small">Clear</button>
+            <button id="export-logs" class="btn small">Export</button>
+          </div>
+        </div>
+        <div id="console-log" class="console-log"></div>
+      </div>
+    </div>
+
+    <!-- Bottom row - Telemetry graphs -->
+    <div class="dashboard-row bottom-row">
+      <div class="panel graph-panel">
+        <div class="panel-header">
+          <h2>Altitude</h2>
+          <div class="graph-controls">
+            <select id="graph-timespan">
+              <option value="60" selected>Last Minute</option>
+              <option value="300">Last 5 Minutes</option>
+              <option value="600">Last 10 Minutes</option>
+              <option value="1800">Last 30 Minutes</option>
+            </select>
+            <button id="pause-graphs" class="btn small">
+              <i class="fas fa-pause"></i>
+            </button>
+            <button id="clear-graphs" class="btn small">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="graph-wrapper">
+            <canvas id="altitude-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel graph-panel">
+        <div class="panel-header">
+          <h2>Speed & Acceleration</h2>
+          <div class="graph-controls second-graph">
+            <!-- Graph 2 controls will be synced with Graph 1 via JavaScript -->
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="graph-wrapper">
+            <canvas id="speed-accel-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
 </div>
 
 <!-- Confirmation Modal -->
 <div id="confirmation-modal" class="modal">
   <div class="modal-content">
-    <h3 id="modal-title">Confirmar Acción</h3>
-    <p id="modal-message">¿Estás seguro de que deseas realizar esta acción?</p>
+    <h3 id="modal-title">Confirm Action</h3>
+    <p id="modal-message">Are you sure you want to perform this action?</p>
     <div class="modal-buttons">
-      <button id="modal-cancel" class="btn">Cancelar</button>
-      <button id="modal-confirm" class="btn critical">Confirmar</button>
+      <button id="modal-cancel" class="btn">Cancel</button>
+      <button id="modal-confirm" class="btn critical">Confirm</button>
     </div>
   </div>
 </div>

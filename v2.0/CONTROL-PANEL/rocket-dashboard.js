@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
         lastCommand: document.getElementById('last-command'),
         commandStatus: document.getElementById('command-status'),
         cmdPing: document.getElementById('cmd-ping'),
-        cmdStatus: document.getElementById('cmd-status'),
+        // cmdStatus: document.getElementById('cmd-status'),
         cmdDiagnostics: document.getElementById('cmd-diagnostics'),
         cmdCalibrate: document.getElementById('cmd-calibrate'),
         cmdWake: document.getElementById('cmd-wake'),
@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'line',
             data: {
                 datasets: [{
-                    label: 'Altitud (m)',
+                    label: 'Altitude (m)',
                     data: [],
                     borderColor: '#00aaff',
                     backgroundColor: 'rgba(0, 170, 255, 0.1)',
@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: 'Altitud (m)',
+                            text: 'Altitude (m)',
                             color: 'rgba(255, 255, 255, 0.6)'
                         },
                         grid: {
@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
             data: {
                 datasets: [
                     {
-                        label: 'Velocidad (m/s)',
+                        label: 'Speed (m/s)',
                         data: [],
                         borderColor: '#4caf50',
                         backgroundColor: 'rgba(76, 175, 80, 0.1)',
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         tension: 0.3
                     },
                     {
-                        label: 'Aceleración (m/s²)',
+                        label: 'Acceleration (m/s²)',
                         data: [],
                         borderColor: '#ff9800',
                         backgroundColor: 'rgba(255, 152, 0, 0.1)',
@@ -269,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     y: {
                         title: {
                             display: true,
-                            text: 'Velocidad (m/s)',
+                            text: 'Speed (m/s)',
                             color: 'rgba(255, 255, 255, 0.6)'
                         },
                         grid: {
@@ -283,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         position: 'right',
                         title: {
                             display: true,
-                            text: 'Aceleración (m/s²)',
+                            text: 'Acceleration (m/s²)',
                             color: 'rgba(255, 255, 255, 0.6)'
                         },
                         grid: {
@@ -305,6 +305,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 animation: false
             }
         });
+
+        // Sync graph controls
+        const secondGraphControls = document.querySelector('.graph-controls.second-graph');
+        if (secondGraphControls) {
+            // Clone controls from first graph to second graph
+            secondGraphControls.innerHTML = document.querySelector('.graph-controls:not(.second-graph)').innerHTML;
+
+            // Remove the ID from the cloned elements to avoid duplicate IDs
+            const clonedSelect = secondGraphControls.querySelector('select');
+            const clonedPauseButton = secondGraphControls.querySelector('button:first-of-type');
+            const clonedClearButton = secondGraphControls.querySelector('button:last-of-type');
+
+            if (clonedSelect) {
+                clonedSelect.id = 'graph-timespan-2';
+                clonedSelect.addEventListener('change', function() {
+                    // Sync with main graph timespan
+                    elements.graphTimespan.value = this.value;
+                    updateGraphTimespan();
+                });
+            }
+
+            if (clonedPauseButton) {
+                clonedPauseButton.id = 'pause-graphs-2';
+                clonedPauseButton.addEventListener('click', toggleGraphPause);
+            }
+
+            if (clonedClearButton) {
+                clonedClearButton.id = 'clear-graphs-2';
+                clonedClearButton.addEventListener('click', clearGraphs);
+            }
+        }
     }
 
     function initRocketModel() {
@@ -412,13 +443,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 zoomControl: true,
                 dragging: true,
                 doubleClickZoom: true
-            }).setView([40.7128, -74.006], 13); // Default view (New York)
+            }).setView([40.4168, -3.7038], 13); // Default view
 
             // Add dark mode tile layer
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
                 subdomains: 'abcd',
-                maxZoom: 19
+                maxZoom: 21
             }).addTo(map);
 
             // Create custom rocket icon
@@ -482,7 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Command buttons - Actualizados sin despertar y armar
         elements.cmdPing.addEventListener('click', () => sendCommand('PING'));
-        elements.cmdStatus.addEventListener('click', () => sendCommand('GET_STATUS'));
+        // elements.cmdStatus.addEventListener('click', () => sendCommand('GET_STATUS'));
         elements.cmdDiagnostics.addEventListener('click', () => sendCommand('RUN_DIAGNOSTICS'));
         elements.cmdCalibrate.addEventListener('click', () => sendCommand('CALIBRATE_SENSORS'));
 
@@ -616,7 +647,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.connectionText.textContent = 'Desconectado';
                 break;
             case 'connecting':
-                elements.connectionText.textContent = 'Conectando...';
+                elements.connectionText.textContent = 'Connecting...';
                 break;
             case 'online':
                 elements.connectionText.textContent = 'Conectado';
