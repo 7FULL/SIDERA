@@ -156,18 +156,6 @@ private:
             SensorFusionSystem* fusionSystem
     );
 
-    // Event handlers
-    static bool handleInitEvents(
-            RocketEvent event,
-            StateMachine& stateMachine,
-            BarometricSensorManager* baroManager,
-            IMUSensorManager* imuManager,
-            GPSSensorManager* gpsManager,
-            LoRaSystem* loraSystem,
-            StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem
-    );
-
     static bool handleGroundIdleEvents(
             RocketEvent event,
             StateMachine& stateMachine,

@@ -25,8 +25,6 @@ enum class RocketState {
 enum class InitSubState {
     HARDWARE_INIT,
     SENSOR_CALIBRATION,
-    COMMUNICATION_INIT,
-    STORAGE_INIT,
     SELF_TEST
 };
 

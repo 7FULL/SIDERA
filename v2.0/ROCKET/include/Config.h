@@ -5,6 +5,14 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+//#define ENABLE_BMP388_DEBUG
+//#define ENABLE_MPL3115A2_DEBUG
+//#define ENABLE_ATGM336H_DEBUG
+//#define ENABLE_L76KB_DEBUG
+//#define ENABLE_BMIO88_DEBUG
+//#define ENABLE_DS18B20_DEBUG
+#define ENABLE_ADXL375_DEBUG
+
 // Version information
 #define FIRMWARE_VERSION "1.0.0"
 #define CONFIG_VERSION 1
@@ -70,6 +78,7 @@
 #define BATTERY_EMPTY_VOLTAGE 3.0f          // Empty LiPo voltage
 #define LOW_BATTERY_THRESHOLD 3.5f          // Low battery warning threshold
 #define CRITICAL_BATTERY_THRESHOLD 3.2f     // Critical battery threshold
+//#define ADC_RESOLUTION 4096
 
 //=== PARACHUTE PARAMETERS ===//
 #define PARACHUTE_DEPLOYMENT_DURATION 1000  // ms to activate deployment mechanism

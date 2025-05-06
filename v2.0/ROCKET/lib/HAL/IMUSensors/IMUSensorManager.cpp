@@ -69,6 +69,8 @@ bool IMUSensorManager::calibrate() {
 
     bool allCalibrated = true;
 
+    Serial.println("Calibrating IMU sensors...");
+
     for (auto sensor : sensors) {
         if (sensor->isOperational()) {
             if (sensor->calibrate() != SensorStatus::OK) {

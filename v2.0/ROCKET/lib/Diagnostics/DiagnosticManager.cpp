@@ -23,6 +23,7 @@ void DiagnosticManager::addTest(DiagnosticTest* test) {
 std::vector<TestResult> DiagnosticManager::runAllTests() {
     lastResults.clear();
     return lastResults;
+    //TODO
 
     if (storageManager) {
         storageManager->logMessage(LogLevel::INFO, Subsystem::SYSTEM,

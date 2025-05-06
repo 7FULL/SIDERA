@@ -96,7 +96,6 @@ bool SDStorage::logMessage(LogLevel level, Subsystem subsystem, const char* mess
     logCount++;
 
     // Flush every 10 log messages or if this is a critical/error message
-    //TODO
     if (logCount % 10 == 0 || level == LogLevel::CRITICAL || level == LogLevel::ERROR) {
         logFile.flush();
 //        if (!logFile.flush()) {

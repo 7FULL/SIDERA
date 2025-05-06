@@ -431,7 +431,7 @@ TestResult SensorFusionTest::runTest() {
     }
 
     // Check if altitude is reasonable
-    if (fusedData.altitude < -1000.0f || fusedData.altitude > 1000.0f) {
+    if (fusedData.altitude < -10.0f || fusedData.altitude > 3000.0f) {
         char errorMsg[64];
         snprintf(errorMsg, sizeof(errorMsg), "Fused altitude out of range: %.2f m",
                  fusedData.altitude);

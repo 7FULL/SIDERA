@@ -88,6 +88,13 @@ bool StateMachine::processEvent(RocketEvent event) {
 //        return true;  // Event was handled by the state handler
 //    }
 
+    //Log the event
+    if (storageManager) {
+        char message[50];
+        snprintf(message, sizeof(message), "Event %d in state %d", static_cast<int>(event), static_cast<int>(currentState));
+        storageManager->logMessage(LogLevel::DEBUG, Subsystem::STATE_MACHINE, message);
+    }
+
     // Otherwise, check the transition table
     for (const auto& transition : transitions) {
         if (transition.fromState == currentState && transition.event == event) {
@@ -99,7 +106,7 @@ bool StateMachine::processEvent(RocketEvent event) {
             // Log the state change
             logStateChange(oldState, currentState);
 
-            Serial.printf("State changed: %d -> %d\n", static_cast<int>(oldState), static_cast<int>(currentState));
+//            Serial.printf("State changed: %d -> %d\n", static_cast<int>(oldState), static_cast<int>(currentState));
 
             return true;
         }
@@ -230,6 +237,15 @@ void StateMachine::updateSubState() {
 
                 // Assign new substate
                 currentSubState = mapping.subState;
+
+                Serial.printf("Substate changed to %d\n", static_cast<int>(currentState));
+                // Log the substate change
+                if (storageManager) {
+                    char message[50];
+                    snprintf(message, sizeof(message), "Substate changed: %d",
+                             static_cast<int>(currentState));
+                    storageManager->logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE, message);
+                }
             }
             break;
         }

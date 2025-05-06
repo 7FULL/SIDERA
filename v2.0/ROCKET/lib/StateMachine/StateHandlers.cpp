@@ -63,11 +63,6 @@ void StateHandlers::setupHandlers(
         handleErrorState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem);
     });
 
-    // Register event handlers
-    stateMachine.registerEventHandler(RocketState::INIT, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem](RocketEvent event) {
-        return handleInitEvents(event, stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem);
-    });
-
     stateMachine.registerEventHandler(RocketState::GROUND_IDLE, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem](RocketEvent event) {
         return handleGroundIdleEvents(event, stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, fusionSystem);
     });
@@ -90,12 +85,17 @@ void StateHandlers::handleInitState(
 ) {
     // Check the current substate
     auto subState = static_cast<InitSubState*>(stateMachine.getCurrentSubState());
+
+//    Serial.println("Handling INIT state...");
+
     if (!subState) {
         // Default to HARDWARE_INIT if no substate
-        subState = new InitSubState(InitSubState::HARDWARE_INIT);
+//        subState = new InitSubState(InitSubState::HARDWARE_INIT);
         stateMachine.processEvent(RocketEvent::ERROR_DETECTED);
         return;
     }
+
+//    Serial.println("Current substate: " + String(static_cast<int>(*subState)));
 
     switch (*subState) {
         case InitSubState::HARDWARE_INIT:
@@ -109,6 +109,7 @@ void StateHandlers::handleInitState(
             break;
 
         case InitSubState::SENSOR_CALIBRATION:
+            Serial.println("Calibrating sensors...");
             // Calibrate sensors
             if (imuManager && baroManager) {
                 if (storageManager) {
@@ -120,35 +121,17 @@ void StateHandlers::handleInitState(
 
                 // Set reference altitude
                 float currentAltitude = baroManager->getAltitude();
+                Serial.println("Setting reference altitude: " + String(currentAltitude));
+                if (storageManager) {
+                    String message = "Setting reference altitude: " + String(currentAltitude);
+                    storageManager->logMessage(LogLevel::INFO, Subsystem::BAROMETER, message.c_str());
+                }
                 baroManager->setReferenceAltitude(currentAltitude);
 
-                // Move to communication init
-                *subState = InitSubState::COMMUNICATION_INIT;
-            }
-            break;
-
-        case InitSubState::COMMUNICATION_INIT:
-            // Initialize communication system
-            if (loraSystem) {
-                if (storageManager) {
-                    storageManager->logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE, "Initializing communication...");
-                }
-
-                // Move to storage init
-                *subState = InitSubState::STORAGE_INIT;
-            }
-            break;
-
-        case InitSubState::STORAGE_INIT:
-            // Storage is already initialized if we're logging messages
-            if (storageManager) {
-                storageManager->logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE, "Storage system initialized");
-
-                // Move to self test
+                // Move to SELF_TEST
                 *subState = InitSubState::SELF_TEST;
             }
             break;
-
         case InitSubState::SELF_TEST:
             // Perform self-test of all systems
             if (storageManager) {
@@ -163,6 +146,7 @@ void StateHandlers::handleInitState(
                 if (storageManager) {
                     storageManager->logMessage(LogLevel::ERROR, Subsystem::BAROMETER, "No operational barometric sensors");
                 }
+                stateMachine.processEvent(RocketEvent::ERROR_DETECTED);
             }
 
             if (imuManager && !imuManager->getOperationalSensorCount()) {
@@ -170,6 +154,7 @@ void StateHandlers::handleInitState(
                 if (storageManager) {
                     storageManager->logMessage(LogLevel::ERROR, Subsystem::IMU, "No operational IMU sensors");
                 }
+                stateMachine.processEvent(RocketEvent::ERROR_DETECTED);
             }
 
             // If all systems are go, complete initialization
@@ -178,8 +163,36 @@ void StateHandlers::handleInitState(
                     storageManager->logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE, "Initialization complete");
                 }
 
-                // Signal completion of boot process
-                stateMachine.processEvent(RocketEvent::BOOT_COMPLETED);
+                if (preflightSystem) {
+                    PreflightStatus status = preflightSystem->runPreflightChecks();
+
+                    // Only advance to GROUND_IDLE if checks passed or had warnings
+                    if (status == PreflightStatus::PASSED || status == PreflightStatus::WARNING) {
+                        stateMachine.processEvent(RocketEvent::BOOT_COMPLETED);
+                    } else {
+                        // Move to ERROR state if critical tests failed
+                        stateMachine.processEvent(RocketEvent::ERROR_DETECTED);
+
+                        Serial.println("Pre-flight checks failed!");
+
+                        if (storageManager) {
+                            String report = preflightSystem->generatePreflightReport();
+
+                            Serial.println(report);
+                            // Log the report in chunks if necessary
+                            // (limited by log message size)
+                            int chunkSize = 60;
+                            for (int i = 0; i < report.length(); i += chunkSize) {
+                                String chunk = report.substring(i, min(i + chunkSize, report.length()));
+                                storageManager->logMessage(LogLevel::ERROR, Subsystem::SYSTEM, chunk.c_str());
+                            }
+                        }
+                    }
+                } else {
+                    Serial.println("Pre-flight system not available, skipping checks.");
+                    // No pre-flight system, advance anyway
+                    stateMachine.processEvent(RocketEvent::BOOT_COMPLETED);
+                }
             } else {
                 if (storageManager) {
                     storageManager->logMessage(LogLevel::ERROR, Subsystem::STATE_MACHINE, "Self-test failed");
@@ -189,36 +202,6 @@ void StateHandlers::handleInitState(
                 stateMachine.processEvent(RocketEvent::ERROR_DETECTED);
             }
             break;
-    }
-
-    if (preflightSystem) {
-        PreflightStatus status = preflightSystem->runPreflightChecks();
-
-        // Only advance to GROUND_IDLE if checks passed or had warnings
-        if (status == PreflightStatus::PASSED || status == PreflightStatus::WARNING) {
-            stateMachine.processEvent(RocketEvent::BOOT_COMPLETED);
-        } else {
-            // Move to ERROR state if critical tests failed
-            stateMachine.processEvent(RocketEvent::ERROR_DETECTED);
-
-            Serial.println("Pre-flight checks failed!");
-
-            if (storageManager) {
-                String report = preflightSystem->generatePreflightReport();
-
-                Serial.println(report);
-                // Log the report in chunks if necessary
-                // (limited by log message size)
-                int chunkSize = 60;
-                for (int i = 0; i < report.length(); i += chunkSize) {
-                    String chunk = report.substring(i, min(i + chunkSize, report.length()));
-                    storageManager->logMessage(LogLevel::ERROR, Subsystem::SYSTEM, chunk.c_str());
-                }
-            }
-        }
-    } else {
-        // No pre-flight system, advance anyway
-        stateMachine.processEvent(RocketEvent::BOOT_COMPLETED);
     }
 }
 
@@ -843,31 +826,6 @@ void StateHandlers::handleErrorState(
             // In recovery mode, waiting for commands
             break;
     }
-}
-
-bool StateHandlers::handleInitEvents(
-        RocketEvent event,
-        StateMachine& stateMachine,
-        BarometricSensorManager* baroManager,
-        IMUSensorManager* imuManager,
-        GPSSensorManager* gpsManager,
-        LoRaSystem* loraSystem,
-        StorageManager* storageManager,
-        SensorFusionSystem* fusionSystem
-) {
-    // Handle init-specific events
-    switch (event) {
-        case RocketEvent::CALIBRATION_DONE:
-            // Move to next substate
-            auto subState = static_cast<InitSubState*>(stateMachine.getCurrentSubState());
-            if (subState && *subState == InitSubState::SENSOR_CALIBRATION) {
-                *subState = InitSubState::COMMUNICATION_INIT;
-                return true;
-            }
-            break;
-    }
-
-    return false;  // Event not handled
 }
 
 bool StateHandlers::handleGroundIdleEvents(

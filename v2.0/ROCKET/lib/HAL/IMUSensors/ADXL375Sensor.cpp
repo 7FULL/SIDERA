@@ -3,6 +3,7 @@
  */
 
 #include "ADXL375Sensor.h"
+#include "Config.h"
 
 ADXL375Sensor::ADXL375Sensor(TwoWire& wire, uint8_t address, int32_t sensorID)
         : wire(wire), sensor(sensorID, &wire), sensorID(sensorID), address(address) {
@@ -165,6 +166,16 @@ SensorStatus ADXL375Sensor::calibrate() {
     offsetX = sumX / numSamples;
     offsetY = sumY / numSamples;
     offsetZ = sumZ / numSamples - 9.81f; // Subtract gravity from Z
+
+    // Print calibration offsets
+    Serial.print("Calibration offsets: ");
+    Serial.print("X: ");
+    Serial.print(offsetX);
+    Serial.print(", Y: ");
+    Serial.print(offsetY);
+    Serial.print(", Z: ");
+    Serial.print(offsetZ);
+    Serial.println();
 
     return SensorStatus::OK;
 }
