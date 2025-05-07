@@ -8,7 +8,7 @@
 #define STATE_MACHINE_H
 
 #include "States.h"
-#include "SensorFusionSystem.h"
+#include "../DataIntegration/DataIntegrationManager.h"
 #include <functional>
 #include <vector>
 #include <Arduino.h>
@@ -44,13 +44,14 @@ public:
     StateMachine();
 
     // Initialize the state machine with required subsystems
+// In the begin method declaration:
     void begin(
             BarometricSensorManager* baroManager,
             IMUSensorManager* imuManager,
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem = nullptr
+            DataIntegrationManager* dataManager = nullptr  // Changed from fusionSystem
     );
 
     // Update the state machine (called in each loop iteration)
@@ -107,7 +108,7 @@ private:
     GPSSensorManager* gpsManager;
     LoRaSystem* loraSystem;
     StorageManager* storageManager;
-    SensorFusionSystem* fusionSystem;
+    DataIntegrationManager* dataManager;
 
     // Timekeeping
     unsigned long lastStateChangeTime;

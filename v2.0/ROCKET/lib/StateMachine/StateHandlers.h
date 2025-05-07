@@ -28,17 +28,18 @@ public:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
+            DataIntegrationManager* dataManager,
             DiagnosticManager* diagnosticManager,
             PreflightCheckSystem* preflightSystem,
             PowerManager* powerManager
     );
 
-private:
     static void sendTelemetryData(
             LoRaSystem* loraSystem,
             BarometricSensorManager* baroManager,
             IMUSensorManager* imuManager,
             GPSSensorManager* gpsManager,
+            DataIntegrationManager* dataIntegrationManager,
             PowerManager* powerManager,
             uint8_t rocketState
     );
@@ -51,6 +52,7 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
+            DataIntegrationManager* dataIntegrationManager,
             DiagnosticManager* diagnosticManager,
             PreflightCheckSystem* preflightSystem
     );
@@ -62,6 +64,7 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
+            DataIntegrationManager* dataIntegrationManager,
             PowerManager* powerManager
     );
 
@@ -72,6 +75,7 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
+            DataIntegrationManager* dataIntegrationManager,
             DiagnosticManager* diagnosticManager,
             PowerManager* powerManager
     );
@@ -83,6 +87,7 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
+            DataIntegrationManager* dataIntegrationManager,
             PowerManager* powerManager
     );
 
@@ -93,6 +98,7 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
+            DataIntegrationManager* dataIntegrationManager,
             PowerManager* powerManager
     );
 
@@ -102,7 +108,8 @@ private:
             IMUSensorManager* imuManager,
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
-            StorageManager* storageManager
+            StorageManager* storageManager,
+            DataIntegrationManager* dataIntegrationManager
     );
 
     static void handleDescentState(
@@ -111,7 +118,8 @@ private:
             IMUSensorManager* imuManager,
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
-            StorageManager* storageManager
+            StorageManager* storageManager,
+            DataIntegrationManager* dataIntegrationManager
     );
 
     static void handleParachuteDescentState(
@@ -121,6 +129,7 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
+            DataIntegrationManager* dataIntegrationManager,
             PowerManager* powerManager
     );
 
@@ -131,6 +140,7 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
+            DataIntegrationManager* dataIntegrationManager,
             PowerManager* powerManager
     );
 
@@ -140,7 +150,8 @@ private:
             IMUSensorManager* imuManager,
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
-            StorageManager* storageManager
+            StorageManager* storageManager,
+            DataIntegrationManager* dataIntegrationManager
     );
 
     static bool handleGroundIdleEvents(
@@ -150,14 +161,15 @@ private:
             IMUSensorManager* imuManager,
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
-            StorageManager* storageManager
+            StorageManager* storageManager,
+            DataIntegrationManager* dataIntegrationManager
     );
 
     // Helpers
     static void deployParachute();
-    static bool detectLaunch(IMUSensorManager* imuManager);
-    static bool detectApogee(BarometricSensorManager* baroManager);
-    static bool detectLanding(BarometricSensorManager* baroManager);
+    static bool detectLaunch(IMUSensorManager* imuManager, DataIntegrationManager* dataManager);
+    static bool detectApogee(BarometricSensorManager* baroManager, DataIntegrationManager* dataManager);
+    static bool detectLanding(BarometricSensorManager* baroManager, DataIntegrationManager* dataManager);
 
     // Timekeeping
     static unsigned long lastSensorUpdateTime;

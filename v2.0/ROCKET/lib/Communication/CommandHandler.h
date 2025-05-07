@@ -17,6 +17,7 @@ public:
             StateMachine* stateMachine,
             PowerManager* powerManager,
             DiagnosticManager* diagnosticManager,
+            DataIntegrationManager* dataIntegrationManager,
             BarometricSensorManager* baroManager,
             IMUSensorManager* imuManager,
             GPSSensorManager* gpsManager
@@ -47,6 +48,7 @@ private:
     BarometricSensorManager* baroManager;
     IMUSensorManager* imuManager;
     GPSSensorManager* gpsManager;
+    DataIntegrationManager* dataManager;
 
     // Handle specific commands
     bool handlePingCommand(const ProtocolPacket& packet);;

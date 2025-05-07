@@ -33,7 +33,7 @@ void StateMachine::begin(
         GPSSensorManager* gpsManager,
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
-        SensorFusionSystem* fusionSystem
+        DataIntegrationManager* dataManager
 ) {
     // Store subsystem references
     this->barometricManager = baroManager;
@@ -41,7 +41,7 @@ void StateMachine::begin(
     this->gpsManager = gpsManager;
     this->loraSystem = loraSystem;
     this->storageManager = storageManager;
-    this->fusionSystem = fusionSystem;
+    this->dataManager = dataManager;
 
     // Initialize state transition table
     initializeTransitions();
@@ -101,7 +101,9 @@ bool StateMachine::processEvent(RocketEvent event) {
             RocketState oldState = currentState;
             changeState(transition.toState);
 
-            fusionSystem->setCurrentState(currentState);
+            if (dataManager) {
+                dataManager->setCurrentState(currentState);
+            }
 
             // Log the state change
             logStateChange(oldState, currentState);

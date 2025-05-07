@@ -7,6 +7,7 @@ CommandHandler::CommandHandler(
         StateMachine* stateMachine,
         PowerManager* powerManager,
         DiagnosticManager* diagnosticManager,
+        DataIntegrationManager* dataManager,
         BarometricSensorManager* baroManager,
         IMUSensorManager* imuManager,
         GPSSensorManager* gpsManager
@@ -18,7 +19,8 @@ CommandHandler::CommandHandler(
             diagnosticManager(diagnosticManager),
             baroManager(baroManager),
             imuManager(imuManager),
-            gpsManager(gpsManager)
+            gpsManager(gpsManager),
+            dataManager(dataManager)
 {
 }
 

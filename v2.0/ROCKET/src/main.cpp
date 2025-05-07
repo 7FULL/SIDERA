@@ -10,7 +10,6 @@
 #include "Config.h"
 #include "PinDefinitions.h"
 
-#include "../lib/SensorFusion/SensorFusionSystem.h"
 #include "../lib/Diagnostics/DiagnosticManager.h"
 #include "../lib/Diagnostics/SpecificTests.h"
 #include "../lib/Diagnostics/PreflightCheck.h"
@@ -87,7 +86,7 @@ CommandHandler* commandHandler;
 LoRaSystem* loraSystem;
 
 // Fusion system
-SensorFusionSystem* fusionSystem;
+DataIntegrationManager* dataManager;
 
 // State machine
 StateMachine stateMachine;
@@ -219,6 +218,17 @@ void initializeAllSystems() {
     initSuccess &= gpsManager.begin();
     Serial.println("GPS sensors initialized");
 
+    Serial.println("Initializing data integration manager...");
+    dataManager = new DataIntegrationManager(&baroManager, &imuManager, &gpsManager, &temperatureManager, powerManager);
+    if (!dataManager->begin()) {
+        Serial.println("ERROR: Failed to initialize data integration manager!");
+        if (storageManager.isOperational()) {
+            storageManager.logMessage(LogLevel::ERROR, Subsystem::SENSORS,
+                                      "Failed to initialize data integration manager");
+        }
+    }
+    Serial.println("Data integration manager initialized");
+
     // Initialize sensor fusion
 //    Serial.println("Initializing sensor fusion system...");
 //    fusionSystem = new SensorFusionSystem(&baroManager, &imuManager, &storageManager);
@@ -242,7 +252,6 @@ void initializeAllSystems() {
     diagnosticManager->addTest(new LoRaCommunicationTest(loraSystem));
     diagnosticManager->addTest(new StorageTest(&storageManager));
     diagnosticManager->addTest(new BatteryTest(powerManager));
-    diagnosticManager->addTest(new SensorFusionTest(fusionSystem));
     diagnosticManager->addTest(new TemperatureSensorTest(&temperatureManager));
     Serial.println("Diagnostic tests added");
 
@@ -299,7 +308,7 @@ void initializeAllSystems() {
     // Initialize and setup state machine
     Serial.println("Initializing state machine...");
     stateMachine.begin(&baroManager, &imuManager, &gpsManager, loraSystem, &storageManager);
-    StateHandlers::setupHandlers(stateMachine, &baroManager, &imuManager, &gpsManager, loraSystem, &storageManager, fusionSystem, diagnosticManager, preflightSystem, powerManager);
+    StateHandlers::setupHandlers(stateMachine, &baroManager, &imuManager, &gpsManager, loraSystem, &storageManager, dataManager, diagnosticManager, preflightSystem, powerManager);
     Serial.println("State machine initialized");
 
     // Long beep to indicate initialization complete
@@ -314,7 +323,7 @@ void initializeAllSystems() {
             &stateMachine,
             powerManager,
             diagnosticManager,
-            fusionSystem,
+            dataManager,
             &baroManager,
             &imuManager,
             &gpsManager

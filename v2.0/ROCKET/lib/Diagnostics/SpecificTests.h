@@ -101,20 +101,6 @@ private:
     PowerManager* manager;
 };
 
-// Sensor fusion tests
-class SensorFusionTest : public DiagnosticTest {
-public:
-    SensorFusionTest(SensorFusionSystem* fusionSystem);
-    TestResult runTest() override;
-    String getName() const override;
-    String getDescription() const override;
-    bool isCritical() const override;
-    String getSubsystem() const override;
-
-private:
-    SensorFusionSystem* fusionSystem;
-};
-
 // Temperature sensor tests
 class TemperatureSensorTest : public DiagnosticTest {
 public:
