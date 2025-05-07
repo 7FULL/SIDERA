@@ -13,7 +13,6 @@
 #include "../HAL/GPSSensors/GPSSensorManager.h"
 #include "../HAL/CommunicationSystems/LoRaSystem.h"
 #include "../HAL/StorageSystems/StorageManager.h"
-#include "../SensorFusion/SensorFusionSystem.h"
 #include "../PowerManagement/PowerManager.h"
 #include "../PowerManagement/PowerController.h"
 #include "../Diagnostics/DiagnosticManager.h"
@@ -29,7 +28,6 @@ public:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem,
             DiagnosticManager* diagnosticManager,
             PreflightCheckSystem* preflightSystem,
             PowerManager* powerManager
@@ -41,7 +39,6 @@ private:
             BarometricSensorManager* baroManager,
             IMUSensorManager* imuManager,
             GPSSensorManager* gpsManager,
-            SensorFusionSystem* fusionSystem,
             PowerManager* powerManager,
             uint8_t rocketState
     );
@@ -54,7 +51,6 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem,
             DiagnosticManager* diagnosticManager,
             PreflightCheckSystem* preflightSystem
     );
@@ -66,7 +62,6 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem,
             PowerManager* powerManager
     );
 
@@ -77,7 +72,6 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem,
             DiagnosticManager* diagnosticManager,
             PowerManager* powerManager
     );
@@ -89,7 +83,6 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem,
             PowerManager* powerManager
     );
 
@@ -100,7 +93,6 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem,
             PowerManager* powerManager
     );
 
@@ -110,8 +102,7 @@ private:
             IMUSensorManager* imuManager,
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
-            StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem
+            StorageManager* storageManager
     );
 
     static void handleDescentState(
@@ -120,8 +111,7 @@ private:
             IMUSensorManager* imuManager,
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
-            StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem
+            StorageManager* storageManager
     );
 
     static void handleParachuteDescentState(
@@ -131,7 +121,6 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem,
             PowerManager* powerManager
     );
 
@@ -142,7 +131,6 @@ private:
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem,
             PowerManager* powerManager
     );
 
@@ -152,8 +140,7 @@ private:
             IMUSensorManager* imuManager,
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
-            StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem
+            StorageManager* storageManager
     );
 
     static bool handleGroundIdleEvents(
@@ -163,15 +150,14 @@ private:
             IMUSensorManager* imuManager,
             GPSSensorManager* gpsManager,
             LoRaSystem* loraSystem,
-            StorageManager* storageManager,
-            SensorFusionSystem* fusionSystem
+            StorageManager* storageManager
     );
 
     // Helpers
     static void deployParachute();
-    static bool detectLaunch(IMUSensorManager* imuManager, SensorFusionSystem* fusionSystem);
-    static bool detectApogee(BarometricSensorManager* baroManager, SensorFusionSystem* fusionSystem);
-    static bool detectLanding(BarometricSensorManager* baroManager, SensorFusionSystem* fusionSystem);
+    static bool detectLaunch(IMUSensorManager* imuManager);
+    static bool detectApogee(BarometricSensorManager* baroManager);
+    static bool detectLanding(BarometricSensorManager* baroManager);
 
     // Timekeeping
     static unsigned long lastSensorUpdateTime;

@@ -7,7 +7,6 @@ CommandHandler::CommandHandler(
         StateMachine* stateMachine,
         PowerManager* powerManager,
         DiagnosticManager* diagnosticManager,
-        SensorFusionSystem* fusionSystem,
         BarometricSensorManager* baroManager,
         IMUSensorManager* imuManager,
         GPSSensorManager* gpsManager
@@ -17,7 +16,6 @@ CommandHandler::CommandHandler(
             stateMachine(stateMachine),
             powerManager(powerManager),
             diagnosticManager(diagnosticManager),
-            fusionSystem(fusionSystem),
             baroManager(baroManager),
             imuManager(imuManager),
             gpsManager(gpsManager)
@@ -57,9 +55,6 @@ void CommandHandler::update() {
                 switch (static_cast<CommandCode>(commandType)) {
                     case CommandCode::PING:
                         success = handlePingCommand(ProtocolPacket());
-                        break;
-                    case CommandCode::GET_STATUS:
-                        success = handleGetStatusCommand(ProtocolPacket());
                         break;
                     case CommandCode::WAKE_UP_COMMAND:
                         success = handleWakeUpCommand(ProtocolPacket());
@@ -174,117 +169,6 @@ bool CommandHandler::handlePingCommand(const ProtocolPacket& packet) {
     payload[3] = timestamp & 0xFF;
 
     return sendResponse(ResponseCode::ACK, payload, 4, packet.sequenceNumber);
-}
-
-bool CommandHandler::handleGetStatusCommand(const ProtocolPacket& packet) {
-    if (!stateMachine) {
-        return sendResponse(ResponseCode::NACK, nullptr, 0, packet.sequenceNumber);
-    }
-
-    // Get current state
-    RocketState currentState = stateMachine->getCurrentState();
-
-    // Map to status code
-    RocketStatusCode statusCode;
-    switch (currentState) {
-        case RocketState::INIT:
-            statusCode = RocketStatusCode::INITIALIZING;
-            break;
-        case RocketState::GROUND_IDLE:
-            statusCode = RocketStatusCode::IDLE;
-            break;
-        case RocketState::READY:
-            // Check substate
-            if (stateMachine->isInSubState(ReadySubState::ARMED)) {
-                statusCode = RocketStatusCode::ARMED;
-            } else if (stateMachine->isInSubState(ReadySubState::COUNTDOWN)) {
-                statusCode = RocketStatusCode::COUNTDOWN;
-            } else {
-                statusCode = RocketStatusCode::READY;
-            }
-            break;
-        case RocketState::POWERED_FLIGHT:
-            statusCode = RocketStatusCode::POWERED_FLIGHT;
-            break;
-        case RocketState::COASTING:
-            statusCode = RocketStatusCode::COASTING;
-            break;
-        case RocketState::APOGEE:
-            statusCode = RocketStatusCode::APOGEE;
-            break;
-        case RocketState::DESCENT:
-            statusCode = RocketStatusCode::DESCENT;
-            break;
-        case RocketState::PARACHUTE_DESCENT:
-            statusCode = RocketStatusCode::PARACHUTE_DEPLOYED;
-            break;
-        case RocketState::LANDED:
-            statusCode = RocketStatusCode::LANDED;
-            break;
-        case RocketState::ERROR:
-            statusCode = RocketStatusCode::ERROR;
-            break;
-        default:
-            statusCode = RocketStatusCode::ERROR;
-            break;
-    }
-
-    // Create status payload
-    uint8_t payload[18];
-    payload[0] = static_cast<uint8_t>(statusCode);
-
-    // Add battery info
-    float voltage = 0.0f;
-    int percentage = 0;
-    if (powerManager) {
-        voltage = powerManager->getBatteryVoltage();
-        percentage = powerManager->getBatteryPercentage();
-    }
-
-    uint16_t voltageInt = static_cast<uint16_t>(voltage * 100);  // Convert to centivolts
-    payload[1] = (voltageInt >> 8) & 0xFF;
-    payload[2] = voltageInt & 0xFF;
-    payload[3] = percentage;
-
-    // Add system uptime
-    uint32_t uptime = millis() / 1000;  // In seconds
-    payload[4] = (uptime >> 24) & 0xFF;
-    payload[5] = (uptime >> 16) & 0xFF;
-    payload[6] = (uptime >> 8) & 0xFF;
-    payload[7] = uptime & 0xFF;
-
-    // Add free storage space
-    uint32_t freeSpace = 0;
-    if (storageManager) {
-        freeSpace = storageManager->getAvailableSpace();
-    }
-    payload[8] = (freeSpace >> 24) & 0xFF;
-    payload[9] = (freeSpace >> 16) & 0xFF;
-    payload[10] = (freeSpace >> 8) & 0xFF;
-    payload[11] = freeSpace & 0xFF;
-
-    // Add GPS fix status
-    bool gpsFix = false;
-    if (fusionSystem) {
-        FusedFlightData data = fusionSystem->getFusedData();
-        // Add some GPS status flags here
-    }
-    payload[12] = gpsFix ? 1 : 0;
-
-    // Add sensor status flags
-    uint8_t sensorFlags = 0;
-    // Each bit represents a sensor system
-    // Set appropriate bits based on sensor status
-    payload[13] = sensorFlags;
-
-    // Add error flags
-    uint32_t errorFlags = 0;
-    payload[14] = (errorFlags >> 24) & 0xFF;
-    payload[15] = (errorFlags >> 16) & 0xFF;
-    payload[16] = (errorFlags >> 8) & 0xFF;
-    payload[17] = errorFlags & 0xFF;
-
-    return sendResponse(ResponseCode::STATUS_DATA, payload, sizeof(payload), packet.sequenceNumber);
 }
 
 bool CommandHandler::handleWakeUpCommand(const ProtocolPacket& packet) {

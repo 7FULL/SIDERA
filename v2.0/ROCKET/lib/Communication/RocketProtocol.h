@@ -7,7 +7,6 @@
 // Command types for ground station to rocket
 enum class CommandCode : uint8_t {
     PING = 0x01,
-    GET_STATUS = 0x02,
     WAKE_UP_COMMAND = 0x03,
     ABORT_COMMAND = 0x04,
     CALIBRATE_SENSORS = 0x05,
