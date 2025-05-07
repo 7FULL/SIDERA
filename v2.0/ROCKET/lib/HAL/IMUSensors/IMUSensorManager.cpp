@@ -2,8 +2,8 @@
  * IMU Sensor Manager Implementation
  */
 
+#include <algorithm>
 #include "IMUSensorManager.h"
-#include "Config.h"
 
 IMUSensorManager::IMUSensorManager() {
 }
@@ -12,8 +12,20 @@ IMUSensorManager::~IMUSensorManager() {
     // Note: We don't delete the sensors here because they might be used elsewhere
 }
 
-void IMUSensorManager::addSensor(IMUSensor* sensor) {
-    sensors.push_back(sensor);
+void IMUSensorManager::addSensor(IMUSensor* sensor, uint8_t priority) {
+    Serial.print("Adding IMU sensor: ");
+    Serial.print(sensor->getName());
+    Serial.print(" with priority ");
+    Serial.println(priority);
+
+    SensorInfo info = {sensor, priority};
+    sensors.push_back(info);
+
+    // Sort sensors by priority (lower number = higher priority)
+    std::sort(sensors.begin(), sensors.end(),
+              [](const SensorInfo& a, const SensorInfo& b) {
+                  return a.priority < b.priority;
+              });
 }
 
 bool IMUSensorManager::begin() {
@@ -29,24 +41,34 @@ bool IMUSensorManager::begin() {
     bool anyInitialized = false;
     int sensorIndex = 1;
 
-    for (auto sensor : sensors) {
+    for (auto& sensorInfo : sensors) {
         Serial.print("Initializing IMU sensor ");
         Serial.print(sensorIndex++);
         Serial.print(" (");
-        Serial.print(sensor->getName());
+        Serial.print(sensorInfo.sensor->getName());
         Serial.println(")...");
 
-        SensorStatus result = sensor->begin();
+        SensorStatus result = sensorInfo.sensor->begin();
         if (result == SensorStatus::OK) {
             Serial.println("IMU sensor initialization succeeded");
             anyInitialized = true;
         } else {
-            Serial.print("[ERROR]--------------IMU sensor initialization failed with status: ");
+            Serial.print("[ERROR] IMU sensor initialization failed with status: ");
             Serial.println(static_cast<int>(result));
         }
     }
 
     initialized = anyInitialized;
+
+    // Find the best sensors to start with
+    if (initialized) {
+        updateActiveSensors();
+        Serial.print("Active accelerometer sensor: ");
+        Serial.println(getActiveSensorName());
+        Serial.print("Active gyroscope sensor: ");
+        Serial.println(getActiveGyroscopeSensorName());
+    }
+
     Serial.print("IMU sensor initialization complete. Success: ");
     Serial.println(anyInitialized ? "YES" : "NO");
     return anyInitialized;
@@ -57,9 +79,13 @@ void IMUSensorManager::update() {
         return;
     }
 
-    for (auto sensor : sensors) {
-        sensor->update();
+    // Update all sensors
+    for (auto& sensorInfo : sensors) {
+        sensorInfo.sensor->update();
     }
+
+    // Check if we need to switch active sensors
+    updateActiveSensors();
 }
 
 bool IMUSensorManager::calibrate() {
@@ -71,13 +97,16 @@ bool IMUSensorManager::calibrate() {
 
     Serial.println("Calibrating IMU sensors...");
 
-    for (auto sensor : sensors) {
-        if (sensor->isOperational()) {
-            if (sensor->calibrate() != SensorStatus::OK) {
+    for (auto& sensorInfo : sensors) {
+        if (sensorInfo.sensor->isOperational()) {
+            if (sensorInfo.sensor->calibrate() != SensorStatus::OK) {
                 allCalibrated = false;
             }
         }
     }
+
+    // Refresh active sensors after calibration
+    updateActiveSensors();
 
     return allCalibrated;
 }
@@ -87,15 +116,15 @@ AccelerometerData IMUSensorManager::getAccelerometerData() {
         return {0.0f, 0.0f, 0.0f, 0.0f};
     }
 
-    // If sensor fusion is enabled and we have multiple operational sensors
-    if (USE_SENSOR_FUSION && getOperationalSensorCount() > 1) {
-        return fuseAccelerometerData();
+    // Use the active accelerometer sensor if available
+    if (activeAccelSensor) {
+        return activeAccelSensor->getAccelerometerData();
     }
 
-    // Otherwise, use the first operational sensor
-    for (auto sensor : sensors) {
-        if (sensor->isOperational()) {
-            return sensor->getAccelerometerData();
+    // Fallback to the first operational sensor
+    for (auto& sensorInfo : sensors) {
+        if (sensorInfo.sensor->isOperational()) {
+            return sensorInfo.sensor->getAccelerometerData();
         }
     }
 
@@ -108,15 +137,15 @@ GyroscopeData IMUSensorManager::getGyroscopeData() {
         return {0.0f, 0.0f, 0.0f};
     }
 
-    // If sensor fusion is enabled and we have multiple operational gyroscopes
-    if (USE_SENSOR_FUSION && getOperationalGyroscopeCount() > 1) {
-        return fuseGyroscopeData();
+    // Use the active gyroscope sensor if available
+    if (activeGyroSensor) {
+        return activeGyroSensor->getGyroscopeData();
     }
 
-    // Otherwise, use the first operational sensor with a gyroscope
-    for (auto sensor : sensors) {
-        if (sensor->isOperational() && sensor->hasGyroscope()) {
-            return sensor->getGyroscopeData();
+    // Fallback to the first operational sensor with a gyroscope
+    for (auto& sensorInfo : sensors) {
+        if (sensorInfo.sensor->isOperational() && sensorInfo.sensor->hasGyroscope()) {
+            return sensorInfo.sensor->getGyroscopeData();
         }
     }
 
@@ -129,8 +158,8 @@ bool IMUSensorManager::hasGyroscope() const {
         return false;
     }
 
-    for (auto sensor : sensors) {
-        if (sensor->isOperational() && sensor->hasGyroscope()) {
+    for (auto& sensorInfo : sensors) {
+        if (sensorInfo.sensor->isOperational() && sensorInfo.sensor->hasGyroscope()) {
             return true;
         }
     }
@@ -140,8 +169,8 @@ bool IMUSensorManager::hasGyroscope() const {
 
 int IMUSensorManager::getOperationalSensorCount() {
     int count = 0;
-    for (auto sensor : sensors) {
-        if (sensor->isOperational()) {
+    for (auto& sensorInfo : sensors) {
+        if (sensorInfo.sensor->isOperational()) {
             count++;
         }
     }
@@ -150,8 +179,8 @@ int IMUSensorManager::getOperationalSensorCount() {
 
 int IMUSensorManager::getOperationalGyroscopeCount() {
     int count = 0;
-    for (auto sensor : sensors) {
-        if (sensor->isOperational() && sensor->hasGyroscope()) {
+    for (auto& sensorInfo : sensors) {
+        if (sensorInfo.sensor->isOperational() && sensorInfo.sensor->hasGyroscope()) {
             count++;
         }
     }
@@ -163,10 +192,18 @@ bool IMUSensorManager::detectHighGEvent(float threshold) {
         return false;
     }
 
-    // Check each sensor for high-G events
-    for (auto sensor : sensors) {
-        if (sensor->isOperational()) {
-            AccelerometerData data = sensor->getAccelerometerData();
+    // Check each sensor for high-G events, prioritizing the active sensor
+    if (activeAccelSensor) {
+        AccelerometerData data = activeAccelSensor->getAccelerometerData();
+        if (data.magnitude > threshold) {
+            return true;
+        }
+    }
+
+    // Check other sensors as backup
+    for (auto& sensorInfo : sensors) {
+        if (sensorInfo.sensor != activeAccelSensor && sensorInfo.sensor->isOperational()) {
+            AccelerometerData data = sensorInfo.sensor->getAccelerometerData();
             if (data.magnitude > threshold) {
                 return true;
             }
@@ -176,81 +213,81 @@ bool IMUSensorManager::detectHighGEvent(float threshold) {
     return false;
 }
 
-AccelerometerData IMUSensorManager::fuseAccelerometerData() {
-    AccelerometerData result = {0.0f, 0.0f, 0.0f, 0.0f};
-    int count = 0;
-
-    // For now, we use a simple complementary filter that gives preference
-    // to high-G sensors when acceleration is high, and to low-G sensors
-    // when acceleration is low
-
-    // First pass: collect data from all sensors
-    for (auto sensor : sensors) {
-        if (sensor->isOperational()) {
-            AccelerometerData data = sensor->getAccelerometerData();
-
-            // Apply weighting based on sensor range
-            float weight = 1.0f;
-
-            // If it's a high-G sensor, give it more weight when acceleration is high
-            float range = sensor->getAccelerometerRange();
-            if (range > 50.0f) { // High-G sensor
-                weight = 0.2f + 0.8f * min(1.0f, data.magnitude / 30.0f);
-            } else { // Low-G sensor
-                weight = 1.0f - 0.8f * min(1.0f, data.magnitude / 30.0f);
-            }
-
-            result.x += data.x * weight;
-            result.y += data.y * weight;
-            result.z += data.z * weight;
-            count += weight;
-        }
+const char* IMUSensorManager::getActiveSensorName() {
+    if (!initialized || !activeAccelSensor) {
+        return "None";
     }
 
-    // Calculate weighted average
-    if (count > 0) {
-        result.x /= count;
-        result.y /= count;
-        result.z /= count;
-
-        // Apply a simple low-pass filter to reduce noise
-        const float alpha = 0.2f; // Filter constant
-        result.x = alpha * result.x + (1.0f - alpha) * lastAccelX;
-        result.y = alpha * result.y + (1.0f - alpha) * lastAccelY;
-        result.z = alpha * result.z + (1.0f - alpha) * lastAccelZ;
-
-        // Save current values for next filter pass
-        lastAccelX = result.x;
-        lastAccelY = result.y;
-        lastAccelZ = result.z;
-
-        // Calculate magnitude
-        result.magnitude = sqrt(result.x * result.x + result.y * result.y + result.z * result.z);
-    }
-
-    return result;
+    return activeAccelSensor->getName();
 }
 
-GyroscopeData IMUSensorManager::fuseGyroscopeData() {
-    GyroscopeData result = {0.0f, 0.0f, 0.0f};
-    int count = 0;
+const char* IMUSensorManager::getActiveGyroscopeSensorName() {
+    if (!initialized || !activeGyroSensor) {
+        return "None";
+    }
 
-    // Simple averaging fusion for now
-    for (auto sensor : sensors) {
-        if (sensor->isOperational() && sensor->hasGyroscope()) {
-            GyroscopeData data = sensor->getGyroscopeData();
-            result.x += data.x;
-            result.y += data.y;
-            result.z += data.z;
-            count++;
+    return activeGyroSensor->getName();
+}
+
+void IMUSensorManager::updateActiveSensors() {
+    IMUSensor* bestAccelSensor = findBestAccelSensor();
+    IMUSensor* bestGyroSensor = findBestGyroSensor();
+
+    // Only switch if there's no active sensor or the best sensor has changed
+    if (!activeAccelSensor || (bestAccelSensor && bestAccelSensor != activeAccelSensor)) {
+        // Log the sensor change
+        if (activeAccelSensor && bestAccelSensor) {
+            Serial.print("Switching active accelerometer from ");
+            Serial.print(activeAccelSensor->getName());
+            Serial.print(" to ");
+            Serial.println(bestAccelSensor->getName());
+        }
+
+        activeAccelSensor = bestAccelSensor;
+    }
+
+    // Same for gyroscope
+    if (!activeGyroSensor || (bestGyroSensor && bestGyroSensor != activeGyroSensor)) {
+        // Log the sensor change
+        if (activeGyroSensor && bestGyroSensor) {
+            Serial.print("Switching active gyroscope from ");
+            Serial.print(activeGyroSensor->getName());
+            Serial.print(" to ");
+            Serial.println(bestGyroSensor->getName());
+        }
+
+        activeGyroSensor = bestGyroSensor;
+    }
+}
+
+IMUSensor* IMUSensorManager::findBestAccelSensor() {
+    if (sensors.empty()) {
+        return nullptr;
+    }
+
+    // Return the highest priority sensor that is operational
+    for (auto& sensorInfo : sensors) {
+        if (sensorInfo.sensor->isOperational()) {
+            return sensorInfo.sensor;
         }
     }
 
-    if (count > 0) {
-        result.x /= count;
-        result.y /= count;
-        result.z /= count;
+    // If no operational sensor, return the highest priority one anyway
+    return sensors[0].sensor;
+}
+
+IMUSensor* IMUSensorManager::findBestGyroSensor() {
+    if (sensors.empty()) {
+        return nullptr;
     }
 
-    return result;
+    // Return the highest priority sensor that is operational and has a gyroscope
+    for (auto& sensorInfo : sensors) {
+        if (sensorInfo.sensor->isOperational() && sensorInfo.sensor->hasGyroscope()) {
+            return sensorInfo.sensor;
+        }
+    }
+
+    // If no operational gyroscope sensor, return nullptr
+    return nullptr;
 }

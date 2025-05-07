@@ -40,7 +40,7 @@
 #define ERROR_SENSOR_RATE 1000              // 1Hz in error state
 
 // Sensor fusion settings
-#define USE_SENSOR_FUSION 1
+#define USE_SENSOR_FUSION 0
 #define COMPLEMENTARY_FILTER_ALPHA 0.98f
 #define KALMAN_POSITION_NOISE 0.01f
 #define KALMAN_VELOCITY_NOISE 0.1f

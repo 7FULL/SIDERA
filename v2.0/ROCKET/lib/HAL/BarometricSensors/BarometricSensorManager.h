@@ -1,7 +1,7 @@
 /**
  * Barometric Sensor Manager
  *
- * Manages multiple barometric sensors and provides fusion capabilities
+ * Manages multiple barometric sensors with failover capability
  */
 
 #ifndef BAROMETRIC_SENSOR_MANAGER_H
@@ -15,8 +15,8 @@ public:
     BarometricSensorManager();
     ~BarometricSensorManager();
 
-    // Add a sensor to the manager
-    void addSensor(BarometricSensor* sensor);
+    // Add a sensor with priority (lower number = higher priority)
+    void addSensor(BarometricSensor* sensor, uint8_t priority = 0);
 
     // Initialize all sensors
     bool begin();
@@ -27,24 +27,36 @@ public:
     // Set the reference altitude for all sensors
     void setReferenceAltitude(float altitude);
 
-    // Get the best available altitude (using fusion if possible)
+    // Get altitude from the best available sensor
     float getAltitude();
 
-    // Get the best available pressure (using fusion if possible)
+    // Get pressure from the best available sensor
     float getPressure();
 
-    // Get the best available temperature (using fusion if possible)
+    // Get temperature from the best available sensor
     float getTemperature();
 
     // Get the number of operational sensors
     int getOperationalSensorCount();
 
+    // Get the name of the currently active sensor
+    const char* getActiveSensorName();
+
 private:
-    std::vector<BarometricSensor*> sensors;
-    float fuseAltitudeData();
-    float fusePressureData();
-    float fuseTemperatureData();
+    struct SensorInfo {
+        BarometricSensor* sensor;
+        uint8_t priority;
+    };
+
+    std::vector<SensorInfo> sensors;
+    BarometricSensor* activeSensor = nullptr;
     bool initialized = false;
+
+    // Finds the best operational sensor based on priority
+    BarometricSensor* findBestSensor();
+
+    // Updates the active sensor if needed
+    void updateActiveSensor();
 };
 
 #endif // BAROMETRIC_SENSOR_MANAGER_H

@@ -1,7 +1,7 @@
 /**
  * IMU Sensor Manager
  *
- * Manages multiple IMU sensors and provides fusion capabilities
+ * Manages multiple IMU sensors with failover capability
  */
 
 #ifndef IMU_SENSOR_MANAGER_H
@@ -15,8 +15,8 @@ public:
     IMUSensorManager();
     ~IMUSensorManager();
 
-    // Add a sensor to the manager
-    void addSensor(IMUSensor* sensor);
+    // Add a sensor with priority (lower number = higher priority)
+    void addSensor(IMUSensor* sensor, uint8_t priority = 0);
 
     // Initialize all sensors
     bool begin();
@@ -27,10 +27,10 @@ public:
     // Calibrate all sensors
     bool calibrate();
 
-    // Get the best available accelerometer data (using fusion if possible)
+    // Get accelerometer data from the best available sensor
     AccelerometerData getAccelerometerData();
 
-    // Get the best available gyroscope data (using fusion if possible)
+    // Get gyroscope data from the best available sensor with a gyroscope
     GyroscopeData getGyroscopeData();
 
     // Check if any operational sensor has a gyroscope
@@ -45,16 +45,31 @@ public:
     // Check if high-G events have been detected
     bool detectHighGEvent(float threshold);
 
+    // Get the name of the currently active sensor
+    const char* getActiveSensorName();
+
+    // Get the name of the currently active gyroscope sensor
+    const char* getActiveGyroscopeSensorName();
+
 private:
-    std::vector<IMUSensor*> sensors;
-    AccelerometerData fuseAccelerometerData();
-    GyroscopeData fuseGyroscopeData();
+    struct SensorInfo {
+        IMUSensor* sensor;
+        uint8_t priority;
+    };
+
+    std::vector<SensorInfo> sensors;
+    IMUSensor* activeAccelSensor = nullptr;
+    IMUSensor* activeGyroSensor = nullptr;
     bool initialized = false;
 
-    // Last known acceleration data for each axis (for filtering)
-    float lastAccelX = 0.0f;
-    float lastAccelY = 0.0f;
-    float lastAccelZ = 0.0f;
+    // Finds the best operational accelerometer sensor
+    IMUSensor* findBestAccelSensor();
+
+    // Finds the best operational gyroscope sensor
+    IMUSensor* findBestGyroSensor();
+
+    // Updates the active sensors if needed
+    void updateActiveSensors();
 };
 
 #endif // IMU_SENSOR_MANAGER_H

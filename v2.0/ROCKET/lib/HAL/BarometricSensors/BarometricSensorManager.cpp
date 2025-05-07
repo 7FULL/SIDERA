@@ -2,8 +2,8 @@
  * Barometric Sensor Manager Implementation
  */
 
+#include <algorithm>
 #include "BarometricSensorManager.h"
-#include "Config.h"
 
 BarometricSensorManager::BarometricSensorManager() {
 }
@@ -12,10 +12,20 @@ BarometricSensorManager::~BarometricSensorManager() {
     // Note: We don't delete the sensors here because they might be used elsewhere
 }
 
-void BarometricSensorManager::addSensor(BarometricSensor* sensor) {
-    Serial.print("Adding sensor: ");
-    Serial.println(sensor->getName());
-    sensors.push_back(sensor);
+void BarometricSensorManager::addSensor(BarometricSensor* sensor, uint8_t priority) {
+    Serial.print("Adding barometric sensor: ");
+    Serial.print(sensor->getName());
+    Serial.print(" with priority ");
+    Serial.println(priority);
+
+    SensorInfo info = {sensor, priority};
+    sensors.push_back(info);
+
+    // Sort sensors by priority (lower number = higher priority)
+    std::sort(sensors.begin(), sensors.end(),
+              [](const SensorInfo& a, const SensorInfo& b) {
+                  return a.priority < b.priority;
+              });
 }
 
 bool BarometricSensorManager::begin() {
@@ -31,24 +41,32 @@ bool BarometricSensorManager::begin() {
     bool anyInitialized = false;
     int sensorIndex = 1;
 
-    for (auto sensor : sensors) {
+    for (auto& sensorInfo : sensors) {
         Serial.print("Initializing sensor ");
         Serial.print(sensorIndex++);
         Serial.print(" (");
-        Serial.print(sensor->getName());
+        Serial.print(sensorInfo.sensor->getName());
         Serial.println(")...");
 
-        SensorStatus result = sensor->begin();
+        SensorStatus result = sensorInfo.sensor->begin();
         if (result == SensorStatus::OK) {
             Serial.println("Sensor initialization succeeded");
             anyInitialized = true;
         } else {
-            Serial.print("[ERROR]--------------Sensor initialization failed with status: ");
+            Serial.print("[ERROR] Sensor initialization failed with status: ");
             Serial.println(static_cast<int>(result));
         }
     }
 
     initialized = anyInitialized;
+
+    // Find the best sensor to start with
+    if (initialized) {
+        updateActiveSensor();
+        Serial.print("Active barometric sensor: ");
+        Serial.println(getActiveSensorName());
+    }
+
     Serial.print("Barometric sensor initialization complete. Success: ");
     Serial.println(anyInitialized ? "YES" : "NO");
     return anyInitialized;
@@ -59,14 +77,18 @@ void BarometricSensorManager::update() {
         return;
     }
 
-    for (auto sensor : sensors) {
-        sensor->update();
+    // Update all sensors
+    for (auto& sensorInfo : sensors) {
+        sensorInfo.sensor->update();
     }
+
+    // Check if we need to switch active sensors
+    updateActiveSensor();
 }
 
 void BarometricSensorManager::setReferenceAltitude(float altitude) {
-    for (auto sensor : sensors) {
-        sensor->setReferenceAltitude(altitude);
+    for (auto& sensorInfo : sensors) {
+        sensorInfo.sensor->setReferenceAltitude(altitude);
     }
 }
 
@@ -75,15 +97,15 @@ float BarometricSensorManager::getAltitude() {
         return 0.0f;
     }
 
-    // If sensor fusion is enabled and we have multiple operational sensors
-    if (USE_SENSOR_FUSION && getOperationalSensorCount() > 1) {
-        return fuseAltitudeData();
+    // Use the active sensor if available
+    if (activeSensor) {
+        return activeSensor->getAltitude();
     }
 
-    // Otherwise, use the first operational sensor
-    for (auto sensor : sensors) {
-        if (sensor->isOperational()) {
-            return sensor->getAltitude();
+    // Fallback to the first operational sensor
+    for (auto& sensorInfo : sensors) {
+        if (sensorInfo.sensor->isOperational()) {
+            return sensorInfo.sensor->getAltitude();
         }
     }
 
@@ -96,15 +118,15 @@ float BarometricSensorManager::getPressure() {
         return 0.0f;
     }
 
-    // If sensor fusion is enabled and we have multiple operational sensors
-    if (USE_SENSOR_FUSION && getOperationalSensorCount() > 1) {
-        return fusePressureData();
+    // Use the active sensor if available
+    if (activeSensor) {
+        return activeSensor->getPressure();
     }
 
-    // Otherwise, use the first operational sensor
-    for (auto sensor : sensors) {
-        if (sensor->isOperational()) {
-            return sensor->getPressure();
+    // Fallback to the first operational sensor
+    for (auto& sensorInfo : sensors) {
+        if (sensorInfo.sensor->isOperational()) {
+            return sensorInfo.sensor->getPressure();
         }
     }
 
@@ -117,15 +139,15 @@ float BarometricSensorManager::getTemperature() {
         return 0.0f;
     }
 
-    // If sensor fusion is enabled and we have multiple operational sensors
-    if (USE_SENSOR_FUSION && getOperationalSensorCount() > 1) {
-        return fuseTemperatureData();
+    // Use the active sensor if available
+    if (activeSensor) {
+        return activeSensor->getTemperature();
     }
 
-    // Otherwise, use the first operational sensor
-    for (auto sensor : sensors) {
-        if (sensor->isOperational()) {
-            return sensor->getTemperature();
+    // Fallback to the first operational sensor
+    for (auto& sensorInfo : sensors) {
+        if (sensorInfo.sensor->isOperational()) {
+            return sensorInfo.sensor->getTemperature();
         }
     }
 
@@ -135,55 +157,52 @@ float BarometricSensorManager::getTemperature() {
 
 int BarometricSensorManager::getOperationalSensorCount() {
     int count = 0;
-    for (auto sensor : sensors) {
-        if (sensor->isOperational()) {
+    for (auto& sensorInfo : sensors) {
+        if (sensorInfo.sensor->isOperational()) {
             count++;
         }
     }
     return count;
 }
 
-float BarometricSensorManager::fuseAltitudeData() {
-    float total = 0.0f;
-    int count = 0;
-
-    // Simple averaging fusion for now
-    for (auto sensor : sensors) {
-        if (sensor->isOperational()) {
-            total += sensor->getAltitude();
-            count++;
-        }
+const char* BarometricSensorManager::getActiveSensorName() {
+    if (!initialized || !activeSensor) {
+        return "None";
     }
 
-    return (count > 0) ? (total / count) : 0.0f;
+    return activeSensor->getName();
 }
 
-float BarometricSensorManager::fusePressureData() {
-    float total = 0.0f;
-    int count = 0;
+void BarometricSensorManager::updateActiveSensor() {
+    BarometricSensor* bestSensor = findBestSensor();
 
-    // Simple averaging fusion for now
-    for (auto sensor : sensors) {
-        if (sensor->isOperational()) {
-            total += sensor->getPressure();
-            count++;
+    // Only switch if there's no active sensor or the best sensor has changed
+    if (!activeSensor || (bestSensor && bestSensor != activeSensor)) {
+        // Log the sensor change
+        if (activeSensor && bestSensor) {
+            Serial.print("Switching active barometric sensor from ");
+            Serial.print(activeSensor->getName());
+            Serial.print(" to ");
+            Serial.println(bestSensor->getName());
         }
-    }
 
-    return (count > 0) ? (total / count) : 0.0f;
+        activeSensor = bestSensor;
+    }
 }
 
-float BarometricSensorManager::fuseTemperatureData() {
-    float total = 0.0f;
-    int count = 0;
+BarometricSensor* BarometricSensorManager::findBestSensor() {
+    if (sensors.empty()) {
+        return nullptr;
+    }
 
-    // Simple averaging fusion for now
-    for (auto sensor : sensors) {
-        if (sensor->isOperational()) {
-            total += sensor->getTemperature();
-            count++;
+    // Return the highest priority sensor that is operational
+    for (auto& sensorInfo : sensors) {
+        if (sensorInfo.sensor->isOperational()) {
+            return sensorInfo.sensor;
         }
     }
 
-    return (count > 0) ? (total / count) : 0.0f;
+    // If no operational sensor, return the highest priority one anyway
+    // (this will be used if all sensors fail)
+    return sensors[0].sensor;
 }

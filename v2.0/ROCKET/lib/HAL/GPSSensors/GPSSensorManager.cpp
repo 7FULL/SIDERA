@@ -2,6 +2,7 @@
  * GPS Sensor Manager Implementation
  */
 
+#include <algorithm>
 #include "GPSSensorManager.h"
 
 GPSSensorManager::GPSSensorManager() {
@@ -15,11 +16,16 @@ GPSSensorManager::~GPSSensorManager() {
 }
 
 void GPSSensorManager::addSensor(GPSSensor* sensor, uint8_t priority) {
+    Serial.print("Adding GPS sensor: ");
+    Serial.print(sensor->getName());
+    Serial.print(" with priority ");
+    Serial.println(priority);
+
     GPSSensorInfo info = {sensor, priority};
     sensors.push_back(info);
 
     // Sort sensors by priority (lower number = higher priority)
-    std::sort_heap(sensors.begin(), sensors.end(),
+    std::sort(sensors.begin(), sensors.end(),
               [](const GPSSensorInfo& a, const GPSSensorInfo& b) {
                   return a.priority < b.priority;
               });
@@ -44,8 +50,7 @@ bool GPSSensorManager::begin() {
         Serial.print(" (");
         Serial.print(sensorInfo.sensor->getName());
         Serial.print(") with priority ");
-        Serial.print(sensorInfo.priority);
-        Serial.println("...");
+        Serial.println(sensorInfo.priority);
 
         SensorStatus result = sensorInfo.sensor->begin();
         if (result == SensorStatus::OK) {
@@ -199,6 +204,14 @@ void GPSSensorManager::updateActiveSensor() {
 
     // Only switch if there's no active sensor or the best sensor has changed
     if (!activeSensor || (bestSensor && bestSensor != activeSensor)) {
+        // Log the sensor change
+        if (activeSensor && bestSensor) {
+            Serial.print("Switching active GPS sensor from ");
+            Serial.print(activeSensor->getName());
+            Serial.print(" to ");
+            Serial.println(bestSensor->getName());
+        }
+
         activeSensor = bestSensor;
     }
 }
