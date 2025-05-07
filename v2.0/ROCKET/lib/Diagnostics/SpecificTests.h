@@ -14,7 +14,6 @@
 #include "../HAL/CommunicationSystems/LoRaSystem.h"
 #include "../HAL/StorageSystems/StorageManager.h"
 #include "../PowerManagement/PowerManager.h"
-#include "../SensorFusion/SensorFusionSystem.h"
 #include "TemperatureSensors/TemperatureSensorManager.h"
 
 // Barometric sensor tests

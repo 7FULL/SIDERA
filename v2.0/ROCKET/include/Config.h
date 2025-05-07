@@ -11,7 +11,7 @@
 //#define ENABLE_L76KB_DEBUG
 //#define ENABLE_BMIO88_DEBUG
 //#define ENABLE_DS18B20_DEBUG
-#define ENABLE_ADXL375_DEBUG
+//#define ENABLE_ADXL375_DEBUG
 
 // Version information
 #define FIRMWARE_VERSION "1.0.0"

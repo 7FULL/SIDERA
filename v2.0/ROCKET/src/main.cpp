@@ -15,7 +15,6 @@
 #include "../lib/Diagnostics/PreflightCheck.h"
 
 #include "../lib/Optimization/ResourceMonitor.h"
-#include "../lib/Optimization/PerformanceOptimizer.h"
 #include "../lib/Optimization/FaultHandler.h"
 
 // Include HAL components
@@ -63,12 +62,9 @@ TemperatureSensorManager temperatureManager;
 
 // Optimization components
 ResourceMonitor* resourceMonitor;
-PerformanceOptimizer* performanceOptimizer;
 FaultHandler* faultHandler;
 
 // Storage systems
-FlashStorage* flashStorage;
-SDStorage* sdStorage;
 StorageManager storageManager;
 
 // Power management
@@ -82,18 +78,12 @@ PreflightCheckSystem* preflightSystem;
 // Command handler
 CommandHandler* commandHandler;
 
-// Communication system
-LoRaSystem* loraSystem;
-
 // Fusion system
 DataIntegrationManager* dataManager;
 
 // State machine
 StateMachine stateMachine;
 
-// Sensor instances
-MPL3115A2Sensor mpl3115Sensor;
-BMP388Sensor bmp388Sensor;
 // Timing control variables
 unsigned long lastPerformanceCheckTime = 0;
 unsigned long lastResourceLogTime = 0;
@@ -107,36 +97,36 @@ void initializeAllSystems() {
     Serial.println("Barometric sensors added");
 
     Serial.println("Adding IMU sensors...");
-    BMI088Sensor* bmi088 = new BMI088Sensor(Wire1, BMIO_GYR_ADDR, BMIO_ACCEL_ADDR);
-    ADXL375Sensor* adxl375 = new ADXL375Sensor(Wire1, AXL_ADDR);
-    imuManager.addSensor(bmi088, 0);  // Primary sensor (priority 0)
-    imuManager.addSensor(adxl375, 1);  // Secondary sensor (priority 1)
+    BMI088Sensor bmi088(Wire1, BMIO_GYR_ADDR, BMIO_ACCEL_ADDR);
+    ADXL375Sensor adxl375(Wire1, AXL_ADDR);
+    imuManager.addSensor(&bmi088, 0);  // Primary sensor (priority 0)
+    imuManager.addSensor(&adxl375, 1);  // Secondary sensor (priority 1)
     Serial.println("IMU sensors added");
 
     Serial.println("Adding temperature sensors...");
-    DS18B20Sensor* ds18b20 = new DS18B20Sensor(DS18B20_PIN);
-    temperatureManager.addSensor(ds18b20);
+    DS18B20Sensor ds18b20(DS18B20_PIN);
+    temperatureManager.addSensor(&ds18b20);
     Serial.println("Temperature sensors added");
 
     Serial.println("Adding GPS sensors...");
-    L76KBGPSSensor* l76kb = new L76KBGPSSensor(Serial1, L76_STBY);
-    ATGM336HGPSSensor* atgm336h = new ATGM336HGPSSensor(Serial2, ATGM_STBY);
+    L76KBGPSSensor l76kb(Serial1, L76_STBY);
+    ATGM336HGPSSensor atgm336h(Serial2, ATGM_STBY);
     //TODO
-//    gpsManager.addSensor(l76kb, 0);  // Priority 0 (primary)
-//    gpsManager.addSensor(atgm336h, 1);  // Priority 1 (secondary)
+//    gpsManager.addSensor(&l76kb, 0);  // Priority 0 (primary)
+//    gpsManager.addSensor(&atgm336h, 1);  // Priority 1 (secondary)
     Serial .println("GPS sensors added");
 
     Serial.println("Adding storage systems...");
-    flashStorage = new FlashStorage(SPI, FLASH_CS);
-    sdStorage = new SDStorage(SPI1, SD_CS);
-    storageManager.addStorage(flashStorage, true);  // Primary
-    storageManager.addStorage(sdStorage, false);    // Secondary
+    FlashStorage flashStorage(SPI, FLASH_CS);
+    SDStorage sdStorage(SPI1, SD_CS);
+    storageManager.addStorage(&flashStorage, true);  // Primary
+    storageManager.addStorage(&sdStorage, false);    // Secondary
     Serial.println("Storage systems added");
 
     Serial.println("Initializing LoRaSystem...");
-    loraSystem = new LoRaSystem(SPI1, LORA_CS, LORA_RST, LORA_DIO0, &storageManager);
-    loraSystem->setNodeId(ROCKET_ID);
-    loraSystem->setDestinationId(GROUND_STATION_ID);
+    LoRaSystem loraSystem(SPI1, LORA_CS, LORA_RST, LORA_DIO0, &storageManager);
+    loraSystem.setNodeId(ROCKET_ID);
+    loraSystem.setDestinationId(GROUND_STATION_ID);
     Serial.println("LoRaSystem initialized");
 
     Serial.println("Initializing power manager...");
@@ -164,22 +154,13 @@ void initializeAllSystems() {
     faultHandler->begin();
     Serial.println("Fault handler initialized");
 
-    Serial.println("Initializing performance optimizer...");
-    performanceOptimizer = new PerformanceOptimizer(
-            &storageManager,
-            &stateMachine,
-            resourceMonitor
-    );
-    performanceOptimizer->begin();
-    Serial.println("Performance optimizer initialized");
-
     Serial.println("Initializing power controller...");
     powerController = new PowerController(
             powerManager,
             &baroManager,
             &imuManager,
             &gpsManager,
-            loraSystem,
+            &loraSystem,
             &stateMachine
     );
 
@@ -203,7 +184,7 @@ void initializeAllSystems() {
     Serial.println("IMU sensors initialized");
 
     Serial.println("Initializing loraSystem...");
-    initSuccess &= loraSystem->begin() == SensorStatus::OK;
+    initSuccess &= loraSystem.begin() == SensorStatus::OK;
     Serial.println("LoRa system initialized");
 
     Serial.println("Initializing temperature sensors...");
@@ -229,17 +210,6 @@ void initializeAllSystems() {
     }
     Serial.println("Data integration manager initialized");
 
-    // Initialize sensor fusion
-//    Serial.println("Initializing sensor fusion system...");
-//    fusionSystem = new SensorFusionSystem(&baroManager, &imuManager, &storageManager);
-//    if (!fusionSystem->begin()) {
-//        Serial.println("ERROR: Failed to initialize sensor fusion system!");
-//        if (storageManager.isOperational()) {
-//            storageManager.logMessage(LogLevel::ERROR, Subsystem::SENSORS, "Failed to initialize sensor fusion system");
-//        }
-//    }
-//    Serial.println("Sensor fusion system initialized");
-
     Serial.println("Initializing DiagnosticManager...");
     diagnosticManager = new DiagnosticManager(&storageManager);
     diagnosticManager->setVerboseLogging(true);
@@ -249,7 +219,7 @@ void initializeAllSystems() {
     diagnosticManager->addTest(new BarometricSensorTest(&baroManager));
     diagnosticManager->addTest(new IMUSensorTest(&imuManager));
     diagnosticManager->addTest(new GPSSensorTest(&gpsManager));
-    diagnosticManager->addTest(new LoRaCommunicationTest(loraSystem));
+    diagnosticManager->addTest(new LoRaCommunicationTest(&loraSystem));
     diagnosticManager->addTest(new StorageTest(&storageManager));
     diagnosticManager->addTest(new BatteryTest(powerManager));
     diagnosticManager->addTest(new TemperatureSensorTest(&temperatureManager));
@@ -307,8 +277,8 @@ void initializeAllSystems() {
 
     // Initialize and setup state machine
     Serial.println("Initializing state machine...");
-    stateMachine.begin(&baroManager, &imuManager, &gpsManager, loraSystem, &storageManager);
-    StateHandlers::setupHandlers(stateMachine, &baroManager, &imuManager, &gpsManager, loraSystem, &storageManager, dataManager, diagnosticManager, preflightSystem, powerManager);
+    stateMachine.begin(&baroManager, &imuManager, &gpsManager, &loraSystem, &storageManager);
+    StateHandlers::setupHandlers(stateMachine, &baroManager, &imuManager, &gpsManager, &loraSystem, &storageManager, dataManager, diagnosticManager, preflightSystem, powerManager);
     Serial.println("State machine initialized");
 
     // Long beep to indicate initialization complete
@@ -318,7 +288,7 @@ void initializeAllSystems() {
 
     Serial.println("Initializing command handler...");
     commandHandler = new CommandHandler(
-            loraSystem,
+            &loraSystem,
             &storageManager,
             &stateMachine,
             powerManager,
@@ -353,7 +323,7 @@ void setup() {
         delay(10);
     }
 
-    delay(5000);
+    delay(2000);
 
     // Initialize pins
     pinMode(LED_RED, OUTPUT);
@@ -362,7 +332,7 @@ void setup() {
 
     // Signal startup
     digitalWrite(BUZZER_PIN, HIGH);
-    delay(100);
+    delay(1000);
     digitalWrite(BUZZER_PIN, LOW);
 
     Serial.println("Initializing rocket control system...");
@@ -392,14 +362,10 @@ void setup() {
 void loop() {
     // *** CRITICAL OPERATIONS ***
 
-    // Update sensors directly instead of fusion system
-    baroManager.update();
-    imuManager.update();
-    gpsManager.update();
+    dataManager->update();
 
     // Update resource monitoring and optimization
     resourceMonitor->update();
-    performanceOptimizer->update();
 
     // Check system health periodically
     unsigned long currentTime = millis();
