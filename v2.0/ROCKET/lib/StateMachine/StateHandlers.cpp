@@ -12,59 +12,56 @@ unsigned long StateHandlers::flightStartTime = 0;
 
 void StateHandlers::setupHandlers(
         StateMachine& stateMachine,
-        BarometricSensorManager* baroManager,
-        IMUSensorManager* imuManager,
-        GPSSensorManager* gpsManager,
+        DataIntegrationManager* dataManager,
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
-        DataIntegrationManager* dataIntegrationManager,
         DiagnosticManager* diagnosticManager,
         PreflightCheckSystem* preflightSystem,
         PowerManager* powerManager
 ) {
     // Register state handlers
-    stateMachine.registerStateHandler(RocketState::INIT, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager, diagnosticManager, preflightSystem]() {
-        handleInitState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager, diagnosticManager, preflightSystem);
+    stateMachine.registerStateHandler(RocketState::INIT, [&stateMachine, dataManager, loraSystem, storageManager, diagnosticManager, preflightSystem]() {
+        handleInitState(stateMachine, dataManager, loraSystem, storageManager, diagnosticManager, preflightSystem);
     });
 
-    stateMachine.registerStateHandler(RocketState::GROUND_IDLE, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager, powerManager]() {
-        handleGroundIdleState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager, powerManager);
+    stateMachine.registerStateHandler(RocketState::GROUND_IDLE, [&stateMachine, dataManager, loraSystem, storageManager, powerManager]() {
+        handleGroundIdleState(stateMachine, dataManager, loraSystem, storageManager, powerManager);
     });
 
-    stateMachine.registerStateHandler(RocketState::READY, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager, diagnosticManager, powerManager]() {
-        handleReadyState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager,diagnosticManager, powerManager);
+    stateMachine.registerStateHandler(RocketState::READY, [&stateMachine, dataManager, loraSystem, storageManager, diagnosticManager, powerManager]() {
+        handleReadyState(stateMachine, dataManager, loraSystem, storageManager, diagnosticManager, powerManager);
     });
 
-    stateMachine.registerStateHandler(RocketState::POWERED_FLIGHT, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager, powerManager]() {
-        handlePoweredFlightState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager, powerManager);
+    stateMachine.registerStateHandler(RocketState::POWERED_FLIGHT, [&stateMachine, dataManager, loraSystem, storageManager, powerManager]() {
+        handlePoweredFlightState(stateMachine, dataManager, loraSystem, storageManager, powerManager);
     });
 
-    stateMachine.registerStateHandler(RocketState::COASTING, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager, powerManager]() {
-        handleCoastingState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager, powerManager);
+    stateMachine.registerStateHandler(RocketState::COASTING, [&stateMachine, dataManager, loraSystem, storageManager, powerManager]() {
+        handleCoastingState(stateMachine, dataManager, loraSystem, storageManager, powerManager);
     });
 
-    stateMachine.registerStateHandler(RocketState::APOGEE, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager]() {
-        handleApogeeState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager);
+    stateMachine.registerStateHandler(RocketState::APOGEE, [&stateMachine, dataManager, loraSystem, storageManager]() {
+        handleApogeeState(stateMachine, dataManager, loraSystem, storageManager);
     });
 
-    stateMachine.registerStateHandler(RocketState::DESCENT, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager]() {
-        handleDescentState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager);
+    stateMachine.registerStateHandler(RocketState::DESCENT, [&stateMachine, dataManager, loraSystem, storageManager]() {
+        handleDescentState(stateMachine, dataManager, loraSystem, storageManager);
     });
 
-    stateMachine.registerStateHandler(RocketState::PARACHUTE_DESCENT, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager, powerManager]() {
-        handleParachuteDescentState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager, powerManager);
+    stateMachine.registerStateHandler(RocketState::PARACHUTE_DESCENT, [&stateMachine, dataManager, loraSystem, storageManager, powerManager]() {
+        handleParachuteDescentState(stateMachine, dataManager, loraSystem, storageManager, powerManager);
     });
 
-    stateMachine.registerStateHandler(RocketState::LANDED, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager, powerManager]() {
-        handleLandedState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager, powerManager);
+    stateMachine.registerStateHandler(RocketState::LANDED, [&stateMachine, dataManager, loraSystem, storageManager, powerManager]() {
+        handleLandedState(stateMachine, dataManager, loraSystem, storageManager, powerManager);
     });
 
-    stateMachine.registerStateHandler(RocketState::ERROR, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager]() {
-        handleErrorState(stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager);
+    stateMachine.registerStateHandler(RocketState::ERROR, [&stateMachine, dataManager, loraSystem, storageManager]() {
+        handleErrorState(stateMachine, dataManager, loraSystem, storageManager);
     });
 
-    stateMachine.registerEventHandler(RocketState::GROUND_IDLE, [&stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager](RocketEvent event) {
-        return handleGroundIdleEvents(event, stateMachine, baroManager, imuManager, gpsManager, loraSystem, storageManager, dataIntegrationManager);
+    stateMachine.registerEventHandler(RocketState::GROUND_IDLE, [&stateMachine, dataManager, loraSystem, storageManager](RocketEvent event) {
+        return handleGroundIdleEvents(event, stateMachine, dataManager, loraSystem, storageManager);
     });
 
     // Initialize timekeeping
@@ -74,28 +71,20 @@ void StateHandlers::setupHandlers(
 
 void StateHandlers::handleInitState(
         StateMachine& stateMachine,
-        BarometricSensorManager* baroManager,
-        IMUSensorManager* imuManager,
-        GPSSensorManager* gpsManager,
+        DataIntegrationManager* dataManager,
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
-        DataIntegrationManager* dataIntegrationManager,
         DiagnosticManager* diagnosticManager,
         PreflightCheckSystem* preflightSystem
 ) {
     // Check the current substate
     auto subState = static_cast<InitSubState*>(stateMachine.getCurrentSubState());
 
-//    Serial.println("Handling INIT state...");
-
     if (!subState) {
         // Default to HARDWARE_INIT if no substate
-//        subState = new InitSubState(InitSubState::HARDWARE_INIT);
         stateMachine.processEvent(RocketEvent::ERROR_DETECTED);
         return;
     }
-
-//    Serial.println("Current substate: " + String(static_cast<int>(*subState)));
 
     switch (*subState) {
         case InitSubState::HARDWARE_INIT:
@@ -111,22 +100,25 @@ void StateHandlers::handleInitState(
         case InitSubState::SENSOR_CALIBRATION:
             Serial.println("Calibrating sensors...");
             // Calibrate sensors
-            if (imuManager && baroManager) {
+            if (dataManager) {
                 if (storageManager) {
                     storageManager->logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE, "Calibrating sensors...");
                 }
 
-                // Calibrate IMU
-                imuManager->calibrate();
-
-                // Set reference altitude
-                float currentAltitude = baroManager->getAltitude();
-                Serial.println("Setting reference altitude: " + String(currentAltitude));
-                if (storageManager) {
-                    String message = "Setting reference altitude: " + String(currentAltitude);
-                    storageManager->logMessage(LogLevel::INFO, Subsystem::BAROMETER, message.c_str());
+                // Perform calibration
+                if (dataManager->calibrateSensors()) {
+                    Serial.println("Sensor calibration successful");
+                    if (storageManager) {
+                        storageManager->logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE, "Sensor calibration successful");
+                    }
+                } else {
+                    Serial.println("Sensor calibration failed");
+                    if (storageManager) {
+                        storageManager->logMessage(LogLevel::ERROR, Subsystem::STATE_MACHINE, "Sensor calibration failed");
+                    }
+                    stateMachine.processEvent(RocketEvent::ERROR_DETECTED);
+                    return;
                 }
-                baroManager->setReferenceAltitude(currentAltitude);
 
                 // Move to SELF_TEST
                 *subState = InitSubState::SELF_TEST;
@@ -141,18 +133,11 @@ void StateHandlers::handleInitState(
             // Check if all subsystems are operational
             bool allSystemsGo = true;
 
-            if (baroManager && !baroManager->getOperationalSensorCount()) {
+            // Check if the DataIntegrationManager is operational
+            if (!dataManager) {
                 allSystemsGo = false;
                 if (storageManager) {
-                    storageManager->logMessage(LogLevel::ERROR, Subsystem::BAROMETER, "No operational barometric sensors");
-                }
-                stateMachine.processEvent(RocketEvent::ERROR_DETECTED);
-            }
-
-            if (imuManager && !imuManager->getOperationalSensorCount()) {
-                allSystemsGo = false;
-                if (storageManager) {
-                    storageManager->logMessage(LogLevel::ERROR, Subsystem::IMU, "No operational IMU sensors");
+                    storageManager->logMessage(LogLevel::ERROR, Subsystem::SYSTEM, "Data integration manager not available");
                 }
                 stateMachine.processEvent(RocketEvent::ERROR_DETECTED);
             }
@@ -207,12 +192,9 @@ void StateHandlers::handleInitState(
 
 void StateHandlers::handleGroundIdleState(
         StateMachine& stateMachine,
-        BarometricSensorManager* baroManager,
-        IMUSensorManager* imuManager,
-        GPSSensorManager* gpsManager,
+        DataIntegrationManager* dataManager,
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
-        DataIntegrationManager* dataIntegrationManager,
         PowerManager* powerManager
 ) {
     // Check the current substate
@@ -220,6 +202,9 @@ void StateHandlers::handleGroundIdleState(
     if (!subState) {
         // Default to SLEEP if no substate
         subState = new GroundIdleSubState(GroundIdleSubState::SLEEP);
+        if (storageManager) {
+            storageManager->logMessage(LogLevel::ERROR, Subsystem::STATE_MACHINE, "No substate found, defaulting to SLEEP");
+        }
     }
 
     // Update sensors at a reduced rate to save power
@@ -227,9 +212,9 @@ void StateHandlers::handleGroundIdleState(
     if (currentTime - lastSensorUpdateTime >= GROUND_IDLE_SENSOR_RATE) {  // 1Hz updates in idle
         lastSensorUpdateTime = currentTime;
 
-        if (dataIntegrationManager){
+        if (dataManager){
             // Update data integration system
-            dataIntegrationManager->update();
+            dataManager->update();
         }
     }
 
@@ -241,10 +226,7 @@ void StateHandlers::handleGroundIdleState(
             // Send telemetry data
             sendTelemetryData(
                     loraSystem,
-                    baroManager,
-                    imuManager,
-                    gpsManager,
-                    dataIntegrationManager,
+                    dataManager,
                     powerManager,
                     static_cast<uint8_t>(RocketState::GROUND_IDLE)
             );
@@ -271,10 +253,7 @@ void StateHandlers::handleGroundIdleState(
 
 void StateHandlers::sendTelemetryData(
         LoRaSystem* loraSystem,
-        BarometricSensorManager* baroManager,
-        IMUSensorManager* imuManager,
-        GPSSensorManager* gpsManager,
-        DataIntegrationManager* dataIntegrationManager,
+        DataIntegrationManager* dataManager,
         PowerManager* powerManager,
         uint8_t rocketState
 ) {
@@ -284,7 +263,7 @@ void StateHandlers::sendTelemetryData(
     }
 
     // Create telemetry packet
-    TelemetryPacket packet;
+    TelemetryPacket packet{};
 
     // Set timestamp and state
     packet.timestamp = millis();
@@ -292,42 +271,34 @@ void StateHandlers::sendTelemetryData(
 
     Serial.println("State: " + String(rocketState));
 
-    // Get sensor data from fusion system if available, otherwise from individual sensors
-    if (dataIntegrationManager) {
-        FlightData flightData = dataIntegrationManager->getFlightData();
+    // Get sensor data from DataIntegrationManager
+    if (dataManager) {
+        FlightData flightData = dataManager->getFlightData();
         packet.altitude = flightData.altitude;
         packet.verticalSpeed = flightData.verticalSpeed;
-        packet.acceleration = flightData.verticalAccel;
+        packet.acceleration = flightData.accelData.magnitude;
         packet.temperature = flightData.temperature;
         packet.pressure = flightData.pressure;
+        packet.gpsSatellites = flightData.gpsSatellites;
+        packet.gpsLatitude = flightData.gpsData.latitude;
+        packet.gpsLongitude = flightData.gpsData.longitude;
+        packet.gpsAltitude = flightData.gpsData.altitude;
 
         // Set flags if apogee detected
         if (flightData.apogeeDetected) {
             packet.flags |= TelemetryPacket::FLAG_APOGEE_DETECTED;
         }
-    } else if (baroManager) {
-        // Fallback to barometer data
-        packet.altitude = baroManager->getAltitude();
-        // Not calculating velocity without fusion system
+        // Set flags if descent detected
+        if (flightData.landingDetected) {
+            packet.flags |= TelemetryPacket::FLAG_LANDED;
+        }
+    } else {
+        // Default values if no data manager available
+        packet.altitude = 0.0f;
         packet.verticalSpeed = 0.0f;
         packet.acceleration = 0.0f;
-    }
-
-    // Get IMU data
-    if (imuManager) {
-        AccelerometerData accelData = imuManager->getAccelerometerData();
-        packet.acceleration = accelData.magnitude;
-    }
-
-    // Get GPS data
-    if (gpsManager && gpsManager->hasPositionFix()) {
-        GPSData gpsData = gpsManager->getGPSData();
-        packet.gpsSatellites = gpsData.satellites;
-        packet.gpsLatitude = gpsData.latitude;
-        packet.gpsLongitude = gpsData.longitude;
-        packet.gpsAltitude = gpsData.altitude;
-    } else {
-        Serial.println("GPS data not available, using default values.");
+        packet.temperature = 0.0f;
+        packet.pressure = 0.0f;
         packet.gpsSatellites = 0;
         packet.gpsLatitude = 0.0f;
         packet.gpsLongitude = 0.0f;
@@ -335,7 +306,7 @@ void StateHandlers::sendTelemetryData(
     }
 
     // Battery data
-    packet.batteryVoltage = powerManager->getBatteryVoltage();
+    packet.batteryVoltage = powerManager ? powerManager->getBatteryVoltage() : 0.0f;
 
     // Check for low battery
     if (packet.batteryVoltage < 3.5f) {
@@ -385,12 +356,9 @@ void StateHandlers::sendTelemetryData(
 
 void StateHandlers::handleReadyState(
         StateMachine& stateMachine,
-        BarometricSensorManager* baroManager,
-        IMUSensorManager* imuManager,
-        GPSSensorManager* gpsManager,
+        DataIntegrationManager* dataManager,
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
-        DataIntegrationManager* dataIntegrationManager,
         DiagnosticManager* diagnosticManager,
         PowerManager* powerManager
 ) {
@@ -399,12 +367,47 @@ void StateHandlers::handleReadyState(
     if (currentTime - lastSensorUpdateTime >= READY_SENSOR_RATE) {  // 10Hz updates when ready
         lastSensorUpdateTime = currentTime;
 
-        if (baroManager) baroManager->update();
-        if (imuManager) imuManager->update();
-        if (gpsManager) gpsManager->update();
+        if (dataManager) {
+            dataManager->update();
+        }
+
+        // Log sensor data
+        if (storageManager && dataManager) {
+            // Create and store telemetry entry
+            StoredTelemetry telemetry{};
+            FlightData flightData = dataManager->getFlightData();
+
+            telemetry.timestamp = currentTime;
+            telemetry.state = static_cast<uint8_t>(RocketState::POWERED_FLIGHT);
+            telemetry.altitude = flightData.altitude;
+            telemetry.vertSpeed = flightData.verticalSpeed;
+            telemetry.accelX = flightData.accelData.x;
+            telemetry.accelY = flightData.accelData.y;
+            telemetry.accelZ = flightData.accelData.z;
+            telemetry.gyroX = flightData.gyroData.x;
+            telemetry.gyroY = flightData.gyroData.y;
+            telemetry.gyroZ = flightData.gyroData.z;
+            telemetry.temperature = flightData.temperature;
+            telemetry.pressure = flightData.pressure;
+            telemetry.batteryMv = flightData.batteryVoltage;
+            telemetry.gpsLat = flightData.gpsData.latitude;
+            telemetry.gpsLon = flightData.gpsData.longitude;
+            telemetry.gpsAlt = flightData.gpsData.altitude;
+            telemetry.gpsSats = flightData.gpsSatellites;
+            telemetry.flags = 0;
+            // Set flags based on flight data
+            if (flightData.apogeeDetected) {
+                telemetry.flags |= TelemetryPacket::FLAG_APOGEE_DETECTED;
+            }
+            if (flightData.landingDetected) {
+                telemetry.flags |= TelemetryPacket::FLAG_LANDED;
+            }
+
+            storageManager->storeTelemetry(telemetry);
+        }
 
         // Check for launch based on acceleration
-        if (detectLaunch(imuManager, dataIntegrationManager)) {
+        if (detectLaunch(dataManager)) {
             if (storageManager) {
                 storageManager->logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE,
                                            "Launch detected from acceleration!");
@@ -426,10 +429,7 @@ void StateHandlers::handleReadyState(
             // Send telemetry data
             sendTelemetryData(
                     loraSystem,
-                    baroManager,
-                    imuManager,
-                    gpsManager,
-                    dataIntegrationManager,
+                    dataManager,
                     powerManager,
                     static_cast<uint8_t>(RocketState::READY)
             );
@@ -439,12 +439,9 @@ void StateHandlers::handleReadyState(
 
 void StateHandlers::handlePoweredFlightState(
         StateMachine& stateMachine,
-        BarometricSensorManager* baroManager,
-        IMUSensorManager* imuManager,
-        GPSSensorManager* gpsManager,
+        DataIntegrationManager* dataManager,
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
-        DataIntegrationManager* dataIntegrationManager,
         PowerManager* powerManager
 ) {
     // Update sensors at full rate during flight
@@ -452,35 +449,57 @@ void StateHandlers::handlePoweredFlightState(
     if (currentTime - lastSensorUpdateTime >= FLIGHT_SENSOR_RATE) {  // 100Hz during powered flight
         lastSensorUpdateTime = currentTime;
 
-        if (baroManager) baroManager->update();
-        if (imuManager) imuManager->update();
+        if (dataManager) {
+            dataManager->update();
+        }
 
         // Log sensor data
-        if (storageManager && baroManager && imuManager) {
+        if (storageManager && dataManager) {
             // Create and store telemetry entry
-            StoredTelemetry telemetry;
+            StoredTelemetry telemetry{};
+            FlightData flightData = dataManager->getFlightData();
+
             telemetry.timestamp = currentTime;
             telemetry.state = static_cast<uint8_t>(RocketState::POWERED_FLIGHT);
-            telemetry.altitude = baroManager->getAltitude() * 1000; // Convert to mm
-
-            // Add more telemetry fields...
+            telemetry.altitude = flightData.altitude;
+            telemetry.vertSpeed = flightData.verticalSpeed;
+            telemetry.accelX = flightData.accelData.x;
+            telemetry.accelY = flightData.accelData.y;
+            telemetry.accelZ = flightData.accelData.z;
+            telemetry.gyroX = flightData.gyroData.x;
+            telemetry.gyroY = flightData.gyroData.y;
+            telemetry.gyroZ = flightData.gyroData.z;
+            telemetry.temperature = flightData.temperature;
+            telemetry.pressure = flightData.pressure;
+            telemetry.batteryMv = flightData.batteryVoltage;
+            telemetry.gpsLat = flightData.gpsData.latitude;
+            telemetry.gpsLon = flightData.gpsData.longitude;
+            telemetry.gpsAlt = flightData.gpsData.altitude;
+            telemetry.gpsSats = flightData.gpsSatellites;
+            telemetry.flags = 0;
+            // Set flags based on flight data
+            if (flightData.apogeeDetected) {
+                telemetry.flags |= TelemetryPacket::FLAG_APOGEE_DETECTED;
+            }
+            if (flightData.landingDetected) {
+                telemetry.flags |= TelemetryPacket::FLAG_LANDED;
+            }
 
             storageManager->storeTelemetry(telemetry);
         }
 
-        // Check for burnout (using acceleration threshold)
-        if (imuManager) {
-            AccelerometerData accelData = imuManager->getAccelerometerData();
-
+        // Check for burnout using flight data
+        if (dataManager) {
+            FlightData flightData = dataManager->getFlightData();
             static bool highAccelPhase = false;
 
             // First make sure we've seen high acceleration
-            if (!highAccelPhase && accelData.magnitude > 3.0f) {
+            if (!highAccelPhase && flightData.accelData.magnitude > 3.0f) {
                 highAccelPhase = true;
             }
 
             // Then detect when it drops below threshold
-            if (highAccelPhase && accelData.magnitude < BURNOUT_ACCEL_THRESHOLD) {
+            if (highAccelPhase && flightData.accelData.magnitude < BURNOUT_ACCEL_THRESHOLD) {
                 if (storageManager) {
                     storageManager->logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE, "Engine burnout detected");
                 }
@@ -498,10 +517,7 @@ void StateHandlers::handlePoweredFlightState(
             // Send telemetry data
             sendTelemetryData(
                     loraSystem,
-                    baroManager,
-                    imuManager,
-                    gpsManager,
-                    dataIntegrationManager,
+                    dataManager,
                     powerManager,
                     static_cast<uint8_t>(RocketState::POWERED_FLIGHT)
             );
@@ -511,12 +527,9 @@ void StateHandlers::handlePoweredFlightState(
 
 void StateHandlers::handleCoastingState(
         StateMachine& stateMachine,
-        BarometricSensorManager* baroManager,
-        IMUSensorManager* imuManager,
-        GPSSensorManager* gpsManager,
+        DataIntegrationManager* dataManager,
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
-        DataIntegrationManager* dataIntegrationManager,
         PowerManager* powerManager
 ) {
     // Update sensors at full rate during flight
@@ -524,24 +537,47 @@ void StateHandlers::handleCoastingState(
     if (currentTime - lastSensorUpdateTime >= COAST_SENSOR_RATE) {  // 100Hz during coast
         lastSensorUpdateTime = currentTime;
 
-        if (baroManager) baroManager->update();
-        if (imuManager) imuManager->update();
+        if (dataManager) {
+            dataManager->update();
+        }
 
         // Log sensor data
-        if (storageManager && baroManager && imuManager) {
+        if (storageManager && dataManager) {
             // Create and store telemetry entry
-            StoredTelemetry telemetry;
-            telemetry.timestamp = currentTime;
-            telemetry.state = static_cast<uint8_t>(RocketState::COASTING);
-            telemetry.altitude = baroManager->getAltitude() * 1000; // Convert to mm
+            StoredTelemetry telemetry{};
+            FlightData flightData = dataManager->getFlightData();
 
-            // Add more telemetry fields...
+            telemetry.timestamp = currentTime;
+            telemetry.state = static_cast<uint8_t>(RocketState::POWERED_FLIGHT);
+            telemetry.altitude = flightData.altitude;
+            telemetry.vertSpeed = flightData.verticalSpeed;
+            telemetry.accelX = flightData.accelData.x;
+            telemetry.accelY = flightData.accelData.y;
+            telemetry.accelZ = flightData.accelData.z;
+            telemetry.gyroX = flightData.gyroData.x;
+            telemetry.gyroY = flightData.gyroData.y;
+            telemetry.gyroZ = flightData.gyroData.z;
+            telemetry.temperature = flightData.temperature;
+            telemetry.pressure = flightData.pressure;
+            telemetry.batteryMv = flightData.batteryVoltage;
+            telemetry.gpsLat = flightData.gpsData.latitude;
+            telemetry.gpsLon = flightData.gpsData.longitude;
+            telemetry.gpsAlt = flightData.gpsData.altitude;
+            telemetry.gpsSats = flightData.gpsSatellites;
+            telemetry.flags = 0;
+            // Set flags based on flight data
+            if (flightData.apogeeDetected) {
+                telemetry.flags |= TelemetryPacket::FLAG_APOGEE_DETECTED;
+            }
+            if (flightData.landingDetected) {
+                telemetry.flags |= TelemetryPacket::FLAG_LANDED;
+            }
 
             storageManager->storeTelemetry(telemetry);
         }
 
         // Check for apogee
-        if (detectApogee(baroManager, dataIntegrationManager)) {
+        if (detectApogee(dataManager)) {
             if (storageManager) {
                 storageManager->logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE, "Apogee detected!");
             }
@@ -558,10 +594,7 @@ void StateHandlers::handleCoastingState(
             // Send telemetry data
             sendTelemetryData(
                     loraSystem,
-                    baroManager,
-                    imuManager,
-                    gpsManager,
-                    dataIntegrationManager,
+                    dataManager,
                     powerManager,
                     static_cast<uint8_t>(RocketState::COASTING)
             );
@@ -571,12 +604,9 @@ void StateHandlers::handleCoastingState(
 
 void StateHandlers::handleApogeeState(
         StateMachine& stateMachine,
-        BarometricSensorManager* baroManager,
-        IMUSensorManager* imuManager,
-        GPSSensorManager* gpsManager,
+        DataIntegrationManager* dataManager,
         LoRaSystem* loraSystem,
-        StorageManager* storageManager,
-        DataIntegrationManager* dataIntegrationManager
+        StorageManager* storageManager
 ) {
     // The apogee state is a transient state - immediately go to descent
     if (storageManager) {
@@ -584,17 +614,14 @@ void StateHandlers::handleApogeeState(
     }
 
     // Force transition to descent
-    stateMachine.processEvent(RocketEvent::BOOT_COMPLETED);  // Using BOOT_COMPLETED as trigger
+    stateMachine.processEvent(RocketEvent::APOGEE_DETECTED);
 }
 
 void StateHandlers::handleDescentState(
         StateMachine& stateMachine,
-        BarometricSensorManager* baroManager,
-        IMUSensorManager* imuManager,
-        GPSSensorManager* gpsManager,
+        DataIntegrationManager* dataManager,
         LoRaSystem* loraSystem,
-        StorageManager* storageManager,
-        DataIntegrationManager* dataIntegrationManager
+        StorageManager* storageManager
 ) {
     // Deploy parachute
     deployParachute();
@@ -609,12 +636,9 @@ void StateHandlers::handleDescentState(
 
 void StateHandlers::handleParachuteDescentState(
         StateMachine& stateMachine,
-        BarometricSensorManager* baroManager,
-        IMUSensorManager* imuManager,
-        GPSSensorManager* gpsManager,
+        DataIntegrationManager* dataManager,
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
-        DataIntegrationManager* dataIntegrationManager,
         PowerManager* powerManager
 ) {
     // Update sensors at a moderate rate during descent
@@ -622,25 +646,47 @@ void StateHandlers::handleParachuteDescentState(
     if (currentTime - lastSensorUpdateTime >= DESCENT_SENSOR_RATE) {  // 50Hz during descent
         lastSensorUpdateTime = currentTime;
 
-        if (baroManager) baroManager->update();
-        if (imuManager) imuManager->update();
-        if (gpsManager) gpsManager->update();
+        if (dataManager) {
+            dataManager->update();
+        }
 
         // Log sensor data
-        if (storageManager && baroManager && imuManager) {
+        if (storageManager && dataManager) {
             // Create and store telemetry entry
-            StoredTelemetry telemetry;
-            telemetry.timestamp = currentTime;
-            telemetry.state = static_cast<uint8_t>(RocketState::PARACHUTE_DESCENT);
-            telemetry.altitude = baroManager->getAltitude() * 1000; // Convert to mm
+            StoredTelemetry telemetry{};
+            FlightData flightData = dataManager->getFlightData();
 
-            // Add more telemetry fields...
+            telemetry.timestamp = currentTime;
+            telemetry.state = static_cast<uint8_t>(RocketState::POWERED_FLIGHT);
+            telemetry.altitude = flightData.altitude;
+            telemetry.vertSpeed = flightData.verticalSpeed;
+            telemetry.accelX = flightData.accelData.x;
+            telemetry.accelY = flightData.accelData.y;
+            telemetry.accelZ = flightData.accelData.z;
+            telemetry.gyroX = flightData.gyroData.x;
+            telemetry.gyroY = flightData.gyroData.y;
+            telemetry.gyroZ = flightData.gyroData.z;
+            telemetry.temperature = flightData.temperature;
+            telemetry.pressure = flightData.pressure;
+            telemetry.batteryMv = flightData.batteryVoltage;
+            telemetry.gpsLat = flightData.gpsData.latitude;
+            telemetry.gpsLon = flightData.gpsData.longitude;
+            telemetry.gpsAlt = flightData.gpsData.altitude;
+            telemetry.gpsSats = flightData.gpsSatellites;
+            telemetry.flags = 0;
+            // Set flags based on flight data
+            if (flightData.apogeeDetected) {
+                telemetry.flags |= TelemetryPacket::FLAG_APOGEE_DETECTED;
+            }
+            if (flightData.landingDetected) {
+                telemetry.flags |= TelemetryPacket::FLAG_LANDED;
+            }
 
             storageManager->storeTelemetry(telemetry);
         }
 
         // Check for landing
-        if (detectLanding(baroManager, dataIntegrationManager)) {
+        if (detectLanding(dataManager)) {
             if (storageManager) {
                 storageManager->logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE, "Landing detected!");
             }
@@ -657,10 +703,7 @@ void StateHandlers::handleParachuteDescentState(
             // Send telemetry data
             sendTelemetryData(
                     loraSystem,
-                    baroManager,
-                    imuManager,
-                    gpsManager,
-                    dataIntegrationManager,
+                    dataManager,
                     powerManager,
                     static_cast<uint8_t>(RocketState::PARACHUTE_DESCENT)
             );
@@ -670,12 +713,9 @@ void StateHandlers::handleParachuteDescentState(
 
 void StateHandlers::handleLandedState(
         StateMachine& stateMachine,
-        BarometricSensorManager* baroManager,
-        IMUSensorManager* imuManager,
-        GPSSensorManager* gpsManager,
+        DataIntegrationManager* dataManager,
         LoRaSystem* loraSystem,
         StorageManager* storageManager,
-        DataIntegrationManager* dataIntegrationManager,
         PowerManager* powerManager
 ) {
     // We've landed, reduce sampling rate
@@ -683,24 +723,41 @@ void StateHandlers::handleLandedState(
     if (currentTime - lastSensorUpdateTime >= LANDED_SENSOR_RATE) {  // 2Hz after landing
         lastSensorUpdateTime = currentTime;
 
-        if (baroManager) baroManager->update();
-        if (imuManager) imuManager->update();
-        if (gpsManager) gpsManager->update();
+        if (dataManager) {
+            dataManager->update();
+        }
 
-        // Log final sensor data
-        if (storageManager && baroManager && imuManager && gpsManager) {
+        // Log sensor data
+        if (storageManager && dataManager) {
             // Create and store telemetry entry
-            StoredTelemetry telemetry;
+            StoredTelemetry telemetry{};
+            FlightData flightData = dataManager->getFlightData();
+
             telemetry.timestamp = currentTime;
-            telemetry.state = static_cast<uint8_t>(RocketState::LANDED);
-            telemetry.altitude = baroManager->getAltitude() * 1000; // Convert to mm
-
-            // Add GPS position for recovery
-            GPSData gpsData = gpsManager->getGPSData();
-            telemetry.gpsLat = gpsData.latitude * 10000000; // Convert to 10^-7 degrees
-            telemetry.gpsLon = gpsData.longitude * 10000000;
-
-            // Add more telemetry fields...
+            telemetry.state = static_cast<uint8_t>(RocketState::POWERED_FLIGHT);
+            telemetry.altitude = flightData.altitude;
+            telemetry.vertSpeed = flightData.verticalSpeed;
+            telemetry.accelX = flightData.accelData.x;
+            telemetry.accelY = flightData.accelData.y;
+            telemetry.accelZ = flightData.accelData.z;
+            telemetry.gyroX = flightData.gyroData.x;
+            telemetry.gyroY = flightData.gyroData.y;
+            telemetry.gyroZ = flightData.gyroData.z;
+            telemetry.temperature = flightData.temperature;
+            telemetry.pressure = flightData.pressure;
+            telemetry.batteryMv = flightData.batteryVoltage;
+            telemetry.gpsLat = flightData.gpsData.latitude;
+            telemetry.gpsLon = flightData.gpsData.longitude;
+            telemetry.gpsAlt = flightData.gpsData.altitude;
+            telemetry.gpsSats = flightData.gpsSatellites;
+            telemetry.flags = 0;
+            // Set flags based on flight data
+            if (flightData.apogeeDetected) {
+                telemetry.flags |= TelemetryPacket::FLAG_APOGEE_DETECTED;
+            }
+            if (flightData.landingDetected) {
+                telemetry.flags |= TelemetryPacket::FLAG_LANDED;
+            }
 
             storageManager->storeTelemetry(telemetry);
         }
@@ -714,10 +771,7 @@ void StateHandlers::handleLandedState(
             // Send telemetry data
             sendTelemetryData(
                     loraSystem,
-                    baroManager,
-                    imuManager,
-                    gpsManager,
-                    dataIntegrationManager,
+                    dataManager,
                     powerManager,
                     static_cast<uint8_t>(RocketState::LANDED)
             );
@@ -747,18 +801,18 @@ void StateHandlers::handleLandedState(
 
 void StateHandlers::handleErrorState(
         StateMachine& stateMachine,
-        BarometricSensorManager* baroManager,
-        IMUSensorManager* imuManager,
-        GPSSensorManager* gpsManager,
+        DataIntegrationManager* dataManager,
         LoRaSystem* loraSystem,
-        StorageManager* storageManager,
-        DataIntegrationManager* dataIntegrationManager
+        StorageManager* storageManager
 ) {
     // Check the current substate
     auto subState = static_cast<ErrorSubState*>(stateMachine.getCurrentSubState());
     if (!subState) {
         // Default to SENSOR_ERROR if no substate
         subState = new ErrorSubState(ErrorSubState::SENSOR_ERROR);
+        if (storageManager) {
+            storageManager->logMessage(LogLevel::ERROR, Subsystem::STATE_MACHINE, "No substate found, defaulting to SENSOR_ERROR");
+        }
     }
 
     // Keep sensors updated at a low rate
@@ -766,9 +820,9 @@ void StateHandlers::handleErrorState(
     if (currentTime - lastSensorUpdateTime >= ERROR_SENSOR_RATE) {  // 1Hz in error state
         lastSensorUpdateTime = currentTime;
 
-        if (baroManager) baroManager->update();
-        if (imuManager) imuManager->update();
-        if (gpsManager) gpsManager->update();
+        if (dataManager) {
+            dataManager->update();
+        }
     }
 
     // Send error telemetry more frequently
@@ -778,20 +832,29 @@ void StateHandlers::handleErrorState(
         if (loraSystem) {
             // Create and send error telemetry message
             // Include the error state
+            TelemetryPacket errorPacket{};
+            errorPacket.timestamp = currentTime;
+            errorPacket.rocketState = static_cast<uint8_t>(RocketState::ERROR);
+            //TODO Data de los sensores
         }
     }
 
     switch (*subState) {
         case ErrorSubState::SENSOR_ERROR:
             // Handle sensor errors - try to recover
-            if (baroManager && baroManager->getOperationalSensorCount() > 0 &&
-                imuManager && imuManager->getOperationalSensorCount() > 0) {
+            if (dataManager) {
+                // Check if all critical sensors are working
+                FlightData data = dataManager->getFlightData();
+                bool sensorsWorking = true;
 
-                if (storageManager) {
-                    storageManager->logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE, "Sensors recovered, returning to idle");
+                // Add checks for critical sensor functionality
+
+                if (sensorsWorking) {
+                    if (storageManager) {
+                        storageManager->logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE, "Sensors recovered, returning to idle");
+                    }
+                    stateMachine.processEvent(RocketEvent::RECOVERY_SUCCEEDED);
                 }
-
-                stateMachine.processEvent(RocketEvent::RECOVERY_SUCCEEDED);
             }
             break;
 
@@ -828,12 +891,9 @@ void StateHandlers::handleErrorState(
 bool StateHandlers::handleGroundIdleEvents(
         RocketEvent event,
         StateMachine& stateMachine,
-        BarometricSensorManager* baroManager,
-        IMUSensorManager* imuManager,
-        GPSSensorManager* gpsManager,
+        DataIntegrationManager* dataManager,
         LoRaSystem* loraSystem,
-        StorageManager* storageManager,
-        DataIntegrationManager* dataIntegrationManager
+        StorageManager* storageManager
 ) {
     Serial.print("DEBUG: Ground Idle processing event: ");
     Serial.println(static_cast<int>(event));
@@ -866,107 +926,24 @@ void StateHandlers::deployParachute() {
     // For example, activating a GPIO pin or controlling a servo
 }
 
-bool StateHandlers::detectLaunch(IMUSensorManager* imuManager, DataIntegrationManager* dataIntegrationManager) {
-    // Use the fusion system for more reliable launch detection
-    if (dataIntegrationManager) {
-        // Launch is detected when vertical acceleration exceeds threshold
-        // and vertical speed is positive
-        FlightData fusedData = dataIntegrationManager->getFlightData();
-        return (fusedData.verticalAccel > LAUNCH_ACCELERATION_THRESHOLD * 9.81f) &&
-               (fusedData.verticalSpeed > 1.0f);
-    }
+bool StateHandlers::detectLaunch(DataIntegrationManager* dataManager) {
+    if (!dataManager) return false;
 
-    // Fallback to basic detection if fusion system is not available
-    if (!imuManager) return false;
-
-    // Get accelerometer data
-    AccelerometerData accelData = imuManager->getAccelerometerData();
-
-    // Check if acceleration exceeds threshold and calculate vertical component
-    // Assuming Z is vertical in rocket frame
-    float verticalAccel = accelData.z;
-
-    // For more robust detection, check both magnitude and vertical component
-    return (accelData.magnitude > LAUNCH_ACCELERATION_THRESHOLD &&
-            verticalAccel > 0.8f * LAUNCH_ACCELERATION_THRESHOLD);
+    // Launch is detected when vertical acceleration exceeds threshold
+    // and vertical speed is positive
+    FlightData flightData = dataManager->getFlightData();
+    return (flightData.verticalAccel > LAUNCH_ACCELERATION_THRESHOLD * 9.81f) &&
+           (flightData.verticalSpeed > 1.0f);
 }
 
-bool StateHandlers::detectApogee(BarometricSensorManager* baroManager, DataIntegrationManager* dataIntegrationManager) {
-    if (dataIntegrationManager) {
-        return dataIntegrationManager->isApogeeDetected();
-    }
+bool StateHandlers::detectApogee(DataIntegrationManager* dataManager) {
+    if (!dataManager) return false;
 
-    if (!baroManager) return false;
-
-    // Simplified apogee detection - in reality, you'd use a more robust algorithm
-    // that takes into account multiple samples and vertical velocity
-
-    static float maxAltitude = 0.0f;
-    static int descentCount = 0;
-
-    float currentAltitude = baroManager->getAltitude();
-
-    // Update max altitude
-    if (currentAltitude > maxAltitude) {
-        maxAltitude = currentAltitude;
-        descentCount = 0;
-        return false;
-    }
-
-    // Check if we're significantly below max altitude for several consecutive readings
-    if (maxAltitude - currentAltitude > 2.0f) {  // At least 2m below max
-        descentCount++;
-
-        if (descentCount >= APOGEE_DETECTION_WINDOW) {
-            return true;  // Apogee confirmed
-        }
-    } else {
-        // Reset descent counter if we're not consistently descending
-        descentCount = 0;
-    }
-
-    return false;
+    return dataManager->isApogeeDetected();
 }
 
-bool StateHandlers::detectLanding(BarometricSensorManager* baroManager, DataIntegrationManager* dataIntegrationManager) {
-    if (dataIntegrationManager) {
-        FlightData fusedData = dataIntegrationManager->getFlightData();
+bool StateHandlers::detectLanding(DataIntegrationManager* dataManager) {
+    if (!dataManager) return false;
 
-        // Landing is detected when altitude is stable and vertical speed is near zero
-        return fusedData.verticalSpeed > -0.5f && fusedData.verticalSpeed < 0.5f &&
-               fusedData.verticalAccel > -0.5f && fusedData.verticalAccel < 0.5f;
-    }
-
-    if (!baroManager) return false;
-
-    static float landingAltitude = 0.0f;
-    static unsigned long stableStartTime = 0;
-    static bool stableAltitudeDetected = false;
-
-    float currentAltitude = baroManager->getAltitude();
-
-    // First time initialization
-    if (landingAltitude == 0.0f) {
-        landingAltitude = currentAltitude;
-        return false;
-    }
-
-    // Check if the altitude is stable
-    if (abs(currentAltitude - landingAltitude) < LANDED_ALTITUDE_THRESHOLD) {
-        if (!stableAltitudeDetected) {
-            stableAltitudeDetected = true;
-            stableStartTime = millis();
-        }
-
-        // Check if we've been stable for long enough
-        if (millis() - stableStartTime >= LANDED_STABILITY_TIME) {
-            return true;  // Landing confirmed
-        }
-    } else {
-        // Update landing altitude and reset stable detection
-        landingAltitude = currentAltitude;
-        stableAltitudeDetected = false;
-    }
-
-    return false;
+    return dataManager->isLandingDetected();
 }

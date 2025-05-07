@@ -140,6 +140,9 @@ bool LoRaSystem::sendMessage(const Message& message) {
 
     if (message.data != nullptr && message.length > 0) {
         Serial.printf("LoRa: Writing %d bytes of data...\n", message.length);
+        //Dummy msg for testing
+//        uint8_t dummyMsg[10] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A};
+//        LoRa.write(dummyMsg, message.length);
         LoRa.write(message.data, message.length);
     } else {
         Serial.println("LoRa: No data to send");
@@ -148,7 +151,7 @@ bool LoRaSystem::sendMessage(const Message& message) {
 
     Serial.println("LoRa: Ending packet...");
 
-    LoRa.endPacket();
+    LoRa.endPacket(true);
 
 //    if (LoRa.endPacket(true) != 1) { // Check if the packet was sent successfully
 //        Serial.println("LoRa: Failed to send packet");

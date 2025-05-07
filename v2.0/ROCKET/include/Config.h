@@ -31,7 +31,7 @@
 
 //=== SENSOR PARAMETERS ===//
 // Update rates by state (ms)
-#define GROUND_IDLE_SENSOR_RATE 1000        // 1Hz in idle
+#define GROUND_IDLE_SENSOR_RATE 2000        // 1Hz in idle
 #define READY_SENSOR_RATE 100               // 10Hz when ready
 #define FLIGHT_SENSOR_RATE 10               // 100Hz during flight
 #define COAST_SENSOR_RATE 10                // 100Hz during coast
@@ -47,7 +47,7 @@
 
 //=== COMMUNICATION PARAMETERS ===//
 // Telemetry rates by state (ms)
-#define GROUND_IDLE_TELEMETRY_RATE 2000     // 0.5Hz in idle - reduced to save power
+#define GROUND_IDLE_TELEMETRY_RATE 4000     // 0.5Hz in idle - reduced to save power
 #define READY_TELEMETRY_RATE 1000           // 1Hz when ready
 #define FLIGHT_TELEMETRY_RATE 200           // 5Hz during flight
 #define COAST_TELEMETRY_RATE 200            // 5Hz during coast

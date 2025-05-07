@@ -8,9 +8,6 @@
 #define STATE_HANDLERS_H
 
 #include "StateMachine.h"
-#include "../HAL/BarometricSensors/BarometricSensorManager.h"
-#include "../HAL/IMUSensors/IMUSensorManager.h"
-#include "../HAL/GPSSensors/GPSSensorManager.h"
 #include "../HAL/CommunicationSystems/LoRaSystem.h"
 #include "../HAL/StorageSystems/StorageManager.h"
 #include "../PowerManagement/PowerManager.h"
@@ -23,12 +20,9 @@ class StateHandlers {
 public:
     static void setupHandlers(
             StateMachine& stateMachine,
-            BarometricSensorManager* baroManager,
-            IMUSensorManager* imuManager,
-            GPSSensorManager* gpsManager,
+            DataIntegrationManager* dataManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            DataIntegrationManager* dataManager,
             DiagnosticManager* diagnosticManager,
             PreflightCheckSystem* preflightSystem,
             PowerManager* powerManager
@@ -36,10 +30,7 @@ public:
 
     static void sendTelemetryData(
             LoRaSystem* loraSystem,
-            BarometricSensorManager* baroManager,
-            IMUSensorManager* imuManager,
-            GPSSensorManager* gpsManager,
-            DataIntegrationManager* dataIntegrationManager,
+            DataIntegrationManager* dataManager,
             PowerManager* powerManager,
             uint8_t rocketState
     );
@@ -47,129 +38,96 @@ public:
     // Individual state handlers
     static void handleInitState(
             StateMachine& stateMachine,
-            BarometricSensorManager* baroManager,
-            IMUSensorManager* imuManager,
-            GPSSensorManager* gpsManager,
+            DataIntegrationManager* dataManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            DataIntegrationManager* dataIntegrationManager,
             DiagnosticManager* diagnosticManager,
             PreflightCheckSystem* preflightSystem
     );
 
     static void handleGroundIdleState(
             StateMachine& stateMachine,
-            BarometricSensorManager* baroManager,
-            IMUSensorManager* imuManager,
-            GPSSensorManager* gpsManager,
+            DataIntegrationManager* dataManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            DataIntegrationManager* dataIntegrationManager,
             PowerManager* powerManager
     );
 
     static void handleReadyState(
             StateMachine& stateMachine,
-            BarometricSensorManager* baroManager,
-            IMUSensorManager* imuManager,
-            GPSSensorManager* gpsManager,
+            DataIntegrationManager* dataManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            DataIntegrationManager* dataIntegrationManager,
             DiagnosticManager* diagnosticManager,
             PowerManager* powerManager
     );
 
     static void handlePoweredFlightState(
             StateMachine& stateMachine,
-            BarometricSensorManager* baroManager,
-            IMUSensorManager* imuManager,
-            GPSSensorManager* gpsManager,
+            DataIntegrationManager* dataManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            DataIntegrationManager* dataIntegrationManager,
             PowerManager* powerManager
     );
 
     static void handleCoastingState(
             StateMachine& stateMachine,
-            BarometricSensorManager* baroManager,
-            IMUSensorManager* imuManager,
-            GPSSensorManager* gpsManager,
+            DataIntegrationManager* dataManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            DataIntegrationManager* dataIntegrationManager,
             PowerManager* powerManager
     );
 
     static void handleApogeeState(
             StateMachine& stateMachine,
-            BarometricSensorManager* baroManager,
-            IMUSensorManager* imuManager,
-            GPSSensorManager* gpsManager,
+            DataIntegrationManager* dataManager,
             LoRaSystem* loraSystem,
-            StorageManager* storageManager,
-            DataIntegrationManager* dataIntegrationManager
+            StorageManager* storageManager
     );
 
     static void handleDescentState(
             StateMachine& stateMachine,
-            BarometricSensorManager* baroManager,
-            IMUSensorManager* imuManager,
-            GPSSensorManager* gpsManager,
+            DataIntegrationManager* dataManager,
             LoRaSystem* loraSystem,
-            StorageManager* storageManager,
-            DataIntegrationManager* dataIntegrationManager
+            StorageManager* storageManager
     );
 
     static void handleParachuteDescentState(
             StateMachine& stateMachine,
-            BarometricSensorManager* baroManager,
-            IMUSensorManager* imuManager,
-            GPSSensorManager* gpsManager,
+            DataIntegrationManager* dataManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            DataIntegrationManager* dataIntegrationManager,
             PowerManager* powerManager
     );
 
     static void handleLandedState(
             StateMachine& stateMachine,
-            BarometricSensorManager* baroManager,
-            IMUSensorManager* imuManager,
-            GPSSensorManager* gpsManager,
+            DataIntegrationManager* dataManager,
             LoRaSystem* loraSystem,
             StorageManager* storageManager,
-            DataIntegrationManager* dataIntegrationManager,
             PowerManager* powerManager
     );
 
     static void handleErrorState(
             StateMachine& stateMachine,
-            BarometricSensorManager* baroManager,
-            IMUSensorManager* imuManager,
-            GPSSensorManager* gpsManager,
+            DataIntegrationManager* dataManager,
             LoRaSystem* loraSystem,
-            StorageManager* storageManager,
-            DataIntegrationManager* dataIntegrationManager
+            StorageManager* storageManager
     );
 
     static bool handleGroundIdleEvents(
             RocketEvent event,
             StateMachine& stateMachine,
-            BarometricSensorManager* baroManager,
-            IMUSensorManager* imuManager,
-            GPSSensorManager* gpsManager,
+            DataIntegrationManager* dataManager,
             LoRaSystem* loraSystem,
-            StorageManager* storageManager,
-            DataIntegrationManager* dataIntegrationManager
+            StorageManager* storageManager
     );
 
-    // Helpers
+    // Helper methods
     static void deployParachute();
-    static bool detectLaunch(IMUSensorManager* imuManager, DataIntegrationManager* dataManager);
-    static bool detectApogee(BarometricSensorManager* baroManager, DataIntegrationManager* dataManager);
-    static bool detectLanding(BarometricSensorManager* baroManager, DataIntegrationManager* dataManager);
+    static bool detectLaunch(DataIntegrationManager* dataManager);
+    static bool detectApogee(DataIntegrationManager* dataManager);
+    static bool detectLanding(DataIntegrationManager* dataManager);
 
     // Timekeeping
     static unsigned long lastSensorUpdateTime;

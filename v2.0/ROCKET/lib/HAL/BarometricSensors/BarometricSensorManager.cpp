@@ -72,6 +72,26 @@ bool BarometricSensorManager::begin() {
     return anyInitialized;
 }
 
+void BarometricSensorManager::calibrate() {
+    if (!initialized) {
+        return;
+    }
+
+    //Make several dummy reads to stabilize the sensor
+    const int stabilizationReadings = 5;
+    for (int i = 0; i < stabilizationReadings; i++) {
+        for (auto& sensorInfo : sensors) {
+            sensorInfo.sensor->update();
+        }
+    }
+
+    // Set reference altitude for all sensors using the active sensor
+    if (activeSensor) {
+        float referenceAltitude = activeSensor->getAltitude();
+        setReferenceAltitude(referenceAltitude);
+    }
+}
+
 void BarometricSensorManager::update() {
     if (!initialized) {
         return;

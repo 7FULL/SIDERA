@@ -164,6 +164,18 @@ bool DataIntegrationManager::isLandingDetected() {
     return landingDetected;
 }
 
+bool DataIntegrationManager::calibrateSensors(){
+    // Placeholder for sensor calibration logic
+    // This could involve zeroing out accelerometer data, calibrating barometer, etc.
+    if (baroManager) {
+        baroManager->calibrate();
+    }
+    if (imuManager) {
+        imuManager->calibrate();
+    }
+    return true;
+}
+
 void DataIntegrationManager::calculateVerticalSpeed() {
     // Skip if we don't have previous altitude data
     if (lastAltitudeTime == 0) {

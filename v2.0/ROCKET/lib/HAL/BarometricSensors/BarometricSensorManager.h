@@ -42,6 +42,8 @@ public:
     // Get the name of the currently active sensor
     const char* getActiveSensorName();
 
+    void calibrate();
+
 private:
     struct SensorInfo {
         BarometricSensor* sensor;

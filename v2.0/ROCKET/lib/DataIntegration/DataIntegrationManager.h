@@ -64,6 +64,8 @@ public:
     // Check if landing was detected
     bool isLandingDetected();
 
+    bool calibrateSensors();
+
 private:
     // Sensor manager references
     BarometricSensorManager* baroManager;

@@ -1,3 +1,103 @@
+//#include <Arduino.h>
+//#include <SPI.h>
+//#include <LoRa.h>
+//
+//// Define pins for LoRa module (using your existing pin definitions)
+//#define LORA_CS     9
+//#define LORA_RST    12
+//#define LORA_DIO0   13
+//#define SPI1_MISO   8
+//#define SPI1_MOSI   11
+//#define SPI1_SCK    10
+//
+//// LED pin for visual feedback
+//#define LED_PIN     25
+//
+//// Transmission interval in milliseconds
+//#define TX_INTERVAL 5000
+//
+//// Counter for message ID
+//int counter = 0;
+//
+//void setup() {
+//    // Initialize Serial for debugging
+//    Serial.begin(115200);
+//
+//    // Wait for serial to be ready or timeout after 3 seconds
+//    unsigned long startTime = millis();
+//    while (!Serial && (millis() - startTime < 3000));
+//
+//    Serial.println("LoRa Antenna Test - Hello World Sender");
+//
+//    // Configure LED
+//    pinMode(LED_PIN, OUTPUT);
+//
+//    // Configure SPI for LoRa
+//    SPI1.setRX(SPI1_MISO);
+//    SPI1.setTX(SPI1_MOSI);
+//    SPI1.setSCK(SPI1_SCK);
+//    SPI1.begin();
+//
+//    // Configure LoRa pins
+//    LoRa.setPins(LORA_CS, LORA_RST, LORA_DIO0);
+//    LoRa.setSPI(SPI1);
+//
+//    // Start LoRa with 868MHz frequency (adjust as needed: 433E6, 868E6, or 915E6)
+//    Serial.println("Initializing LoRa...");
+//    if (!LoRa.begin(868E6)) {
+//        Serial.println("LoRa initialization failed!");
+//        while (1) {
+//            // Blink LED rapidly to indicate failure
+//            digitalWrite(LED_PIN, HIGH);
+//            delay(100);
+//            digitalWrite(LED_PIN, LOW);
+//            delay(100);
+//        }
+//    }
+//
+//    // Set LoRa parameters
+//    LoRa.setSpreadingFactor(7);      // Range 6-12, lower = faster data rate
+//    LoRa.setSignalBandwidth(125E3);  // 125kHz bandwidth
+//    LoRa.setCodingRate4(5);          // 4/5 coding rate
+//    LoRa.setPreambleLength(8);       // Default preamble length
+//    LoRa.enableCrc();                // Enable CRC checking
+//
+//    Serial.println("LoRa initialization successful!");
+//    Serial.println("Sending 'Hello World' messages every 5 seconds...");
+//
+//    // Blink LED three times to indicate successful initialization
+//    for (int i = 0; i < 3; i++) {
+//        digitalWrite(LED_PIN, HIGH);
+//        delay(200);
+//        digitalWrite(LED_PIN, LOW);
+//        delay(200);
+//    }
+//}
+//
+//void loop() {
+//    Serial.print("Sending packet: ");
+//    Serial.println(counter);
+//
+//    // Turn on LED to indicate transmission
+//    digitalWrite(LED_PIN, HIGH);
+//
+//    // Send packet
+//    LoRa.beginPacket();
+//    uint8_t data[] = {0x48, 0x65, 0x6C, 0x6C, 0x6F}; // "Hello" en ASCII
+//    LoRa.write(data, sizeof(data)); // Envía los bytes crudos
+//    LoRa.print(counter);
+//    LoRa.endPacket();
+//
+//    // Turn off LED
+//    digitalWrite(LED_PIN, LOW);
+//
+//    // Increment counter
+//    counter++;
+//
+//    // Wait for next transmission
+//    delay(TX_INTERVAL);
+//}
+
 /**
  * Rocket Control System - RP2040 Version
  * Main entry point - Single-threaded implementation
@@ -60,6 +160,8 @@ IMUSensorManager imuManager;
 GPSSensorManager gpsManager;
 TemperatureSensorManager temperatureManager;
 
+LoRaSystem* loraSystem;
+
 // Optimization components
 ResourceMonitor* resourceMonitor;
 FaultHandler* faultHandler;
@@ -90,10 +192,10 @@ unsigned long lastResourceLogTime = 0;
 
 void initializeAllSystems() {
     Serial.println("Adding barometric sensors...");
-    BMP388Sensor bmp388Sensor(Wire1, BMP_ADDR);
-    MPL3115A2Sensor mpl3115Sensor(Wire1, MPL_ADDR);
-    baroManager.addSensor(&bmp388Sensor, 0);  // Primary sensor (priority 0)
-    baroManager.addSensor(&mpl3115Sensor, 1);  // Secondary sensor (priority 1)
+    BMP388Sensor* bmp388Sensor = new BMP388Sensor(Wire1, BMP_ADDR);
+    MPL3115A2Sensor* mpl3115Sensor = new MPL3115A2Sensor(Wire1, MPL_ADDR);
+    baroManager.addSensor(bmp388Sensor, 0);  // Primary sensor (priority 0)
+    baroManager.addSensor(mpl3115Sensor, 1);  // Secondary sensor (priority 1)
     Serial.println("Barometric sensors added");
 
     Serial.println("Adding IMU sensors...");
@@ -124,9 +226,9 @@ void initializeAllSystems() {
     Serial.println("Storage systems added");
 
     Serial.println("Initializing LoRaSystem...");
-    LoRaSystem loraSystem(SPI1, LORA_CS, LORA_RST, LORA_DIO0, &storageManager);
-    loraSystem.setNodeId(ROCKET_ID);
-    loraSystem.setDestinationId(GROUND_STATION_ID);
+    loraSystem = new LoRaSystem(SPI1, LORA_CS, LORA_RST, LORA_DIO0, &storageManager);
+    loraSystem->setNodeId(ROCKET_ID);
+    loraSystem->setDestinationId(GROUND_STATION_ID);
     Serial.println("LoRaSystem initialized");
 
     Serial.println("Initializing power manager...");
@@ -160,7 +262,7 @@ void initializeAllSystems() {
             &baroManager,
             &imuManager,
             &gpsManager,
-            &loraSystem,
+            loraSystem,
             &stateMachine
     );
 
@@ -184,7 +286,7 @@ void initializeAllSystems() {
     Serial.println("IMU sensors initialized");
 
     Serial.println("Initializing loraSystem...");
-    initSuccess &= loraSystem.begin() == SensorStatus::OK;
+    initSuccess &= loraSystem->begin() == SensorStatus::OK;
     Serial.println("LoRa system initialized");
 
     Serial.println("Initializing temperature sensors...");
@@ -219,7 +321,7 @@ void initializeAllSystems() {
     diagnosticManager->addTest(new BarometricSensorTest(&baroManager));
     diagnosticManager->addTest(new IMUSensorTest(&imuManager));
     diagnosticManager->addTest(new GPSSensorTest(&gpsManager));
-    diagnosticManager->addTest(new LoRaCommunicationTest(&loraSystem));
+    diagnosticManager->addTest(new LoRaCommunicationTest(loraSystem));
     diagnosticManager->addTest(new StorageTest(&storageManager));
     diagnosticManager->addTest(new BatteryTest(powerManager));
     diagnosticManager->addTest(new TemperatureSensorTest(&temperatureManager));
@@ -277,18 +379,18 @@ void initializeAllSystems() {
 
     // Initialize and setup state machine
     Serial.println("Initializing state machine...");
-    stateMachine.begin(&baroManager, &imuManager, &gpsManager, &loraSystem, &storageManager);
-    StateHandlers::setupHandlers(stateMachine, &baroManager, &imuManager, &gpsManager, &loraSystem, &storageManager, dataManager, diagnosticManager, preflightSystem, powerManager);
+    stateMachine.begin(&baroManager, &imuManager, &gpsManager, loraSystem, &storageManager);
+    StateHandlers::setupHandlers(stateMachine, dataManager, loraSystem, &storageManager, diagnosticManager, preflightSystem, powerManager);
     Serial.println("State machine initialized");
 
     // Long beep to indicate initialization complete
-    digitalWrite(BUZZER_PIN, HIGH);
-    delay(1000);
-    digitalWrite(BUZZER_PIN, LOW);
+//    digitalWrite(BUZZER_PIN, HIGH);
+//    delay(1000);
+//    digitalWrite(BUZZER_PIN, LOW);
 
     Serial.println("Initializing command handler...");
     commandHandler = new CommandHandler(
-            &loraSystem,
+            loraSystem,
             &storageManager,
             &stateMachine,
             powerManager,
@@ -362,8 +464,6 @@ void setup() {
 void loop() {
     // *** CRITICAL OPERATIONS ***
 
-    dataManager->update();
-
     // Update resource monitoring and optimization
     resourceMonitor->update();
 
@@ -397,52 +497,6 @@ void loop() {
     if (currentTime - lastResourceLogTime > 300000) { // Every 5 minutes
         lastResourceLogTime = currentTime;
         resourceMonitor->logResourceUsage();
-    }
-
-    // Process sensor data directly from sensor managers
-    float currentAltitude = baroManager.getAltitude();
-    float currentPressure = baroManager.getPressure();
-    AccelerometerData accelData = imuManager.getAccelerometerData();
-
-    // Calculate vertical speed (simplified without Kalman filtering)
-    static float lastAltitude = 0.0f;
-    static unsigned long lastAltitudeTime = 0;
-    float verticalSpeed = 0.0f;
-
-    if (lastAltitudeTime > 0) {
-        float deltaTime = (currentTime - lastAltitudeTime) / 1000.0f; // in seconds
-        if (deltaTime > 0) {
-            verticalSpeed = (currentAltitude - lastAltitude) / deltaTime;
-        }
-    }
-
-    lastAltitude = currentAltitude;
-    lastAltitudeTime = currentTime;
-
-    // Detect apogee - simplified implementation
-    static float maxAltitude = 0.0f;
-    static int descentCount = 0;
-    static bool apogeeDetectedFlag = false;
-
-    // Update max altitude
-    if (currentAltitude > maxAltitude) {
-        maxAltitude = currentAltitude;
-        descentCount = 0;
-    } else if (maxAltitude - currentAltitude > 2.0f) { // At least 2m below max
-        descentCount++;
-
-        // Confirm apogee after several consecutive readings below max
-        if (descentCount >= 5 && !apogeeDetectedFlag) {
-            apogeeDetectedFlag = true;
-            stateMachine.processEvent(RocketEvent::APOGEE_DETECTED);
-
-            // Log apogee detection
-            if (storageManager.isOperational()) {
-                char message[50];
-                snprintf(message, sizeof(message), "Apogee detected at %.1fm", maxAltitude);
-                storageManager.logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE, message);
-            }
-        }
     }
 
     // Update power management
