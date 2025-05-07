@@ -4,6 +4,7 @@
 
 #include "StateHandlers.h"
 #include "Config.h"
+#include "PinDefinitions.h"
 
 // Initialize static members
 unsigned long StateHandlers::lastSensorUpdateTime = 0;
@@ -188,6 +189,14 @@ void StateHandlers::handleInitState(
             }
             break;
     }
+
+    // Handle LED indicators
+    static unsigned long lastLedTime = 0;
+    unsigned long currentTime = millis(); // Asegúrate de declarar currentTime
+    if (currentTime - lastLedTime >= 500) { // Cambia el intervalo según el estado
+        lastLedTime = currentTime;
+        digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
+    }
 }
 
 void StateHandlers::handleGroundIdleState(
@@ -249,110 +258,13 @@ void StateHandlers::handleGroundIdleState(
             // Low power monitoring mode
             break;
     }
+
+    static unsigned long lastLedTime = 0;
+    if (currentTime - lastLedTime >= 250) { // Cambia el intervalo según el estado
+        lastLedTime = currentTime;
+        digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
+    }
 }
-
-void StateHandlers::sendTelemetryData(
-        LoRaSystem* loraSystem,
-        DataIntegrationManager* dataManager,
-        PowerManager* powerManager,
-        uint8_t rocketState
-) {
-    if (!loraSystem) {
-        Serial.println("LoRa system not available, cannot send telemetry.");
-        return;
-    }
-
-    // Create telemetry packet
-    TelemetryPacket packet{};
-
-    // Set timestamp and state
-    packet.timestamp = millis();
-    packet.rocketState = rocketState;
-
-    Serial.println("State: " + String(rocketState));
-
-    // Get sensor data from DataIntegrationManager
-    if (dataManager) {
-        FlightData flightData = dataManager->getFlightData();
-        packet.altitude = flightData.altitude;
-        packet.verticalSpeed = flightData.verticalSpeed;
-        packet.acceleration = flightData.accelData.magnitude;
-        packet.temperature = flightData.temperature;
-        packet.pressure = flightData.pressure;
-        packet.gpsSatellites = flightData.gpsSatellites;
-        packet.gpsLatitude = flightData.gpsData.latitude;
-        packet.gpsLongitude = flightData.gpsData.longitude;
-        packet.gpsAltitude = flightData.gpsData.altitude;
-
-        // Set flags if apogee detected
-        if (flightData.apogeeDetected) {
-            packet.flags |= TelemetryPacket::FLAG_APOGEE_DETECTED;
-        }
-        // Set flags if descent detected
-        if (flightData.landingDetected) {
-            packet.flags |= TelemetryPacket::FLAG_LANDED;
-        }
-    } else {
-        // Default values if no data manager available
-        packet.altitude = 0.0f;
-        packet.verticalSpeed = 0.0f;
-        packet.acceleration = 0.0f;
-        packet.temperature = 0.0f;
-        packet.pressure = 0.0f;
-        packet.gpsSatellites = 0;
-        packet.gpsLatitude = 0.0f;
-        packet.gpsLongitude = 0.0f;
-        packet.gpsAltitude = 0.0f;
-    }
-
-    // Battery data
-    packet.batteryVoltage = powerManager ? powerManager->getBatteryVoltage() : 0.0f;
-
-    // Check for low battery
-    if (packet.batteryVoltage < 3.5f) {
-        packet.flags |= TelemetryPacket::FLAG_LOW_BATTERY;
-    }
-
-    // Set parachute flag if in parachute descent state
-    if (rocketState == static_cast<uint8_t>(RocketState::PARACHUTE_DESCENT)) {
-        packet.flags |= TelemetryPacket::FLAG_PARACHUTE_DEPLOYED;
-    }
-
-    // Set landed flag if in landed state
-    if (rocketState == static_cast<uint8_t>(RocketState::LANDED)) {
-        packet.flags |= TelemetryPacket::FLAG_LANDED;
-    }
-
-    // Set error flag if in error state
-    if (rocketState == static_cast<uint8_t>(RocketState::ERROR)) {
-        packet.flags |= TelemetryPacket::FLAG_ERROR_CONDITION;
-    }
-
-    // Create sensor status byte
-    packet.sensorStatus = 0;
-
-    // Now serialize and send the packet
-    TelemetrySerializer serializer;
-    std::vector<uint8_t> packetData = serializer.serialize(packet);
-
-    // Create LoRa message
-    Message message;
-    message.type = MessageType::TELEMETRY;
-    message.priority = 100;  // Medium priority for telemetry
-    message.timestamp = millis();
-    message.length = packetData.size();
-    message.data = new uint8_t[message.length];
-    memcpy(message.data, packetData.data(), message.length);
-    message.acknowledged = false;
-
-    // Send the message
-    bool result = loraSystem->sendMessage(message);
-    Serial.printf("LoRa send result: %s\n", result ? "SUCCESS" : "FAILURE");
-
-    // Clean up
-    delete[] message.data;
-}
-
 
 void StateHandlers::handleReadyState(
         StateMachine& stateMachine,
@@ -434,6 +346,12 @@ void StateHandlers::handleReadyState(
                     static_cast<uint8_t>(RocketState::READY)
             );
         }
+    }
+
+    static unsigned long lastLedTime = 0;
+    if (currentTime - lastLedTime >= 100) { // Cambia el intervalo según el estado
+        lastLedTime = currentTime;
+        digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
     }
 }
 
@@ -523,6 +441,12 @@ void StateHandlers::handlePoweredFlightState(
             );
         }
     }
+
+    static unsigned long lastLedTime = 0;
+    if (currentTime - lastLedTime >= 50) { // Cambia el intervalo según el estado
+        lastLedTime = currentTime;
+        digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
+    }
 }
 
 void StateHandlers::handleCoastingState(
@@ -599,6 +523,12 @@ void StateHandlers::handleCoastingState(
                     static_cast<uint8_t>(RocketState::COASTING)
             );
         }
+    }
+
+    static unsigned long lastLedTime = 0;
+    if (currentTime - lastLedTime >= 50) { // Cambia el intervalo según el estado
+        lastLedTime = currentTime;
+        digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
     }
 }
 
@@ -709,6 +639,12 @@ void StateHandlers::handleParachuteDescentState(
             );
         }
     }
+
+    static unsigned long lastLedTime = 0;
+    if (currentTime - lastLedTime >= 100) { // Cambia el intervalo según el estado
+        lastLedTime = currentTime;
+        digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
+    }
 }
 
 void StateHandlers::handleLandedState(
@@ -796,6 +732,12 @@ void StateHandlers::handleLandedState(
             storageManager->logMessage(LogLevel::INFO, Subsystem::SYSTEM,
                                        "Automatically entering low power mode after landing");
         }
+    }
+
+    static unsigned long lastLedTime = 0;
+    if (currentTime - lastLedTime >= 500) { // Cambia el intervalo según el estado
+        lastLedTime = currentTime;
+        digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
     }
 }
 
@@ -886,6 +828,12 @@ void StateHandlers::handleErrorState(
             // In recovery mode, waiting for commands
             break;
     }
+
+    static unsigned long lastLedTime = 0;
+    if (currentTime - lastLedTime >= 100) { // Cambia el intervalo según el estado
+        lastLedTime = currentTime;
+        digitalWrite(LED_RED, !digitalRead(LED_RED));
+    }
 }
 
 bool StateHandlers::handleGroundIdleEvents(
@@ -946,4 +894,109 @@ bool StateHandlers::detectLanding(DataIntegrationManager* dataManager) {
     if (!dataManager) return false;
 
     return dataManager->isLandingDetected();
+}
+
+void StateHandlers::sendTelemetryData(
+        LoRaSystem* loraSystem,
+        DataIntegrationManager* dataManager,
+        PowerManager* powerManager,
+        uint8_t rocketState
+) {
+    if (!loraSystem) {
+        Serial.println("LoRa system not available, cannot send telemetry.");
+        return;
+    }
+
+    // Create telemetry packet
+    TelemetryPacket packet{};
+
+    // Set timestamp and state
+    packet.timestamp = millis();
+    packet.rocketState = rocketState;
+
+//    Serial.println("State: " + String(rocketState));
+
+    // Get sensor data from DataIntegrationManager
+    if (dataManager) {
+        FlightData flightData = dataManager->getFlightData();
+        packet.altitude = flightData.altitude;
+        packet.verticalSpeed = flightData.verticalSpeed;
+        packet.acceleration = flightData.accelData.magnitude;
+        packet.temperature = flightData.temperature;
+        packet.pressure = flightData.pressure;
+        packet.gpsSatellites = flightData.gpsSatellites;
+        packet.gpsLatitude = flightData.gpsData.latitude;
+        packet.gpsLongitude = flightData.gpsData.longitude;
+        packet.gpsAltitude = flightData.gpsData.altitude;
+
+        // Set flags if apogee detected
+        if (flightData.apogeeDetected) {
+            packet.flags |= TelemetryPacket::FLAG_APOGEE_DETECTED;
+        }
+        // Set flags if descent detected
+        if (flightData.landingDetected) {
+            packet.flags |= TelemetryPacket::FLAG_LANDED;
+        }
+    } else {
+        // Default values if no data manager available
+        packet.altitude = 0.0f;
+        packet.verticalSpeed = 0.0f;
+        packet.acceleration = 0.0f;
+        packet.temperature = 0.0f;
+        packet.pressure = 0.0f;
+        packet.gpsSatellites = 0;
+        packet.gpsLatitude = 0.0f;
+        packet.gpsLongitude = 0.0f;
+        packet.gpsAltitude = 0.0f;
+    }
+
+    // Battery data
+    packet.batteryVoltage = powerManager ? powerManager->getBatteryVoltage() : 0.0f;
+
+    // Check for low battery
+    if (packet.batteryVoltage < 3.5f) {
+        packet.flags |= TelemetryPacket::FLAG_LOW_BATTERY;
+    }
+
+    // Set parachute flag if in parachute descent state
+    if (rocketState == static_cast<uint8_t>(RocketState::PARACHUTE_DESCENT)) {
+        packet.flags |= TelemetryPacket::FLAG_PARACHUTE_DEPLOYED;
+    }
+
+    // Set landed flag if in landed state
+    if (rocketState == static_cast<uint8_t>(RocketState::LANDED)) {
+        packet.flags |= TelemetryPacket::FLAG_LANDED;
+    }
+
+    // Set error flag if in error state
+    if (rocketState == static_cast<uint8_t>(RocketState::ERROR)) {
+        packet.flags |= TelemetryPacket::FLAG_ERROR_CONDITION;
+    }
+
+    // Create sensor status byte
+    packet.sensorStatus = 0;
+
+    // Now serialize and send the packet
+    TelemetrySerializer serializer;
+    std::vector<uint8_t> packetData = serializer.serialize(packet);
+
+    // Create LoRa message
+    Message message;
+    message.type = MessageType::TELEMETRY;
+    message.priority = 100;  // Medium priority for telemetry
+    message.timestamp = millis();
+    message.length = packetData.size();
+    message.data = new uint8_t[message.length];
+    memcpy(message.data, packetData.data(), message.length);
+    message.acknowledged = false;
+
+    // Send the message
+    bool result = loraSystem->sendMessage(message);
+
+    if (!result) {
+        Serial.println("Failed to send telemetry data");
+    }
+
+    // Clean up
+    delete[] message.data;
 }

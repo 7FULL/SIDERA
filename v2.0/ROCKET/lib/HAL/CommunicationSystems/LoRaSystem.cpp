@@ -3,6 +3,7 @@
  */
 
 #include "LoRaSystem.h"
+#include "Config.h"
 
 // Initialize static instance pointer
 LoRaSystem* LoRaSystem::instance = nullptr;
@@ -126,44 +127,54 @@ bool LoRaSystem::sendMessage(const Message& message) {
         return false;
     }
 
+    #ifdef ENABLE_LORA_DEBUG
     Serial.println("LoRa: Starting packet...");
+    #endif
+
     if (!LoRa.beginPacket()) {
         Serial.println("LoRa: Failed to start packet");
         return false;
     }
 
+    #ifdef ENABLE_LORA_DEBUG
     Serial.println("LoRa: Writing header...");
+    #endif
+
     LoRa.write(destinationId);
     LoRa.write(nodeId);
     LoRa.write(packetCounter++);
     LoRa.write(static_cast<uint8_t>(message.type));
 
     if (message.data != nullptr && message.length > 0) {
+        #ifdef ENABLE_LORA_DEBUG
         Serial.printf("LoRa: Writing %d bytes of data...\n", message.length);
-        //Dummy msg for testing
-//        uint8_t dummyMsg[10] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A};
-//        LoRa.write(dummyMsg, message.length);
+        #endif
+
         LoRa.write(message.data, message.length);
     } else {
         Serial.println("LoRa: No data to send");
         return false;
     }
 
+    #ifdef ENABLE_LORA_DEBUG
     Serial.println("LoRa: Ending packet...");
+    #endif
 
 //    LoRa.endPacket(true);
 
-    if (LoRa.endPacket(false) != 1) { // Check if the packet was sent successfully
+    if (LoRa.endPacket(true) != 1) { // Check if the packet was sent successfully
         Serial.println("LoRa: Failed to send packet");
         return false;
     }
 
+    #ifdef ENABLE_LORA_DEBUG
     Serial.println("LoRa: Packet sent successfully");
-
-    // Añade un pequeño retraso para garantizar que la transmisión se complete
-    delay(10);
-
     Serial.println("LoRa: Switching to receive mode...");
+    #endif
+
+
+    // Little delay to allow the module to switch modes
+    delay(10);
     LoRa.receive();
 
     // Log sent message

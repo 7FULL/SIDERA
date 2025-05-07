@@ -160,13 +160,13 @@ IMUSensorManager imuManager;
 GPSSensorManager gpsManager;
 TemperatureSensorManager temperatureManager;
 
-LoRaSystem* loraSystem;
-
 // Optimization components
 ResourceMonitor* resourceMonitor;
 FaultHandler* faultHandler;
 
 // Storage systems
+FlashStorage* flashStorage;
+SDStorage* sdStorage;
 StorageManager storageManager;
 
 // Power management
@@ -180,11 +180,17 @@ PreflightCheckSystem* preflightSystem;
 // Command handler
 CommandHandler* commandHandler;
 
-// Fusion system
-DataIntegrationManager* dataManager;
+// Communication system
+LoRaSystem* loraSystem;
 
 // State machine
 StateMachine stateMachine;
+
+DataIntegrationManager* dataManager;
+
+// Sensor instances
+MPL3115A2Sensor mpl3115Sensor = MPL3115A2Sensor(Wire1, MPL_ADDR);
+BMP388Sensor bmp388Sensor = BMP388Sensor(Wire1, BMP_ADDR);
 
 // Timing control variables
 unsigned long lastPerformanceCheckTime = 0;
@@ -192,44 +198,47 @@ unsigned long lastResourceLogTime = 0;
 
 void initializeAllSystems() {
     Serial.println("Adding barometric sensors...");
-    BMP388Sensor* bmp388Sensor = new BMP388Sensor(Wire1, BMP_ADDR);
-    MPL3115A2Sensor* mpl3115Sensor = new MPL3115A2Sensor(Wire1, MPL_ADDR);
-    baroManager.addSensor(bmp388Sensor, 0);  // Primary sensor (priority 0)
-    baroManager.addSensor(mpl3115Sensor, 1);  // Secondary sensor (priority 1)
+    baroManager.addSensor(&bmp388Sensor, 0);  // Primary sensor (priority 0)
+    baroManager.addSensor(&mpl3115Sensor, 1);  // Secondary sensor (priority 1)
     Serial.println("Barometric sensors added");
 
     Serial.println("Adding IMU sensors...");
-    BMI088Sensor bmi088(Wire1, BMIO_GYR_ADDR, BMIO_ACCEL_ADDR);
-    ADXL375Sensor adxl375(Wire1, AXL_ADDR);
-    imuManager.addSensor(&bmi088, 0);  // Primary sensor (priority 0)
-    imuManager.addSensor(&adxl375, 1);  // Secondary sensor (priority 1)
+//    BMI088Sensor bmi088(Wire1, BMIO_GYR_ADDR, BMIO_ACCEL_ADDR);
+//    ADXL375Sensor adxl375(Wire1, AXL_ADDR);
+    BMI088Sensor* bmi088 = new BMI088Sensor(Wire1, BMIO_GYR_ADDR, BMIO_ACCEL_ADDR);
+    ADXL375Sensor* adxl375 = new ADXL375Sensor(Wire1, AXL_ADDR);
+    imuManager.addSensor(bmi088, 0);  // Primary sensor (priority 0)
+    imuManager.addSensor(adxl375, 1);  // Secondary sensor (priority 1)
     Serial.println("IMU sensors added");
 
     Serial.println("Adding temperature sensors...");
-    DS18B20Sensor ds18b20(DS18B20_PIN);
-    temperatureManager.addSensor(&ds18b20);
+//    DS18B20Sensor ds18b20(DS18B20_PIN);
+    DS18B20Sensor* ds18b20 = new DS18B20Sensor(DS18B20_PIN);
+    temperatureManager.addSensor(ds18b20);
     Serial.println("Temperature sensors added");
 
     Serial.println("Adding GPS sensors...");
-    L76KBGPSSensor l76kb(Serial1, L76_STBY);
-    ATGM336HGPSSensor atgm336h(Serial2, ATGM_STBY);
+//    L76KBGPSSensor l76kb(Serial1, L76_STBY);
+//    ATGM336HGPSSensor atgm336h(Serial2, ATGM_STBY);
+    L76KBGPSSensor* l76kb = new L76KBGPSSensor(Serial1, L76_STBY);
+    ATGM336HGPSSensor* atgm336h = new ATGM336HGPSSensor(Serial2, ATGM_STBY);
     //TODO
 //    gpsManager.addSensor(&l76kb, 0);  // Priority 0 (primary)
 //    gpsManager.addSensor(&atgm336h, 1);  // Priority 1 (secondary)
     Serial .println("GPS sensors added");
-
-    Serial.println("Adding storage systems...");
-    FlashStorage flashStorage(SPI, FLASH_CS);
-    SDStorage sdStorage(SPI1, SD_CS);
-    storageManager.addStorage(&flashStorage, true);  // Primary
-    storageManager.addStorage(&sdStorage, false);    // Secondary
-    Serial.println("Storage systems added");
 
     Serial.println("Initializing LoRaSystem...");
     loraSystem = new LoRaSystem(SPI1, LORA_CS, LORA_RST, LORA_DIO0, &storageManager);
     loraSystem->setNodeId(ROCKET_ID);
     loraSystem->setDestinationId(GROUND_STATION_ID);
     Serial.println("LoRaSystem initialized");
+
+    Serial.println("Adding storage systems...");
+    flashStorage = new FlashStorage(SPI, FLASH_CS);
+    sdStorage = new SDStorage(SPI1, SD_CS);
+    storageManager.addStorage(flashStorage, true);  // Primary
+    storageManager.addStorage(sdStorage, false);    // Secondary
+    Serial.println("Storage systems added");
 
     Serial.println("Initializing power manager...");
     powerManager = new PowerManager(BATTERY_VOLTAGE_PIN, &storageManager);
@@ -513,13 +522,6 @@ void loop() {
         commandHandler->update();
     }
 
-    // Handle LED indicators
-    static unsigned long lastLedTime = 0;
-    if (currentTime - lastLedTime >= 250) {  // 4Hz blink
-        lastLedTime = currentTime;
-        digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
-    }
-
     // Brief delay to prevent hammering the CPU
-    delay(10);
+//    delay(10);
 }

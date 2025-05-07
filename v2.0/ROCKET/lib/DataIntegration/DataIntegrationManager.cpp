@@ -132,8 +132,13 @@ void DataIntegrationManager::update() {
     calculateVerticalSpeed();
 
     // Update apogee and landing detection
-    detectApogee();
-    detectLanding();
+    if (currentState == RocketState::POWERED_FLIGHT || currentState == RocketState::COASTING) {
+        detectApogee();
+    }
+
+    if (currentState == RocketState::DESCENT || currentState == RocketState::PARACHUTE_DESCENT) {
+        detectLanding();
+    }
 
     // Update flight data flags
     flightData.apogeeDetected = apogeeDetected;
