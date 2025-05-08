@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         cmdArm: document.getElementById('cmd-arm'),
         cmdLaunch: document.getElementById('cmd-launch'),
         cmdAbort: document.getElementById('cmd-abort'),
-        cmdDeployParachute: document.getElementById('cmd-deploy-parachute'),
+        // cmdDeployParachute: document.getElementById('cmd-deploy-parachute'),
 
         // Console elements
         consoleLog: document.getElementById('console-log'),
@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initSignalStrengthIndicator();
 
         // Log initial message
-        logToConsole('Sistema iniciado', 'info');
+        logToConsole('System initialized', 'info');
     }
 
     function initCharts() {
@@ -341,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function initRocketModel() {
         // Only initialize if Three.js is available
         if (typeof THREE === 'undefined') {
-            logToConsole('Three.js no disponible - El modelo 3D no será renderizado', 'warning');
+            logToConsole('Three.js not available - 3D model will not be rendered', 'warning');
             return;
         }
 
@@ -544,7 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function initSerialBridge() {
         // Check if the Serial Bridge API is available
         if (typeof SerialBridge === 'undefined') {
-            logToConsole('SerialBridge no disponible - Trabajando en modo simulación', 'warning');
+            logToConsole('SerialBridge not available - Working in simulation mode', 'warning');
 
             // Add simulated devices for testing
             populatePortSelector(['COM1', 'COM2', 'COM3', '/dev/ttyUSB0']);
@@ -591,7 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedPort = elements.portSelector.value;
 
         if (!selectedPort) {
-            logToConsole('Por favor, selecciona un puerto', 'error');
+            logToConsole('Please select a port', 'error');
             return;
         }
 
@@ -625,8 +625,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleConnect() {
         appState.connected = true;
         updateConnectionStatus('online');
-        logToConsole('Conectado al cohete', 'info');
-        elements.connectButton.textContent = 'Desconectar';
+        logToConsole('Connected to rocket', 'info');
+        elements.connectButton.textContent = 'Disconnect';
         //
         // // Send an initial status request
         // setTimeout(() => sendCommand('GET_STATUS'), 500);
@@ -635,8 +635,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleDisconnect() {
         appState.connected = false;
         updateConnectionStatus('offline');
-        logToConsole('Desconectado del cohete', 'info');
-        elements.connectButton.textContent = 'Conectar';
+        logToConsole('Disconnected from rocket', 'info');
+        elements.connectButton.textContent = 'Connect';
     }
 
     function updateConnectionStatus(status) {
@@ -644,19 +644,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         switch (status) {
             case 'offline':
-                elements.connectionText.textContent = 'Desconectado';
+                elements.connectionText.textContent = 'Disconnected';
                 break;
             case 'connecting':
                 elements.connectionText.textContent = 'Connecting...';
                 break;
             case 'online':
-                elements.connectionText.textContent = 'Conectado';
+                elements.connectionText.textContent = 'Connected';
                 break;
         }
     }
 
     function handleSerialError(error) {
-        logToConsole(`Error de comunicación: ${error}`, 'error');
+        logToConsole(`Communication error: ${error}`, 'error');
         handleDisconnect();
     }
 
@@ -685,12 +685,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     processEventNotification(packet.data);
                     break;
                 default:
-                    // logToConsole(`Paquete desconocido: ${data} asumiendo que es telemtria`, 'warning');
+                    // logToConsole(`Unknown packet: ${data} assuming it is telemetry`, 'warning');
                     processTelemetryData(packet);
             }
         } catch (error) {
             // Not JSON, handle as raw data
-            logToConsole(`Datos recibidos: ${data}`, 'info');
+            logToConsole(`Data received: ${data}`, 'info');
         }
     }
 
@@ -728,7 +728,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Log the telemetry packet
-        logToConsole(`Telemetría recibida [Alt: ${telemetry.alt.toFixed(1)}m, V: ${telemetry.vS.toFixed(1)}m/s]`, 'telemetry');
+        logToConsole(`Telemetry received [Alt: ${telemetry.alt.toFixed(1)}m, V: ${telemetry.vS.toFixed(1)}m/s]`, 'telemetry');
+
+        // Dispatch event for command monitoring
+        const event = new CustomEvent('telemetryReceived', {
+            detail: telemetry
+        });
+        document.dispatchEvent(event);
     }
 
     function processStatusData(status) {
@@ -745,17 +751,17 @@ document.addEventListener('DOMContentLoaded', () => {
         updateSignalDisplay(status.rssi, status.snr);
 
         // Log the status
-        logToConsole(`Estado recibido: ${getRocketStateName(status.rocketState)}`, 'info');
+        logToConsole(`Status received: ${getRocketStateName(status.rocketState)}`, 'info');
     }
 
     function processCommandResponse(response) {
         // Update command status
-        elements.commandStatus.textContent = response.success ? 'Éxito' : 'Fallido';
+        elements.commandStatus.textContent = response.success ? 'Success' : 'Failed';
         elements.commandStatus.style.color = response.success ? '#4caf50' : '#f44336';
 
         // Log the response
-        const message = response.message || (response.success ? 'Comando ejecutado con éxito' : 'Error ejecutando comando');
-        logToConsole(`Respuesta: ${message}`, response.success ? 'info' : 'error');
+        const message = response.message || (response.success ? 'Command executed successfully' : 'Error executing command');
+        logToConsole(`Response: ${message}`, response.success ? 'info' : 'error');
 
         // If it was a ping, calculate round-trip time
         if (appState.lastCommand && appState.lastCommand.command === 'PING' && response.success) {
@@ -766,10 +772,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function processDiagnosticData(diagnostic) {
         // Create a formatted diagnostic log
-        let message = 'Resultados de Diagnóstico:\n';
+        let message = 'Diagnostic Results:\n';
 
         diagnostic.tests.forEach((test, index) => {
-            message += `${index + 1}. ${test.name}: ${test.passed ? 'PASÓ' : 'FALLÓ'}\n`;
+            message += `${index + 1}. ${test.name}: ${test.passed ? 'PASSED' : 'FAILED'}\n`;
             if (!test.passed && test.error) {
                 message += `   Error: ${test.error}\n`;
             }
@@ -781,7 +787,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function processEventNotification(event) {
         // Handle event notification
-        logToConsole(`EVENTO: ${event.description}`, 'warning');
+        logToConsole(`EVENT: ${event.description}`, 'warning');
 
         // Play alert sound if it's critical
         if (event.priority === 'critical' || event.priority === 'emergency') {
@@ -922,8 +928,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Update GPS status text
         elements.gpsStatus.textContent = telemetry.gpsS > 0
-            ? `Fix (${telemetry.gpsS} satélites)`
-            : 'Sin Señal';
+            ? `Fix (${telemetry.gpsS} satellites)`
+            : 'No Signal';
 
         // If Leaflet map is initialized and we have valid coordinates, update the map
         if (appState.mapInitialized &&
@@ -1055,7 +1061,7 @@ document.addEventListener('DOMContentLoaded', () => {
             : '<i class="fas fa-pause"></i>';
 
         // Log pause state
-        logToConsole(`Gráficos ${appState.graphsPaused ? 'pausados' : 'reanudados'}`, 'info');
+        logToConsole(`Graphs ${appState.graphsPaused ? 'paused' : 'resumed'}`, 'info');
     }
 
     function clearGraphs() {
@@ -1072,12 +1078,88 @@ document.addEventListener('DOMContentLoaded', () => {
             charts.speedAccel.update();
         }
 
-        logToConsole('Gráficos limpiados', 'info');
+        logToConsole('Graphs cleared', 'info');
     }
 
     // ---- COMMAND FUNCTIONS ----
 
+    // Command execution monitoring configuration
+    const commandConfig = {
+        // Command timeout in milliseconds
+        timeout: 5000,
+        // Maximum number of retries
+        maxRetries: 3,
+        // Command definitions with expected state changes
+        commands: {
+            'PING': {
+                // Ping doesn't change state, just checks connection
+                expectedResponse: null,
+                timeout: 2000, // Shorter timeout for ping
+                verifyFn: (telemetry) => true // Always succeeds if we receive any telemetry
+            },
+            'WAKE_UP_COMMAND': {
+                // Expect to transition from IDLE (0x01) to READY (0x02)
+                expectedState: 0x02, // READY
+                timeout: 3000,
+                verifyFn: (telemetry) => telemetry.state == 0x02
+            },
+            'CALIBRATE_SENSORS': {
+                // No state change, but expect success
+                timeout: 8000, // Calibration can take longer
+                verifyFn: (telemetry) => true // Assume success if telemetry keeps coming
+            },
+            'RUN_DIAGNOSTICS': {
+                // No state change, but expect success
+                timeout: 10000, // Diagnostics can take even longer
+                verifyFn: (telemetry) => true // Assume success if telemetry keeps coming
+            },
+            'LAUNCH_COMMAND': {
+                // Expect to transition to POWERED_FLIGHT (0x03)
+                expectedState: 0x03, // POWERED_FLIGHT
+                timeout: 10000,
+                verifyFn: (telemetry) => telemetry.state == 0x03
+            },
+            'ABORT_COMMAND': {
+                // Expect to transition to either GROUND_IDLE (0x01) or PARACHUTE_DESCENT (0x07) depending on current state
+                timeout: 5000,
+                verifyFn: (telemetry, previousCommand) => {
+                    // If we were in flight, expect parachute deployment
+                    if (appState.lastTelemetry.state >= 0x03 && appState.lastTelemetry.state <= 0x06) {
+                        return telemetry.state == 0x07; // PARACHUTE_DESCENT
+                    }
+                    // Otherwise expect idle
+                    return telemetry.state == 0x01; // GROUND_IDLE
+                }
+            },
+            'FORCE_DEPLOY_PARACHUTE': {
+                // Expect to transition to PARACHUTE_DESCENT (0x07)
+                expectedState: 0x07, // PARACHUTE_DESCENT
+                timeout: 5000,
+                verifyFn: (telemetry) => telemetry.state == 0x07
+            }
+        },
+
+        // Active command monitoring state
+        pendingCommand: null,
+        retryCount: 0,
+        timeoutHandle: null
+    };
+
     function sendCommand(command, params = {}) {
+        // Clear any existing pending command
+        if (commandConfig.timeoutHandle) {
+            clearTimeout(commandConfig.timeoutHandle);
+            commandConfig.timeoutHandle = null;
+        }
+
+        // Set up the new pending command
+        commandConfig.pendingCommand = {
+            command: command,
+            params: params,
+            timestamp: Date.now(),
+            retryCount: 0
+        };
+
         // Store command in history
         appState.lastCommand = {
             command,
@@ -1087,11 +1169,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Update UI
         elements.lastCommand.textContent = command;
-        elements.commandStatus.textContent = 'Enviando...';
+        elements.commandStatus.textContent = 'Sending...';
         elements.commandStatus.style.color = '#ffc107';
 
         // Log the command
-        logToConsole(`Enviando comando: ${command}`, 'command');
+        logToConsole(`Sending command: ${command}`, 'command');
 
         // Add to command history
         appState.commandHistory.push({
@@ -1111,6 +1193,102 @@ document.addEventListener('DOMContentLoaded', () => {
             command,
             params
         });
+
+        // Set up timeout for this command
+        const timeout = commandConfig.commands[command]?.timeout || commandConfig.timeout;
+        commandConfig.timeoutHandle = setTimeout(() => {
+            handleCommandTimeout(command, params);
+        }, timeout);
+
+        // Add event listener for telemetry if not already added
+        if (!window._commandMonitorInitialized) {
+            window._commandMonitorInitialized = true;
+            document.addEventListener('telemetryReceived', checkCommandExecution);
+        }
+    }
+
+    /**
+     * Handle command timeout by retrying or reporting failure
+     */
+    function handleCommandTimeout(command, params) {
+        const pendingCmd = commandConfig.pendingCommand;
+        if (!pendingCmd || pendingCmd.command !== command) {
+            return; // Command was already handled or superseded
+        }
+
+        if (pendingCmd.retryCount < commandConfig.maxRetries) {
+            // Retry the command
+            pendingCmd.retryCount++;
+            logToConsole(`Command ${command} timed out, retrying (${pendingCmd.retryCount}/${commandConfig.maxRetries})`, 'warning');
+
+            // Update UI
+            elements.commandStatus.textContent = `Retry ${pendingCmd.retryCount}/${commandConfig.maxRetries}...`;
+            elements.commandStatus.style.color = '#ffa000'; // Orange for retry
+
+            // Send the command again
+            if (typeof SerialBridge !== 'undefined' && !location.search.includes('demo=true')) {
+                SerialBridge.sendCommand({
+                    command: command,
+                    params: params
+                });
+            } else {
+                simulateCommandResponse(command);
+            }
+
+            // Set up next timeout
+            const timeout = commandConfig.commands[command]?.timeout || commandConfig.timeout;
+            commandConfig.timeoutHandle = setTimeout(() => {
+                handleCommandTimeout(command, params);
+            }, timeout);
+        } else {
+            // Command failed after all retries
+            logToConsole(`Command ${command} failed after ${commandConfig.maxRetries} retries`, 'error');
+
+            // Update UI
+            elements.commandStatus.textContent = 'Failed';
+            elements.commandStatus.style.color = '#f44336';
+
+            // Clear pending command
+            commandConfig.pendingCommand = null;
+            commandConfig.timeoutHandle = null;
+        }
+    }
+
+    /**
+     * Check if received telemetry indicates command execution success
+     */
+    function checkCommandExecution(e) {
+        const telemetry = e.detail;
+        const pendingCmd = commandConfig.pendingCommand;
+
+        if (!pendingCmd) {
+            return; // No pending command
+        }
+
+        const cmdConfig = commandConfig.commands[pendingCmd.command];
+        if (!cmdConfig) {
+            return; // Unknown command
+        }
+
+        // Check if telemetry indicates successful command execution
+        const verifyFn = cmdConfig.verifyFn ||
+            ((telemetry) => telemetry.state === cmdConfig.expectedState);
+
+        if (verifyFn(telemetry, pendingCmd)) {
+            // Command succeeded
+            logToConsole(`Command ${pendingCmd.command} executed successfully`, 'info');
+
+            // Update UI
+            elements.commandStatus.textContent = 'Success';
+            elements.commandStatus.style.color = '#4caf50';
+
+            // Clear timeout and pending command
+            if (commandConfig.timeoutHandle) {
+                clearTimeout(commandConfig.timeoutHandle);
+            }
+            commandConfig.pendingCommand = null;
+            commandConfig.timeoutHandle = null;
+        }
     }
 
     function showConfirmation(title, message, confirmCallback) {
@@ -1170,7 +1348,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function clearConsole() {
         elements.consoleLog.innerHTML = '';
-        logToConsole('Consola limpiada', 'info');
+        logToConsole('Console cleared', 'info');
     }
 
     function exportLogs() {
@@ -1198,26 +1376,26 @@ document.addEventListener('DOMContentLoaded', () => {
         link.download = `rocket_log_${new Date().toISOString().replace(/:/g, '-')}.csv`;
         link.click();
 
-        logToConsole('Logs exportados a CSV', 'info');
+        logToConsole('Logs exported to CSV', 'info');
     }
 
     // ---- UTILITY FUNCTIONS ----
 
     function getRocketStateName(stateCode) {
         const states = {
-            0x00: 'INICIALIZANDO',
-            0x01: 'REPOSO',
-            0x02: 'LISTO',
-            0x03: 'PROPULSIÓN',
-            0x04: 'ASCENSO INERCIAL',
-            0x05: 'APOGEO',
-            0x06: 'DESCENSO',
-            0x07: 'DESCENSO CON PARACAÍDAS',
-            0x08: 'ATERRIZADO',
+            0x00: 'INITIALIZING',
+            0x01: 'IDLE',
+            0x02: 'READY',
+            0x03: 'POWERED_FLIGHT',
+            0x04: 'COASTING',
+            0x05: 'APOGEE',
+            0x06: 'DESCENT',
+            0x07: 'PARACHUTE_DESCENT',
+            0x08: 'LANDED',
             0x09: 'ERROR'
         };
 
-        return states[stateCode] || 'DESCONOCIDO';
+        return states[stateCode] || 'UNKNOWN';
     }
 
     function getRocketStateClass(stateCode) {
@@ -1263,7 +1441,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function playAlertSound() {
         // Play an alert sound
-        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJermZKwe4lYFz1Zn8z///7//e2XOAAA//90FwAAAAAAAAAAAAAAIgj3XL3a//////////95HwMgAAAAAAAAAAAAsZGgnp6dgW1bALGql5OufIdYG0Bbn8r8/v/////+7Zg5AAD//3UYAGz/////ayYPlcv//6lZEQAAAAAAAAAAAP//y6EaAAAAAAAAAACxkaCfnp2BbVsAr6mUkrFoglkYQFmexfv+/////f/tl4E5AAD//3UYAG7/////ah4Om8n//6dXEQAAAAAAAAAAAP//y6CZAAAAAAAAAP//E/IBAAAAAAAAsZKgoJ6dgm9aAK6pj42ugIVaGkFZncL7/v/////+7le8QQAA//91GQBu/////2kaB53O//+tVBQAAAAAAAAAAAD//8uhmQAAAAAAAAAA//8T8gEAAAAAAABqDUuoqzFaY7S1noNqOB2kxJAA/v////7/7hHcTAAA//91GgBv/////2gXBJ/P//+uUhUAAAAAAAAAAAD//8uimQAAAAAAAAAA//8T8gEAAAAAAABmDD9jqyRKZbW2n4ZtOhuiwYwA/f////9b3m8NAP//dRsAb/////9nFQKgz///r1AWAAAAAAAAAAAAAP//zKKaAAAAAAAAAAD//xPyAQAAAAAAAGcKT1GqGTZouLehiGw3G6K9iAD9/////1ved3MI//91HABw/////2YTAaLP//+vThgAAAAAAAAAAAD//82imgAAAAAAAAAA//8T8gEAAAAAAABpDmhBqgYle7m4pIlqNhuiuYYA/f////9a3ndDB///dR0AcP////9lEQCj0P//sE0ZAAAAAAAAAAAAAP//zaOaAAAAAAAAAAD//xPyAQAAAAAAAGYOdTaq9wuIurmmiWUyG6G1gwD9/////1reekAG//91HgBy/////2QQAKbQ//+xSxsAAAAAAAAAAAD//82jmgAAAAAAAAAA//8T8gEAAAAAAABnEIMmp+f3kru7qIliLRqespEA/f////9Z3nx9BP//dR8AcP////9iDf2o0P//sUocAAAAAAAAAAAA//7OpJoAAAAAAAAAAP//E/IBAAAAAAAAaROQFafX5JS9vamJYCoboK6OAP3/////WN6AFAL//3YgAHP/////Ygz8qtD//7JIIAAAAAAAAAAAAAD//s6lmwAAAAAAAAAA//8T8gEAAAAAAABrFJwGpdPUmL2+q4lelBifqowA/f////9Y3oSSAP//diEAdP////9gCfqr0P//s0UiAAAAAAAAAAAA//7Pp5sAAAAAAAAAAP//E/IBAAAAAAAAbBenA6PPxpy+v62KW4sYnqaJAP3/////V96GFAD//3YiAHT/////YAj5rNH//7RDJQAAAAAAAAAAAAAA/v7QqJwAAAAAAAAAAP//E/IBAAAAAAAAaxmoAKLLuZ++wK6KWYIYnqKHAP3/////Vt6I2QD//3YjAHb/////Xgb3rtH//7VBJAAAAAAAAAAAAAD+/tGonAAAAAAAAAAA//8T8gEAAAAAAABsGqoAndCxo7/BsIpWfBidnoUA/f////9V3outdQD//3YkAHb/////Xgb0r9H//7Y/JgAAAAAAAAAAAP790qmdAAAAAAAAAAD//xPyAQAAAAAAAGsZrACb1Kmlv8KyilN3GJ2ahAD9/////1PejiDv//92JQB3/////10D9LHR//+2PScAAAAAAAAAAAD+/dOpnQAAAAAAAAAA//8T8gEAAAAAAABtGa0AmNinp7/EtYRDRm4tAAAAAAAAAADNhQDA//92JgB4/////1wC8rPR//+3OykAAAAAAAAAAAD+/dSqnQAAAAAAAAAA//8T8gEAAAAAAABuGa4GmUBtcGsAAAAAAAAAAAAAAAAAAAAAAAAA//92JwB5/////1wB8rTR//+3OisAAAAAAAAAAAD+/dWqngAAAAAAAAAA//8T8gEAAAAAAABwGa8P6ejo2AEAAAAAAAAAAAAAAAAAAAAAAAAAY5cAef////9bAO+20f//uDgtAAAAAAAAAAAA/vzWq54AAAAAAAAAAP//E/IBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==');
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJermZKwe4lYFz1Zn8z///7//e2XOAAA//90FwAAAAAAAAAAAAAAIgj3XL3a//////////95HwMgAAAAAAAAAAAAsZGgnp6dgW1bALGql5OufIdYG0Bbn8r8/v/////+7Zg5AAD//3UYAGz/////ayYPlcv//6lZEQAAAAAAAAAAAP//y6EaAAAAAAAAAACxkaCfnp2BbVsAr6mUkrFoglkYQFmexfv+/////f/tl4E5AAD//3UYAG7/////ah4Om8n//6dXEQAAAAAAAAAAAP//y6CZAAAAAAAAAP//E/IBAAAAAAAAsZKgoJ6dgm9aAK6pj42ugIVaGkFZncL7/v/////+7le8QQAA//91GQBu/////2kaB53O//+tVBQAAAAAAAAAAAD//8uhmQAAAAAAAAAA//8T8gEAAAAAAABqDUuoqzFaY7S1noNqOB2kxJAA/v////7/7hHcTAAA//91GgBv/////2gXBJ/P//+uUhUAAAAAAAAAAAD//8uimQAAAAAAAAAA//8T8gEAAAAAAABmDD9jqyRKZbW2n4ZtOhuiwYwA/f////9b3m8NAP//dRsAb/////9nFQKgz///r1AWAAAAAAAAAAAAAP//zKKaAAAAAAAAAAD//xPyAQAAAAAAAGcKT1GqGTZouLehiGw3G6K9iAD9/////1ved3MI//91HABw/////2YTAaLP//+vThgAAAAAAAAAAAD//82imgAAAAAAAAAA//8T8gEAAAAAAABpDmhBqgYle7m4pIlqNhuiuYYA/f////9a3ndDB///dR0AcP////9lEQCj0P//sE0ZAAAAAAAAAAAAAP//zaOaAAAAAAAAAAD//xPyAQAAAAAAAGYOdTaq9wuIurmmiWUyG6G1gwD9/////1reekAG//91HgBy/////2QQAKbQ//+xSxsAAAAAAAAAAAD//82jmgAAAAAAAAAA//8T8gEAAAAAAABnEIMmp+f3kru7qIliLRqespEA/f////9Z3nx9BP//dR8AcP////9iDf2o0P//sUocAAAAAAAAAAAA//7OpJoAAAAAAAAAAP//E/IBAAAAAAAAaROQFafX5JS9vamJYCoboK6OAP3/////WN6AFAL//3YgAHP/////Ygz8qtD//7JIIAAAAAAAAAAAAAD//s6lmwAAAAAAAAAA//8T8gEAAAAAAABrFJwGpdPUmL2+q4lelBifqowA/f////9Y3oSSAP//diEAdP////9gCfqr0P//s0UiAAAAAAAAAAAA//7Pp5sAAAAAAAAAAP//E/IBAAAAAAAAbBenA6PPxpy+v62KW4sYnqaJAP3/////V96GFAD//3YiAHT/////YAj5rNH//7RDJQAAAAAAAAAAAAAA/v7QqJwAAAAAAAAAAP//E/IBAAAAAAAAaxmoAKLLuZ++wK6KWYIYnqKHAP3/////Vt6I2QD//3YjAHb/////Xgb3rtH//7VBJAAAAAAAAAAAAAD+/tGonAAAAAAAAAAA//8T8gEAAAAAAABsGqoAndCxo7/BsIpWfBidnoUA/f////9V3outdQD//3YkAHb/////Xgb0r9H//7Y/JgAAAAAAAAAAAP790qmdAAAAAAAAAAD//xPyAQAAAAAAAGsZrACb1Kmlv8KyilN3GJ2ahAD9/////1PejiDv//92JQB3/////10D9LHR//+2PScAAAAAAAAAAAD+/dOpnQAAAAAAAAAA//8T8gEAAAAAAABtGa0AmNinp7/EtYRDRm4tAAAAAAAAAADNhQDA//92JgB4/////1wC8rPR//+3OykAAAAAAAAAAAD+/dSqnQAAAAAAAAAA//8T8gEAAAAAAABuGa4GmUBtcGsAAAAAAAAAAAAAAAAAAAAAAAAA//92JwB5/////1wB8rTR//+3OisAAAAAAAAAAAD+/dWqngAAAAAAAAAA//8T8gEAAAAAAABwGa8P6ejo2AEAAAAAAAAAAAAAAAAAAAAAAAAAY5cAef////9bAO+20f//uDgtAAAAAAAAAAAA/vzWq54AAAAAAAAAAP//E/IBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==');
         audio.play();
     }
 
@@ -1407,7 +1585,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             switch (command) {
                 case 'PING':
-                    processCommandResponse({ success: true, message: 'Pong! Conexión OK' });
+                    processCommandResponse({ success: true, message: 'Pong! Connection OK' });
                     break;
 
                 case 'GET_STATUS':
@@ -1425,19 +1603,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Change state to READY
                     appState.lastTelemetry.rocketState = 0x03; // READY
                     updateRocketStateDisplay(0x03);
-                    processCommandResponse({ success: true, message: 'Cohete despertado' });
+                    processCommandResponse({ success: true, message: 'Rocket awakened' });
                     break;
 
                 case 'ARM_ROCKET':
                     // Change state to ARMED
                     appState.lastTelemetry.rocketState = 0x04; // ARMED
                     updateRocketStateDisplay(0x04);
-                    processCommandResponse({ success: true, message: 'Cohete armado' });
+                    processCommandResponse({ success: true, message: 'Rocket armed' });
                     break;
 
                 case 'LAUNCH_COMMAND':
                     // Simulate launch sequence
-                    processCommandResponse({ success: true, message: 'Iniciando secuencia de lanzamiento' });
+                    processCommandResponse({ success: true, message: 'Launching sequence initiated' });
 
                     // Change state to COUNTDOWN
                     appState.lastTelemetry.rocketState = 0x05; // COUNTDOWN
@@ -1454,13 +1632,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         appState.missionStartTime = Date.now();
                         flightPhase = 'powered-flight';
 
-                        logToConsole('¡¡¡DESPEGUE!!!', 'warning');
+                        logToConsole('!!!LIFTOFF!!!', 'warning');
                         playAlertSound();
                     }, 5000);
                     break;
 
                 case 'ABORT_COMMAND':
-                    processCommandResponse({ success: true, message: 'Misión abortada' });
+                    processCommandResponse({ success: true, message: 'Mission aborted' });
 
                     // Reset simulation
                     flightPhase = 'pre-launch';
@@ -1469,22 +1647,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
 
                 case 'CALIBRATE_SENSORS':
-                    processCommandResponse({ success: true, message: 'Sensores calibrados' });
+                    processCommandResponse({ success: true, message: 'Sensors calibrated' });
                     break;
 
                 case 'RUN_DIAGNOSTICS':
-                    processCommandResponse({ success: true, message: 'Diagnóstico iniciado' });
+                    processCommandResponse({ success: true, message: 'Diagnostics started' });
 
                     // Simulate diagnostic results
                     setTimeout(() => {
                         processDiagnosticData({
                             tests: [
-                                { name: 'Barómetro', passed: true },
+                                { name: 'Barometer', passed: true },
                                 { name: 'IMU', passed: true },
                                 { name: 'GPS', passed: true },
-                                { name: 'Paracaídas', passed: true },
+                                { name: 'Parachute', passed: true },
                                 { name: 'Flash Storage', passed: true },
-                                { name: 'Batería', passed: true },
+                                { name: 'Battery', passed: true },
                                 { name: 'Radio', passed: true }
                             ]
                         });
@@ -1492,7 +1670,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
 
                 case 'FORCE_DEPLOY_PARACHUTE':
-                    processCommandResponse({ success: true, message: '¡Paracaídas desplegado!' });
+                    processCommandResponse({ success: true, message: 'Parachute deployed!' });
 
                     // Change state to PARACHUTE_DESCENT
                     appState.lastTelemetry.rocketState = 0x14; // PARACHUTE_DESCENT
@@ -1501,7 +1679,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
 
                 default:
-                    processCommandResponse({ success: false, message: 'Comando desconocido' });
+                    processCommandResponse({ success: false, message: 'Unknown command' });
                     break;
             }
         }, 500 + Math.random() * 500); // Random delay to simulate transmission

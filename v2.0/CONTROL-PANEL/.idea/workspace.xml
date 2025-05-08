@@ -6,12 +6,17 @@
   <component name="ChangeListManager">
     <list default="true" id="d1ca9a27-336a-4e31-a514-cb52368ef075" name="Changes" comment="V2.0">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/rocket-dashboard.js" beforeDir="false" afterPath="$PROJECT_DIR$/rocket-dashboard.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../PCB_CONTROL_PANEL/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../PCB_CONTROL_PANEL/src/main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/include/Config.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/include/Config.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/CommunicationSystems/LoRaSystem.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/CommunicationSystems/LoRaSystem.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/platformio.ini" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/platformio.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/src/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../untitled/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../untitled/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../untitled/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../untitled/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../untitled/include/README" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../untitled/lib/README" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../untitled/platformio.ini" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../untitled/src/main.cpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../untitled/test/README" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -109,7 +114,7 @@
       <workItem from="1746435476742" duration="16829000" />
       <workItem from="1746517371275" duration="951000" />
       <workItem from="1746727932744" duration="1840000" />
-      <workItem from="1746730961847" duration="1299000" />
+      <workItem from="1746730961847" duration="3101000" />
     </task>
     <task id="LOCAL-00001" summary="V2.0">
       <option name="closed" value="true" />
