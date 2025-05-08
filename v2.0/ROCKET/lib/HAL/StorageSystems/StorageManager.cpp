@@ -7,7 +7,7 @@
 #include "Config.h"
 
 StorageManager::StorageManager()
-        : primaryStorage(nullptr), currentState(0) {
+        : primaryStorage(nullptr), currentState(RocketState::INIT) {
 }
 
 StorageManager::~StorageManager() {
@@ -59,6 +59,10 @@ bool StorageManager::logMessage(LogLevel level, Subsystem subsystem, const char*
     }
 
     return success;
+}
+
+RocketState StorageManager::getCurrentState() const {
+    return currentState;
 }
 
 bool StorageManager::storeTelemetry(const StoredTelemetry& telemetry) {
@@ -119,11 +123,11 @@ bool StorageManager::transferData() {
     return anySuccess;
 }
 
-void StorageManager::setSystemState(uint8_t state) {
+void StorageManager::setSystemState(RocketState state) {
     currentState = state;
 
     // If we've landed, try to transfer data
-    if (state == 7) { // LANDED state value (from your States enum)
+    if (state == RocketState::LANDED) { // LANDED state value (from your States enum)
         transferData();
     }
 }

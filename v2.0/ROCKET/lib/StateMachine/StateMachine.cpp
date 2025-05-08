@@ -76,7 +76,7 @@ void StateMachine::update() {
 
     // Update subsystems state tracking
     if (storageManager) {
-        storageManager->setSystemState(static_cast<uint8_t>(currentState));
+        storageManager->setSystemState(currentState);
     }
 }
 

@@ -8,6 +8,7 @@
 #define STORAGE_MANAGER_H
 
 #include "../StorageSystem.h"
+#include "States.h"
 #include <vector>
 
 class StorageManager {
@@ -34,7 +35,7 @@ public:
     bool transferData();
 
     // Set the system state (to allow tracking LANDED state)
-    void setSystemState(uint8_t state);
+    void setSystemState(RocketState state);
 
     // Get the available space in the primary storage
     uint32_t getAvailableSpace();
@@ -45,10 +46,13 @@ public:
     // Clear all data in all storage systems
     bool clearAllData();
 
+    // Get the current state of the storage manager
+    RocketState getCurrentState() const;
+
 private:
     StorageSystem* primaryStorage;
     std::vector<StorageSystem*> secondaryStorage;
-    uint8_t currentState;
+    RocketState currentState;
 
     // Helper method to convert float values to scaled integers for storage
     static int32_t floatToScaledInt(float value, float scale);

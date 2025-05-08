@@ -41,7 +41,38 @@ bool CommandHandler::begin() {
 }
 
 void CommandHandler::update() {
-    // Process any pending commands
+    // Get current state from the state machine
+    RocketState currentState = RocketState::ERROR;
+    if (stateMachine) {
+        currentState = stateMachine->getCurrentState();
+    }
+
+    // Only process commands if the rocket is on the ground
+    bool canProcessCommands = (currentState == RocketState::INIT ||
+                               currentState == RocketState::GROUND_IDLE ||
+                               currentState == RocketState::READY);
+
+    // If not in a state where we can process commands, return early
+    if (!canProcessCommands) {
+        // Discard any messages if we're receiving commands when we shouldn't
+        if (loraSystem && loraSystem->hasReceivedMessages()) {
+            Message message;
+            while (loraSystem->getNextMessage(message)) {
+                // Just discard messages without processing
+                if (message.data) {
+                    delete[] message.data;
+                }
+            }
+
+            if (storageManager) {
+                storageManager->logMessage(LogLevel::WARNING, Subsystem::COMMUNICATION,
+                                           "Command received but ignored - rocket not in ground state");
+            }
+        }
+        return;
+    }
+
+    // Process any pending commands - only if we're in a ground state
     if (loraSystem && loraSystem->hasReceivedMessages()) {
         Message message;
         while (loraSystem->getNextMessage(message)) {
@@ -98,31 +129,18 @@ void CommandHandler::update() {
 
 bool CommandHandler::sendResponse(ResponseCode code, const uint8_t* payload,
                                   uint16_t length, uint16_t sequenceNumber) {
-    if (!loraSystem) {
-        return false;
+    // We're no longer sending explicit command responses
+    // Just log the command status internally instead
+
+    if (storageManager) {
+        char message[64];
+        snprintf(message, sizeof(message), "Command processed: result=%s",
+                 code == ResponseCode::ACK ? "success" : "failure");
+        storageManager->logMessage(LogLevel::INFO, Subsystem::COMMUNICATION, message);
     }
 
-    // Create response packet
-    std::vector<uint8_t> packetData =
-            RocketProtocol::createResponsePacket(code, payload, length, sequenceNumber);
-
-    // Create LoRa message
-    Message message;
-    message.type = MessageType::COMMAND_RESPONSE;
-    message.priority = 200;  // High priority for responses
-    message.timestamp = millis();
-    message.length = packetData.size();
-    message.data = new uint8_t[message.length];
-    memcpy(message.data, packetData.data(), message.length);
-    message.acknowledged = false;
-
-    // Send the message
-    bool result = loraSystem->sendMessage(message);
-
-    // Clean up data
-    delete[] message.data;
-
-    return result;
+    // Return success even though we didn't send anything
+    return true;
 }
 
 bool CommandHandler::sendErrorMessage(const char* message) {

@@ -6,7 +6,11 @@
   <component name="ChangeListManager">
     <list default="true" id="d1ca9a27-336a-4e31-a514-cb52368ef075" name="Changes" comment="V2.0">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rocket-dashboard.js" beforeDir="false" afterPath="$PROJECT_DIR$/rocket-dashboard.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../PCB_CONTROL_PANEL/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../PCB_CONTROL_PANEL/src/main.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ROCKET/include/Config.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/include/Config.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/CommunicationSystems/LoRaSystem.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/CommunicationSystems/LoRaSystem.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ROCKET/platformio.ini" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/platformio.ini" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ROCKET/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -87,7 +91,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-f27c65a3e318-JavaScript-WS-251.23774.424" />
+        <option value="bundled-js-predefined-d6986cc7102b-6a121458b545-JavaScript-WS-251.25410.117" />
       </set>
     </attachedChunks>
   </component>
@@ -104,6 +108,8 @@
       <workItem from="1746387660406" duration="3604000" />
       <workItem from="1746435476742" duration="16829000" />
       <workItem from="1746517371275" duration="951000" />
+      <workItem from="1746727932744" duration="1840000" />
+      <workItem from="1746730961847" duration="1299000" />
     </task>
     <task id="LOCAL-00001" summary="V2.0">
       <option name="closed" value="true" />

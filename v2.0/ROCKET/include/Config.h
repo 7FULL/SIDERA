@@ -49,13 +49,13 @@
 
 //=== COMMUNICATION PARAMETERS ===//
 // Telemetry rates by state (ms)
-#define GROUND_IDLE_TELEMETRY_RATE 2000     // 0.5Hz in idle - reduced to save power
-#define READY_TELEMETRY_RATE 1000           // 1Hz when ready
-#define FLIGHT_TELEMETRY_RATE 200           // 5Hz during flight
-#define COAST_TELEMETRY_RATE 200            // 5Hz during coast
-#define DESCENT_TELEMETRY_RATE 500          // 2Hz during descent
-#define LANDED_TELEMETRY_RATE 1000          // 1Hz after landing
-#define ERROR_TELEMETRY_RATE 2000           // 0.5Hz in error state
+#define GROUND_IDLE_TELEMETRY_RATE 4000     // 0.5Hz in idle - reduced to save power
+#define READY_TELEMETRY_RATE 2000           // 1Hz when ready
+#define FLIGHT_TELEMETRY_RATE 1000           // 5Hz during flight
+#define COAST_TELEMETRY_RATE 1000            // 5Hz during coast
+#define DESCENT_TELEMETRY_RATE 2000          // 2Hz during descent
+#define LANDED_TELEMETRY_RATE 2000          // 1Hz after landing
+#define ERROR_TELEMETRY_RATE 4000           // 0.5Hz in error state
 
 // LoRa parameters
 #define LORA_FREQUENCY 915E6                // Hz (US frequency)

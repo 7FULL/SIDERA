@@ -1,10 +1,3 @@
-/**
- * Ground Station Control Panel for Rocket System
- *
- * This code runs on a RP2040-based board with the same hardware as the rocket,
- * providing a ground control interface to monitor telemetry and send commands.
- */
-
 #include <Arduino.h>
 #include <SPI.h>
 #include <LoRa.h>
@@ -32,10 +25,10 @@
 
 // LoRa settings
 #define LORA_FREQUENCY 868E6  // Use 915E6 for US
-#define LORA_SPREADING_FACTOR 7
-#define LORA_BANDWIDTH 125E3
-#define LORA_CODING_RATE 5
-#define LORA_TX_POWER 17
+#define LORA_SPREADING_FACTOR 12
+#define LORA_BANDWIDTH 62.5E3
+#define LORA_CODING_RATE 8
+#define LORA_TX_POWER 20
 
 // Node IDs
 #define GROUND_STATION_ID 0x01
@@ -122,10 +115,6 @@ void sendCommand(CommandCode code, uint8_t* payload = nullptr, size_t length = 0
 void printTelemetry();
 void logTelemetry();
 void updateLeds();
-void checkConnection();
-void printHelp();
-bool parseFloat(float& value);
-bool parseInt(int& value);
 
 void setup() {
     // Initialize serial for debugging and user interface
@@ -159,21 +148,23 @@ void setup() {
     Wire1.setSCL(I2C1_SCL);
     Wire1.begin();
 
+    delay(1000); // Wait for I2C to stabilize
+
     // Initialize SPI
     SPI1.setMISO(SPI1_MISO);
     SPI1.setMOSI(SPI1_MOSI);
     SPI1.setSCK(SPI1_SCK);
     SPI1.begin();
 
+    delay(1000); // Wait for SPI to stabilize
+
     pinMode(LORA_CS, OUTPUT);
     digitalWrite(LORA_CS, HIGH);
 
     // Initialize LoRa and SD
     initLoRa();
+    delay(1000); // Wait for LoRa to stabilize
     initSD();
-
-    // Print instructions
-    printHelp();
 }
 
 void loop() {
@@ -256,14 +247,28 @@ void initSD() {
         return;
     }
 
-    // Create a new log file with timestamp
-    sprintf(logFileName, "LOG_%lu.CSV", millis());
+    int fileCount = 0;
+    FatFile dir;
+    dir.open("/");
+    FatFile file;
+    while (file.openNext(&dir, O_RDONLY)) {
+        char name[32];
+        file.getName(name, sizeof(name));
+        if (strstr(name, "LOG_") == name && strstr(name, ".CSV")) {
+            fileCount++;
+        }
+        file.close();
+    }
+    dir.close();
+
+    // Crear el archivo con el número correspondiente
+    sprintf(logFileName, "LOG_%d.CSV", fileCount);
     if (!logFile.open(logFileName, O_WRITE | O_CREAT)) {
         Serial.println("Error creating log file");
         return;
     }
 
-    // Write header
+    // Escribir cabecera
     logFile.write("Timestamp,RocketState,Altitude,VertSpeed,Accel,Temp,Pressure,Battery,Sats,Lat,Lon,RSSI,SNR");
     logFile.flush();
 
@@ -277,145 +282,39 @@ void handleSerialCommands() {
 
         // Process command
         switch (cmd) {
-            case '?':
-            case 'h':
-                printHelp();
-                break;
-
             case 'p':
                 // Ping command
-                Serial.println("Sending PING command...");
+//                Serial.println("Sending PING command...");
                 sendCommand(CommandCode::PING);
                 break;
-
-            case 's':
-                // Get status command
-                Serial.println("Requesting rocket status...");
-                sendCommand(CommandCode::GET_STATUS);
-                break;
-
-            case 'a':
-                // Arm rocket
-                Serial.println("Arming rocket...");
-//                sendCommand(CommandCode::ARM_ROCKET);
-                break;
-
-            case 'd':
-                // Disarm rocket
-                Serial.println("Disarming rocket...");
-//                sendCommand(CommandCode::DISARM_ROCKET);
-                break;
-
             case 'l':
                 // Launch command
-                Serial.println("WARNING: SENDING LAUNCH COMMAND!");
-                Serial.println("Are you sure? (y/n)");
+//                Serial.println("WARNING: SENDING LAUNCH COMMAND!");
+//                Serial.println("Are you sure? (y/n)");
                 sendCommand(CommandCode::WAKE_UP_COMMAND);
                 break;
 
             case 'x':
                 // Abort command
-                Serial.println("Sending ABORT command...");
+//                Serial.println("Sending ABORT command...");
                 sendCommand(CommandCode::ABORT_COMMAND);
                 break;
 
             case 'c':
                 // Calibrate sensors
-                Serial.println("Calibrating sensors...");
+//                Serial.println("Calibrating sensors...");
                 sendCommand(CommandCode::CALIBRATE_SENSORS);
                 break;
 
             case 'r':
                 // Run diagnostics
-                Serial.println("Running diagnostics...");
+//                Serial.println("Running diagnostics...");
                 sendCommand(CommandCode::RUN_DIAGNOSTICS);
-                break;
-
-            case 'e':
-                // Deploy parachute (EMERGENCY)
-                Serial.println("WARNING: EMERGENCY PARACHUTE DEPLOYMENT!");
-                Serial.println("Are you sure? (y/n)");
-                while (!Serial.available());
-                if (Serial.read() == 'y') {
-                    Serial.println("DEPLOYING PARACHUTE");
-//                    sendCommand(CommandCode::FORCE_DEPLOY_PARACHUTE);
-                } else {
-                    Serial.println("Deployment aborted");
-                }
-                break;
-
-            case 'i':
-                // Print last telemetry data
-                printTelemetry();
-                break;
-
-            case 'w':
-                // Set parameter
-            {
-                Serial.println("Enter parameter ID (0-255):");
-                int parameterId;
-                if (!parseInt(parameterId) || parameterId < 0 || parameterId > 255) {
-                    Serial.println("Invalid parameter ID");
-                    break;
-                }
-
-                Serial.println("Enter parameter value (integer):");
-                int parameterValue;
-                if (!parseInt(parameterValue)) {
-                    Serial.println("Invalid parameter value");
-                    break;
-                }
-
-                uint8_t payload[3];
-                payload[0] = (uint8_t)parameterId;
-                payload[1] = (parameterValue >> 8) & 0xFF;
-                payload[2] = parameterValue & 0xFF;
-
-                Serial.println("Setting parameter...");
-//                sendCommand(CommandCode::SET_PARAMETER, payload, 3);
-            }
-                break;
-
-            case 'g':
-                // Get parameter
-            {
-                Serial.println("Enter parameter ID (0-255):");
-                int parameterId;
-                if (!parseInt(parameterId) || parameterId < 0 || parameterId > 255) {
-                    Serial.println("Invalid parameter ID");
-                    break;
-                }
-
-                uint8_t payload[1];
-                payload[0] = (uint8_t)parameterId;
-
-                Serial.println("Getting parameter...");
-//                sendCommand(CommandCode::GET_PARAMETER, payload, 1);
-            }
-                break;
-
-            case 'z':
-                // Reset system (dangerous)
-                Serial.println("WARNING: RESETTING ROCKET SYSTEM!");
-                Serial.println("Are you sure? (y/n)");
-                while (!Serial.available());
-                if (Serial.read() == 'y') {
-                    Serial.println("RESETTING ROCKET SYSTEM");
-//                    sendCommand(CommandCode::RESET_SYSTEM);
-                } else {
-                    Serial.println("Reset aborted");
-                }
-                break;
-
-            case '\r':
-            case '\n':
-                // Ignore newlines
                 break;
 
             default:
                 Serial.print("Unknown command: ");
                 Serial.println(cmd);
-                printHelp();
                 break;
         }
 
@@ -423,67 +322,6 @@ void handleSerialCommands() {
         while (Serial.available()) {
             Serial.read();
         }
-    }
-}
-
-void checkConnection() {
-    // Check if we haven't received any message for a while
-    unsigned long timeWithoutMessage = millis() - lastTelemetryTime;
-
-    if (rocketConnectionActive && timeWithoutMessage > 10000) {
-        // If no message for 10 seconds, consider connection lost
-        rocketConnectionActive = false;
-        Serial.println("\n!!! CONNECTION LOST !!!");
-        Serial.println("No telemetry for 10 seconds");
-    }
-
-    // Send a ping periodically if we haven't received telemetry in a while
-    static unsigned long lastPingSent = 0;
-    if (timeWithoutMessage > 5000 && (millis() - lastPingSent) > 5000) {
-        lastPingSent = millis();
-        Serial.println("Sending automatic ping to check connection...");
-        sendCommand(CommandCode::PING);
-    }
-}
-
-// Helper function to print rocket state in human-readable form
-void printRocketState(uint8_t state) {
-    switch (static_cast<RocketStatusCode>(state)) {
-        case RocketStatusCode::INIT:
-            Serial.println("INITIALIZING");
-            break;
-        case RocketStatusCode::GROUND_IDLE:
-            Serial.println("IDLE");
-            break;
-        case RocketStatusCode::READY:
-            Serial.println("READY");
-            break;
-        case RocketStatusCode::POWERED_FLIGHT:
-            Serial.println("POWERED FLIGHT");
-            break;
-        case RocketStatusCode::COASTING:
-            Serial.println("COASTING");
-            break;
-        case RocketStatusCode::APOGEE:
-            Serial.println("APOGEE");
-            break;
-        case RocketStatusCode::DESCENT:
-            Serial.println("DESCENT");
-            break;
-        case RocketStatusCode::PARACHUTE_DESCENT:
-            Serial.println("PARACHUTE DEPLOYED");
-            break;
-        case RocketStatusCode::LANDED:
-            Serial.println("LANDED");
-            break;
-        case RocketStatusCode::ERROR:
-            Serial.println("ERROR");
-            break;
-        default:
-            Serial.print("UNKNOWN (");
-            Serial.print(state);
-            Serial.println(")");
-            break;
     }
 }
 
@@ -508,90 +346,6 @@ uint32_t readUint32() {
         value |= (uint32_t)LoRa.read() << (i * 8);
     }
     return value;
-}
-
-// Helper function to print formatted time (days:hours:minutes:seconds)
-void printFormattedTime(uint32_t seconds) {
-    uint32_t days = seconds / 86400;
-    seconds %= 86400;
-    uint32_t hours = seconds / 3600;
-    seconds %= 3600;
-    uint32_t minutes = seconds / 60;
-    seconds %= 60;
-
-    if (days > 0) {
-        Serial.print(days);
-        Serial.print("d ");
-    }
-
-    if (hours > 0 || days > 0) {
-        Serial.print(hours);
-        Serial.print("h ");
-    }
-
-    Serial.print(minutes);
-    Serial.print("m ");
-    Serial.print(seconds);
-    Serial.println("s");
-}
-
-void printHelp() {
-    Serial.println("\n==== Ground Station Commands ====");
-    Serial.println("p - Ping rocket");
-    Serial.println("s - Get rocket status");
-    Serial.println("i - Print last telemetry data");
-    Serial.println("a - Arm rocket");
-    Serial.println("d - Disarm rocket");
-    Serial.println("l - Launch (start countdown)");
-    Serial.println("x - Abort countdown/mission");
-    Serial.println("e - Emergency parachute deployment");
-    Serial.println("c - Calibrate sensors");
-    Serial.println("r - Run diagnostics");
-    Serial.println("w - Set parameter");
-    Serial.println("g - Get parameter");
-    Serial.println("z - Reset rocket system");
-    Serial.println("h/? - Show this help");
-    Serial.println("================================");
-}
-
-// Helper to parse float from serial
-bool parseFloat(float& value) {
-    String input = "";
-    while (true) {
-        if (Serial.available()) {
-            char c = Serial.read();
-            if (c == '\n' || c == '\r') {
-                if (input.length() > 0) {
-                    value = input.toFloat();
-                    return true;
-                }
-                return false;
-            } else if (isdigit(c) || c == '.' || c == '-') {
-                input += c;
-                Serial.print(c); // Echo back
-            }
-        }
-    }
-}
-
-// Helper to parse integer from serial
-bool parseInt(int& value) {
-    String input = "";
-    while (true) {
-        if (Serial.available()) {
-            char c = Serial.read();
-            if (c == '\n' || c == '\r') {
-                if (input.length() > 0) {
-                    value = input.toInt();
-                    return true;
-                }
-                return false;
-            } else if (isdigit(c) || c == '-') {
-                input += c;
-                Serial.print(c); // Echo back
-            }
-        }
-    }
 }
 
 void processLoRaPacket(int packetSize) {
@@ -653,166 +407,6 @@ void processLoRaPacket(int packetSize) {
             logTelemetry();
         }
     }
-    else switch (static_cast<ResponseCode>(type)) {
-            case ResponseCode::ACK:
-                Serial.println("Received ACK");
-                if (packetSize > 4) {
-                    // ACK with timestamp (ping response)
-                    uint32_t timestamp = 0;
-                    for (int i = 0; i < 4 && LoRa.available(); i++) {
-                        timestamp = (timestamp << 8) | LoRa.read();
-                    }
-                    // Calculate round-trip time
-                    unsigned long rtt = millis() - lastPingTime;
-                    Serial.print("Ping RTT: ");
-                    Serial.print(rtt);
-                    Serial.println(" ms");
-                    lastPingResponseTime = millis();
-                }
-                break;
-
-            case ResponseCode::NACK:
-                Serial.println("Received NACK - Command failed");
-                break;
-
-            case ResponseCode::STATUS_DATA:
-                if (packetSize >= 14) {
-                    rocketStatus = LoRa.read(); // Status code
-
-                    // Parse battery info
-                    uint16_t batteryVoltage = (LoRa.read() << 8) | LoRa.read();
-                    uint8_t batteryPercentage = LoRa.read();
-
-                    // Parse uptime
-                    uint32_t uptime = 0;
-                    for (int i = 0; i < 4; i++) {
-                        uptime = (uptime << 8) | LoRa.read();
-                    }
-
-                    // Parse storage
-                    uint32_t freeSpace = 0;
-                    for (int i = 0; i < 4; i++) {
-                        freeSpace = (freeSpace << 8) | LoRa.read();
-                    }
-
-                    // Parse GPS fix and other flags
-                    bool gpsFix = LoRa.read() > 0;
-                    uint8_t sensorFlags = LoRa.read();
-
-                    // Display the status
-                    Serial.println("\n----- Rocket Status -----");
-                    Serial.print("State: ");
-                    printRocketState(rocketStatus);
-                    Serial.print("Battery: ");
-                    Serial.print(batteryVoltage / 100.0f, 2);
-                    Serial.print("V (");
-                    Serial.print(batteryPercentage);
-                    Serial.println("%)");
-                    Serial.print("Uptime: ");
-                    printFormattedTime(uptime);
-                    Serial.print("Free Space: ");
-                    Serial.print(freeSpace / 1024);
-                    Serial.println("KB");
-                    Serial.print("GPS Fix: ");
-                    Serial.println(gpsFix ? "YES" : "NO");
-                    Serial.print("Sensor Status: 0x");
-                    Serial.println(sensorFlags, HEX);
-                    Serial.print("Signal: RSSI ");
-                    Serial.print(lastRssi);
-                    Serial.print("dBm, SNR ");
-                    Serial.print(lastSnr, 1);
-                    Serial.println("dB");
-                    Serial.println("------------------------");
-                }
-                break;
-
-            case ResponseCode::DIAGNOSTIC_RESULT:
-                if (packetSize > 5) {
-                    uint8_t testCount = LoRa.read();
-                    Serial.println("\n----- Diagnostic Results -----");
-                    Serial.print("Tests run: ");
-                    Serial.println(testCount);
-
-                    for (int i = 0; i < testCount && LoRa.available(); i++) {
-                        bool passed = LoRa.read() > 0;
-                        uint8_t nameLength = LoRa.read();
-
-                        String testName = "";
-                        for (int j = 0; j < nameLength && LoRa.available(); j++) {
-                            testName += (char)LoRa.read();
-                        }
-
-                        Serial.print(i+1);
-                        Serial.print(". ");
-                        Serial.print(testName);
-                        Serial.print(": ");
-                        Serial.println(passed ? "PASS" : "FAIL");
-
-                        if (!passed) {
-                            // Read error message
-                            uint8_t errorLength = LoRa.read();
-                            String errorMsg = "";
-                            for (int j = 0; j < errorLength && LoRa.available(); j++) {
-                                errorMsg += (char)LoRa.read();
-                            }
-                            Serial.print("   Error: ");
-                            Serial.println(errorMsg);
-                        }
-                    }
-                    Serial.println("-----------------------------");
-                }
-                break;
-
-            case ResponseCode::EVENT_NOTIFICATION:
-                if (packetSize > 5) {
-                    uint8_t eventCode = LoRa.read();
-
-                    String eventDescription = "";
-                    while (LoRa.available()) {
-                        eventDescription += (char)LoRa.read();
-                    }
-
-                    Serial.println("\n!!! EVENT NOTIFICATION !!!");
-                    Serial.print("Event Code: 0x");
-                    Serial.println(eventCode, HEX);
-                    Serial.print("Description: ");
-                    Serial.println(eventDescription);
-                    Serial.println("!!!!!!!!!!!!!!!!!!!!!!!!!");
-                }
-                break;
-
-            case ResponseCode::ERROR_MESSAGE:
-            {
-                String errorMsg = "";
-                while (LoRa.available()) {
-                    errorMsg += (char)LoRa.read();
-                }
-
-                Serial.println("\n!!! ERROR MESSAGE !!!");
-                Serial.println(errorMsg);
-                Serial.println("!!!!!!!!!!!!!!!!!!!!");
-            }
-                break;
-
-            case ResponseCode::PARAMETER_VALUE:
-                if (packetSize > 7) {
-                    uint8_t paramId = LoRa.read();
-                    uint16_t paramValue = (LoRa.read() << 8) | LoRa.read();
-
-                    Serial.println("\n----- Parameter Value -----");
-                    Serial.print("Parameter ID: ");
-                    Serial.println(paramId);
-                    Serial.print("Value: ");
-                    Serial.println(paramValue);
-                    Serial.println("--------------------------");
-                }
-                break;
-
-            default:
-                Serial.print("Unknown packet type: 0x");
-                Serial.println(type, HEX);
-                break;
-        }
 
     // Read any remaining bytes
     while (LoRa.available()) {
@@ -849,7 +443,6 @@ void sendCommand(CommandCode code, uint8_t* payload, size_t length) {
     digitalWrite(LED_RED, LOW);
 }
 
-// Update the printTelemetry function to send data in chunks
 void printTelemetry() {
     if (lastTelemetryTime == 0) {
         Serial.println("No telemetry data received yet");

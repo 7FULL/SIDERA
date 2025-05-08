@@ -4,6 +4,7 @@
 
 #include "LoRaSystem.h"
 #include "Config.h"
+#include "States.h"
 
 // Initialize static instance pointer
 LoRaSystem* LoRaSystem::instance = nullptr;
@@ -67,10 +68,11 @@ SensorStatus LoRaSystem::begin() {
 
     // Set parameters for better performance
     LoRa.setFrequency(868E6); // Set frequency to 868 MHz (EU)
-    LoRa.setSpreadingFactor(7);      // 7 is default
-    LoRa.setSignalBandwidth(125E3);  // 125 kHz is typical
-    LoRa.setCodingRate4(5);          // 4/5 coding rate
+    LoRa.setSpreadingFactor(12);      // 7 is default
+    LoRa.setSignalBandwidth(62.5E3);  // 125 kHz is typical
+    LoRa.setCodingRate4(8);          // 4/5 coding rate
     LoRa.setSyncWord(0x34);          // Default sync word
+    LoRa.setTxPower(20, PA_OUTPUT_PA_BOOST_PIN);
     LoRa.enableCrc();                // Enable CRC checking
 
     // Set callback for received packets
@@ -162,29 +164,37 @@ bool LoRaSystem::sendMessage(const Message& message) {
 
 //    LoRa.endPacket(true);
 
-    if (LoRa.endPacket(true) != 1) { // Check if the packet was sent successfully
+    if (LoRa.endPacket() != 1) { // Check if the packet was sent successfully
         Serial.println("LoRa: Failed to send packet");
         return false;
     }
 
     #ifdef ENABLE_LORA_DEBUG
-    Serial.println("LoRa: Packet sent successfully");
-    Serial.println("LoRa: Switching to receive mode...");
+        Serial.println("LoRa: Packet sent successfully");
     #endif
 
-
-    // Little delay to allow the module to switch modes
-    delay(10);
-    LoRa.receive();
-
-    // Log sent message
     if (storageManager) {
         char logMsg[64];
         snprintf(logMsg, sizeof(logMsg),
                  "LoRa: Sent %d byte message to ID %d, type %d",
                  message.length, destinationId, static_cast<uint8_t>(message.type));
         storageManager->logMessage(LogLevel::DEBUG, Subsystem::COMMUNICATION, logMsg);
+
+        RocketState currentState = storageManager->getCurrentState();
+
+        bool canProcessCommands = (currentState == RocketState::INIT ||
+                                   currentState == RocketState::GROUND_IDLE ||
+                                   currentState == RocketState::READY);
+
+        if (canProcessCommands) {
+            Serial.println("LoRa: Changing to receive mode...");
+            LoRa.receive();
+        }
     }
+
+    // Little delay to allow the module to switch modes
+    delay(10);
+
     return true;
 }
 

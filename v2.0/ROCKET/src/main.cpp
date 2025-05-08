@@ -202,30 +202,33 @@ void initializeAllSystems() {
     baroManager.addSensor(&mpl3115Sensor, 1);  // Secondary sensor (priority 1)
     Serial.println("Barometric sensors added");
 
+    delay(1000);  // Wait for sensors to stabilize
+
     Serial.println("Adding IMU sensors...");
-//    BMI088Sensor bmi088(Wire1, BMIO_GYR_ADDR, BMIO_ACCEL_ADDR);
-//    ADXL375Sensor adxl375(Wire1, AXL_ADDR);
     BMI088Sensor* bmi088 = new BMI088Sensor(Wire1, BMIO_GYR_ADDR, BMIO_ACCEL_ADDR);
     ADXL375Sensor* adxl375 = new ADXL375Sensor(Wire1, AXL_ADDR);
     imuManager.addSensor(bmi088, 0);  // Primary sensor (priority 0)
     imuManager.addSensor(adxl375, 1);  // Secondary sensor (priority 1)
     Serial.println("IMU sensors added");
 
+    delay(1000);  // Wait for sensors to stabilize
+
     Serial.println("Adding temperature sensors...");
-//    DS18B20Sensor ds18b20(DS18B20_PIN);
     DS18B20Sensor* ds18b20 = new DS18B20Sensor(DS18B20_PIN);
     temperatureManager.addSensor(ds18b20);
     Serial.println("Temperature sensors added");
 
+    delay(1000);  // Wait for sensors to stabilize
+
     Serial.println("Adding GPS sensors...");
-//    L76KBGPSSensor l76kb(Serial1, L76_STBY);
-//    ATGM336HGPSSensor atgm336h(Serial2, ATGM_STBY);
     L76KBGPSSensor* l76kb = new L76KBGPSSensor(Serial1, L76_STBY);
     ATGM336HGPSSensor* atgm336h = new ATGM336HGPSSensor(Serial2, ATGM_STBY);
     //TODO
-//    gpsManager.addSensor(&l76kb, 0);  // Priority 0 (primary)
-//    gpsManager.addSensor(&atgm336h, 1);  // Priority 1 (secondary)
+    gpsManager.addSensor(l76kb, 0);  // Priority 0 (primary)
+    gpsManager.addSensor(atgm336h, 1);  // Priority 1 (secondary)
     Serial .println("GPS sensors added");
+
+    delay(1000);  // Wait for sensors to stabilize
 
     Serial.println("Initializing LoRaSystem...");
     loraSystem = new LoRaSystem(SPI1, LORA_CS, LORA_RST, LORA_DIO0, &storageManager);
@@ -233,12 +236,16 @@ void initializeAllSystems() {
     loraSystem->setDestinationId(GROUND_STATION_ID);
     Serial.println("LoRaSystem initialized");
 
+    delay(1000);  // Wait for LoRa system to stabilize
+
     Serial.println("Adding storage systems...");
     flashStorage = new FlashStorage(SPI, FLASH_CS);
     sdStorage = new SDStorage(SPI1, SD_CS);
     storageManager.addStorage(flashStorage, true);  // Primary
     storageManager.addStorage(sdStorage, false);    // Secondary
     Serial.println("Storage systems added");
+
+    delay(1000);  // Wait for storage systems to stabilize
 
     Serial.println("Initializing power manager...");
     powerManager = new PowerManager(BATTERY_VOLTAGE_PIN, &storageManager);
@@ -255,15 +262,21 @@ void initializeAllSystems() {
     }
     Serial.println("Power manager initialized");
 
+    delay(1000);  // Wait for power manager to stabilize
+
     Serial.println("Initializing resource monitor...");
     resourceMonitor = new ResourceMonitor(&storageManager);
     resourceMonitor->begin();
     Serial.println("Resource monitor initialized");
 
+    delay(1000);  // Wait for resource monitor to stabilize
+
     Serial.println("Initializing fault handler...");
     faultHandler = new FaultHandler(&storageManager, &stateMachine);
     faultHandler->begin();
     Serial.println("Fault handler initialized");
+
+    delay(1000);  // Wait for fault handler to stabilize
 
     Serial.println("Initializing power controller...");
     powerController = new PowerController(
@@ -283,6 +296,8 @@ void initializeAllSystems() {
     }
     Serial.println("Power controller initialized");
 
+    delay(1000);  // Wait for power controller to stabilize
+
     // Initialize each subsystem
     bool initSuccess = true;
 
@@ -290,25 +305,37 @@ void initializeAllSystems() {
     initSuccess &= baroManager.begin();
     Serial.println("Barometric sensors initialized");
 
+    delay(1000);  // Wait for barometric sensors to stabilize
+
     Serial.println("Initializing IMU sensors...");
     initSuccess &= imuManager.begin();
     Serial.println("IMU sensors initialized");
+
+    delay(1000);  // Wait for IMU sensors to stabilize
 
     Serial.println("Initializing loraSystem...");
     initSuccess &= loraSystem->begin() == SensorStatus::OK;
     Serial.println("LoRa system initialized");
 
+    delay(1000);  // Wait for LoRa system to stabilize
+
     Serial.println("Initializing temperature sensors...");
     initSuccess &= temperatureManager.begin();
     Serial.println("Temperature sensors initialized");
+
+    delay(1000);  // Wait for temperature sensors to stabilize
 
     Serial.println("Initializing storage systems...");
     initSuccess &= storageManager.begin();
     Serial.println("Storage systems initialized");
 
+    delay(1000);  // Wait for storage systems to stabilize
+
     Serial.println("Initializing GPS sensors...");
     initSuccess &= gpsManager.begin();
     Serial.println("GPS sensors initialized");
+
+    delay(1000);  // Wait for GPS sensors to stabilize
 
     Serial.println("Initializing data integration manager...");
     dataManager = new DataIntegrationManager(&baroManager, &imuManager, &gpsManager, &temperatureManager, powerManager);
@@ -321,10 +348,14 @@ void initializeAllSystems() {
     }
     Serial.println("Data integration manager initialized");
 
+    delay(1000);  // Wait for data integration manager to stabilize
+
     Serial.println("Initializing DiagnosticManager...");
     diagnosticManager = new DiagnosticManager(&storageManager);
     diagnosticManager->setVerboseLogging(true);
     Serial.println("DiagnosticManager initialized");
+
+    delay(1000);  // Wait for diagnostic manager to stabilize
 
     Serial.println("Adding diagnostic tests...");
     diagnosticManager->addTest(new BarometricSensorTest(&baroManager));
@@ -336,10 +367,14 @@ void initializeAllSystems() {
     diagnosticManager->addTest(new TemperatureSensorTest(&temperatureManager));
     Serial.println("Diagnostic tests added");
 
+    delay(1000);  // Wait for diagnostic tests to stabilize
+
     Serial.println("Initializing PreflightCheckSystem...");
     preflightSystem = new PreflightCheckSystem(diagnosticManager, &storageManager);
     preflightSystem->begin();
     Serial.println("PreflightCheckSystem initialized");
+
+    delay(1000);  // Wait for preflight check system to stabilize
 
     Serial.println("Running initial diagnostics...");
     // Double beep to indicate diagnostics start
@@ -392,6 +427,8 @@ void initializeAllSystems() {
     StateHandlers::setupHandlers(stateMachine, dataManager, loraSystem, &storageManager, diagnosticManager, preflightSystem, powerManager);
     Serial.println("State machine initialized");
 
+    delay(1000);  // Wait for state machine to stabilize
+
     // Long beep to indicate initialization complete
 //    digitalWrite(BUZZER_PIN, HIGH);
 //    delay(1000);
@@ -418,6 +455,8 @@ void initializeAllSystems() {
         }
     }
     Serial.println("Command handler initialized");
+
+    delay(1000);  // Wait for command handler to stabilize
 
     // Initialize timing variables
     lastPerformanceCheckTime = millis();
@@ -453,16 +492,22 @@ void setup() {
     Wire1.setSCL(I2C1_SCL);
     Wire1.begin();
 
+    delay(1000); // Allow I2C to stabilize
+
     SPI1.setMISO(SPI1_MISO);
     SPI1.setMOSI(SPI1_MOSI);
     SPI1.setSCK(SPI1_SCK);
     SPI1.begin();
+
+    delay(1000); // Allow SPI to stabilize
 
     pinMode(LORA_CS, OUTPUT);
     digitalWrite(LORA_CS, HIGH);
 
     Serial1.begin(9600);
     Serial2.begin(9600);
+
+    delay(1000); // Allow UART to stabilize
 
     // Initialize all systems
     initializeAllSystems();

@@ -1205,16 +1205,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getRocketStateName(stateCode) {
         const states = {
-            0x01: 'INICIALIZANDO',
-            0x02: 'REPOSO',
-            0x03: 'LISTO',
-            0x10: 'PROPULSIÓN',
-            0x11: 'ASCENSO INERCIAL',
-            0x12: 'APOGEO',
-            0x13: 'DESCENSO',
-            0x14: 'DESCENSO CON PARACAÍDAS',
-            0x20: 'ATERRIZADO',
-            0xE0: 'ERROR'
+            0x00: 'INICIALIZANDO',
+            0x01: 'REPOSO',
+            0x02: 'LISTO',
+            0x03: 'PROPULSIÓN',
+            0x04: 'ASCENSO INERCIAL',
+            0x05: 'APOGEO',
+            0x06: 'DESCENSO',
+            0x07: 'DESCENSO CON PARACAÍDAS',
+            0x08: 'ATERRIZADO',
+            0x09: 'ERROR'
         };
 
         return states[stateCode] || 'DESCONOCIDO';
