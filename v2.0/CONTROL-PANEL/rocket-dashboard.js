@@ -520,7 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Critical commands with confirmation
         elements.cmdLaunch.addEventListener('click', () => showConfirmation('INICIAR LANZAMIENTO', '¡ADVERTENCIA! Estás a punto de iniciar la secuencia de lanzamiento. ¿Estás COMPLETAMENTE seguro?', () => sendCommand('LAUNCH_COMMAND')));
         elements.cmdAbort.addEventListener('click', () => showConfirmation('ABORTAR MISIÓN', '¡ADVERTENCIA! Estás a punto de abortar la misión. ¿Estás COMPLETAMENTE seguro?', () => sendCommand('ABORT_COMMAND')));
-        elements.cmdDeployParachute.addEventListener('click', () => showConfirmation('DESPLIEGUE DE EMERGENCIA', '¡ADVERTENCIA! Estás a punto de desplegar el paracaídas manualmente. ¿Estás COMPLETAMENTE seguro?', () => sendCommand('FORCE_DEPLOY_PARACHUTE')));
+        // elements.cmdDeployParachute.addEventListener('click', () => showConfirmation('DESPLIEGUE DE EMERGENCIA', '¡ADVERTENCIA! Estás a punto de desplegar el paracaídas manualmente. ¿Estás COMPLETAMENTE seguro?', () => sendCommand('FORCE_DEPLOY_PARACHUTE')));
 
         // Graph controls
         elements.graphTimespan.addEventListener('change', updateGraphTimespan);
