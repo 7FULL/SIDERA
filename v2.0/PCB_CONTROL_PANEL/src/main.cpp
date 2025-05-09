@@ -193,9 +193,15 @@ void initLoRa() {
     Serial.println("LoRa: Performing hardware reset...");
     pinMode(LORA_RST, OUTPUT);
     digitalWrite(LORA_RST, LOW);
-    delay(10);
+    delay(1000);
     digitalWrite(LORA_RST, HIGH);
-    delay(100);
+    delay(1000);// Give the module more time to stabilize
+
+    Serial.println("LoRa: Resetting SPI...");
+    SPI1.end();
+    delay(1000);
+    SPI1.begin();
+    delay(1000);
 
     // Configure LoRa
     LoRa.setPins(LORA_CS, LORA_RST, LORA_DIO0);

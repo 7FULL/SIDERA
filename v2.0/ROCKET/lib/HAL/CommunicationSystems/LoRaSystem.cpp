@@ -27,10 +27,16 @@ SensorStatus LoRaSystem::begin() {
         Serial.println("LoRa: Performing hardware reset...");
         pinMode(resetPin, OUTPUT);
         digitalWrite(resetPin, LOW);
-        delay(10);
+        delay(1000);
         digitalWrite(resetPin, HIGH);
-        delay(100); // Give the module more time to stabilize
+        delay(1000); // Give the module more time to stabilize
     }
+
+    Serial.println("LoRa: Resetting SPI...");
+    spi.end();
+    delay(1000);
+    spi.begin();
+    delay(1000);
 
 //    SPI1.setCS();
 
@@ -67,7 +73,7 @@ SensorStatus LoRaSystem::begin() {
     }
 
     // Set parameters for better performance
-    LoRa.setFrequency(868E6); // Set frequency to 868 MHz (EU)
+//    LoRa.setFrequency(868E6); // Set frequency to 868 MHz (EU)
     LoRa.setSpreadingFactor(12);      // 7 is default
     LoRa.setSignalBandwidth(62.5E3);  // 125 kHz is typical
     LoRa.setCodingRate4(8);          // 4/5 coding rate
@@ -129,13 +135,30 @@ bool LoRaSystem::sendMessage(const Message& message) {
         return false;
     }
 
+    RocketState currentState = storageManager->getCurrentState();
+
+    bool canProcessCommands = (currentState == RocketState::INIT ||
+                               currentState == RocketState::GROUND_IDLE ||
+                               currentState == RocketState::READY);
+
     #ifdef ENABLE_LORA_DEBUG
     Serial.println("LoRa: Starting packet...");
     #endif
 
     if (!LoRa.beginPacket()) {
         Serial.println("LoRa: Failed to start packet");
-        return false;
+
+        //We try putting it in idle mode and then starting again
+        LoRa.idle();
+        delay(10);
+        if (!LoRa.beginPacket()) {
+            Serial.println("LoRa: Failed to start packet after idle");
+            return false;
+        }else{
+            Serial.println("LoRa: Packet started after idle");
+        }
+    }else{
+        Serial.println("LoRa: Packet started");
     }
 
     #ifdef ENABLE_LORA_DEBUG
@@ -179,12 +202,6 @@ bool LoRaSystem::sendMessage(const Message& message) {
                  "LoRa: Sent %d byte message to ID %d, type %d",
                  message.length, destinationId, static_cast<uint8_t>(message.type));
         storageManager->logMessage(LogLevel::DEBUG, Subsystem::COMMUNICATION, logMsg);
-
-        RocketState currentState = storageManager->getCurrentState();
-
-        bool canProcessCommands = (currentState == RocketState::INIT ||
-                                   currentState == RocketState::GROUND_IDLE ||
-                                   currentState == RocketState::READY);
 
         if (canProcessCommands) {
             Serial.println("LoRa: Changing to receive mode...");
