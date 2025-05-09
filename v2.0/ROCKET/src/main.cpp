@@ -1,36 +1,31 @@
+//region Pruebas
+////region Lora prueba
 //#include <Arduino.h>
 //#include <SPI.h>
 //#include <LoRa.h>
 //
-//// Define pins for LoRa module (using your existing pin definitions)
+//// RP2040 pin definitions - adjust if needed
 //#define LORA_CS     9
 //#define LORA_RST    12
 //#define LORA_DIO0   13
 //#define SPI1_MISO   8
 //#define SPI1_MOSI   11
 //#define SPI1_SCK    10
-//
-//// LED pin for visual feedback
 //#define LED_PIN     25
 //
-//// Transmission interval in milliseconds
-//#define TX_INTERVAL 5000
-//
-//// Counter for message ID
+//// Message configuration
+//#define TX_INTERVAL 200
 //int counter = 0;
 //
 //void setup() {
-//    // Initialize Serial for debugging
+//    // Initialize serial at high speed for debugging
 //    Serial.begin(115200);
+//    delay(3000);  // Time to open serial monitor
+//    Serial.println("=== LoRa Simple Transmitter Test ===");
 //
-//    // Wait for serial to be ready or timeout after 3 seconds
-//    unsigned long startTime = millis();
-//    while (!Serial && (millis() - startTime < 3000));
-//
-//    Serial.println("LoRa Antenna Test - Hello World Sender");
-//
-//    // Configure LED
+//    // Setup LED
 //    pinMode(LED_PIN, OUTPUT);
+//    digitalWrite(LED_PIN, LOW);
 //
 //    // Configure SPI for LoRa
 //    SPI1.setRX(SPI1_MISO);
@@ -38,16 +33,24 @@
 //    SPI1.setSCK(SPI1_SCK);
 //    SPI1.begin();
 //
-//    // Configure LoRa pins
+//    // Configure LoRa module with clear error handling
+//    Serial.println("Initializing LoRa module...");
 //    LoRa.setPins(LORA_CS, LORA_RST, LORA_DIO0);
 //    LoRa.setSPI(SPI1);
 //
-//    // Start LoRa with 868MHz frequency (adjust as needed: 433E6, 868E6, or 915E6)
-//    Serial.println("Initializing LoRa...");
+//    // Reset the module first (important!)
+//    pinMode(LORA_RST, OUTPUT);
+//    digitalWrite(LORA_RST, LOW);
+//    delay(20);
+//    digitalWrite(LORA_RST, HIGH);
+//    delay(150);
+//
+//    // Initialize with 868MHz frequency (EU standard)
+//    // Use 915E6 for US or 433E6 for Asia
 //    if (!LoRa.begin(868E6)) {
-//        Serial.println("LoRa initialization failed!");
+//        Serial.println("ERROR: LoRa initialization failed!");
+//        // Blink rapidly to indicate failure
 //        while (1) {
-//            // Blink LED rapidly to indicate failure
 //            digitalWrite(LED_PIN, HIGH);
 //            delay(100);
 //            digitalWrite(LED_PIN, LOW);
@@ -55,17 +58,17 @@
 //        }
 //    }
 //
-//    // Set LoRa parameters
-//    LoRa.setSpreadingFactor(7);      // Range 6-12, lower = faster data rate
+//    // Use reliable, conservative settings
+//    LoRa.setSpreadingFactor(9);      // Range 6-12, higher = more range but slower
 //    LoRa.setSignalBandwidth(125E3);  // 125kHz bandwidth
 //    LoRa.setCodingRate4(5);          // 4/5 coding rate
 //    LoRa.setPreambleLength(8);       // Default preamble length
 //    LoRa.enableCrc();                // Enable CRC checking
+//    LoRa.setTxPower(17, PA_OUTPUT_PA_BOOST_PIN); // Higher power
 //
-//    Serial.println("LoRa initialization successful!");
-//    Serial.println("Sending 'Hello World' messages every 5 seconds...");
+//    Serial.println("LoRa Transmitter initialized successfully!");
 //
-//    // Blink LED three times to indicate successful initialization
+//    // Indicate success with three slow blinks
 //    for (int i = 0; i < 3; i++) {
 //        digitalWrite(LED_PIN, HIGH);
 //        delay(200);
@@ -75,20 +78,41 @@
 //}
 //
 //void loop() {
-//    Serial.print("Sending packet: ");
-//    Serial.println(counter);
+//    Serial.print("Sending packet #");
+//    Serial.print(counter);
+//    Serial.print(": 'Hello World'");
 //
-//    // Turn on LED to indicate transmission
+//    // Visual indicator
 //    digitalWrite(LED_PIN, HIGH);
 //
-//    // Send packet
-//    LoRa.beginPacket();
-//    uint8_t data[] = {0x48, 0x65, 0x6C, 0x6C, 0x6F}; // "Hello" en ASCII
-//    LoRa.write(data, sizeof(data)); // Envía los bytes crudos
-//    LoRa.print(counter);
-//    LoRa.endPacket();
+//    // Start LoRa packet
+////    LoRa.idle();  // Ensure idle state before transmission
 //
-//    // Turn off LED
+//    if (!LoRa.beginPacket()) {
+//        Serial.println(" - ERROR: Could not start packet");
+//        digitalWrite(LED_PIN, LOW);
+//        delay(100);
+//        digitalWrite(LED_PIN, HIGH);
+//        delay(100);
+//        digitalWrite(LED_PIN, LOW);
+//        delay(TX_INTERVAL);
+//        return;
+//    }
+//
+//    // Write message content
+//    LoRa.print("Hello World #");
+//    LoRa.print(counter);
+//
+//    // End packet with explicit confirmation
+//    bool sent = LoRa.endPacket(true);
+//
+//    if (sent) {
+//        Serial.println(" - SUCCESS");
+//    } else {
+//        Serial.println(" - ERROR: Transmission failed");
+//    }
+//
+//    // Turn off indicator LED
 //    digitalWrite(LED_PIN, LOW);
 //
 //    // Increment counter
@@ -97,15 +121,11 @@
 //    // Wait for next transmission
 //    delay(TX_INTERVAL);
 //}
+////endregion Lora prueba
+//endregion
 
-/**
- * Rocket Control System - RP2040 Version
- * Main entry point - Single-threaded implementation
- *
- * This file initializes the hardware and runs the main control loop
- * in the standard Arduino setup/loop structure.
- */
-
+//region MainCode
+//region to close
 #include <Arduino.h>
 #include "Config.h"
 #include "PinDefinitions.h"
@@ -570,3 +590,5 @@ void loop() {
     // Brief delay to prevent hammering the CPU
 //    delay(10);
 }
+//endregion
+//endregion

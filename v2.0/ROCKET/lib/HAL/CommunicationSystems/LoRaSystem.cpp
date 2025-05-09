@@ -23,63 +23,31 @@ LoRaSystem::~LoRaSystem() {
 }
 
 SensorStatus LoRaSystem::begin() {
+    LoRa.setPins(csPin, resetPin, irqPin);
+    LoRa.setSPI(spi);
+
     if (resetPin >= 0) {
         Serial.println("LoRa: Performing hardware reset...");
         pinMode(resetPin, OUTPUT);
         digitalWrite(resetPin, LOW);
-        delay(1000);
+        delay(20);
         digitalWrite(resetPin, HIGH);
-        delay(1000); // Give the module more time to stabilize
+        delay(150); // Give the module more time to stabilize
     }
 
-    Serial.println("LoRa: Resetting SPI...");
-    spi.end();
-    delay(1000);
-    spi.begin();
-    delay(1000);
-
-//    SPI1.setCS();
-
-    // Configure LoRa module with SPI and pins
-    LoRa.setPins(csPin, resetPin, irqPin);
-    LoRa.setSPI(spi);
-
-    // We wait for the LoRa module to be ready
-    Serial.println("LoRa: Waiting for module to be ready...");
-    //Number of attempts to wait for the module
-    int maxAttempts = 10;
-    int attempts = 0;
-    //Auxiliary variable to check if the module is ready
-    bool moduleReady = false;
-    while (attempts < maxAttempts) {
-        Serial.print("Attempt ");
-        Serial.print(attempts + 1);
-        Serial.print(" of ");
-        Serial.print(maxAttempts);
-
-        // Check if the module is ready
-        if (LoRa.begin(868E6)) { // Default to 915E6 for US region 868E6 for EU
-            moduleReady = true;
-            break;
-        }
-        attempts++;
-        delay(1000); // Wait before retrying
-    }
-
-    if (!moduleReady) {
-        Serial.println("LoRa: Module not found!");
+    if (!LoRa.begin(868E6)) { // Default to 915E6 for US region 868E6 for EU
+        Serial.println("LoRa: ERROR: Initialization failed!");
         status = SensorStatus::NOT_INITIALIZED;
         return status;
     }
 
     // Set parameters for better performance
-//    LoRa.setFrequency(868E6); // Set frequency to 868 MHz (EU)
-    LoRa.setSpreadingFactor(12);      // 7 is default
-    LoRa.setSignalBandwidth(62.5E3);  // 125 kHz is typical
-    LoRa.setCodingRate4(8);          // 4/5 coding rate
-    LoRa.setSyncWord(0x34);          // Default sync word
-    LoRa.setTxPower(20, PA_OUTPUT_PA_BOOST_PIN);
+    LoRa.setSpreadingFactor(9);      // Range 6-12, higher = more range but slower
+    LoRa.setSignalBandwidth(125E3);  // 125kHz bandwidth
+    LoRa.setCodingRate4(5);          // 4/5 coding rate
+    LoRa.setPreambleLength(8);       // Default preamble length
     LoRa.enableCrc();                // Enable CRC checking
+    LoRa.setTxPower(17, PA_OUTPUT_PA_BOOST_PIN); // Higher power
 
     // Set callback for received packets
     LoRa.onReceive(onReceiveStatic);
@@ -149,14 +117,15 @@ bool LoRaSystem::sendMessage(const Message& message) {
         Serial.println("LoRa: Failed to start packet");
 
         //We try putting it in idle mode and then starting again
-        LoRa.idle();
-        delay(10);
-        if (!LoRa.beginPacket()) {
-            Serial.println("LoRa: Failed to start packet after idle");
-            return false;
-        }else{
-            Serial.println("LoRa: Packet started after idle");
-        }
+        return false;
+//        LoRa.idle();
+//        delay(10);
+//        if (!LoRa.beginPacket()) {
+//            Serial.println("LoRa: Failed to start packet after idle");
+//            return false;
+//        }else{
+//            Serial.println("LoRa: Packet started after idle");
+//        }
     }else{
         Serial.println("LoRa: Packet started");
     }
@@ -187,10 +156,7 @@ bool LoRaSystem::sendMessage(const Message& message) {
 
 //    LoRa.endPacket(true);
 
-    if (LoRa.endPacket(true) != 1) { // Check if the packet was sent successfully
-        Serial.println("LoRa: Failed to send packet");
-//        return false;
-    }
+    LoRa.endPacket(true);
 
     #ifdef ENABLE_LORA_DEBUG
         Serial.println("LoRa: Packet sent successfully");
@@ -205,12 +171,12 @@ bool LoRaSystem::sendMessage(const Message& message) {
 
         if (canProcessCommands) {
             Serial.println("LoRa: Changing to receive mode...");
-            LoRa.receive();
+//            LoRa.receive();
         }
     }
 
     // Little delay to allow the module to switch modes
-    delay(10);
+//    delay(10);
 
     return true;
 }
