@@ -224,8 +224,8 @@ void initializeAllSystems() {
     L76KBGPSSensor* l76kb = new L76KBGPSSensor(Serial1, L76_STBY);
     ATGM336HGPSSensor* atgm336h = new ATGM336HGPSSensor(Serial2, ATGM_STBY);
     //TODO
-    gpsManager.addSensor(l76kb, 0);  // Priority 0 (primary)
-    gpsManager.addSensor(atgm336h, 1);  // Priority 1 (secondary)
+//    gpsManager.addSensor(l76kb, 0);  // Priority 0 (primary)
+//    gpsManager.addSensor(atgm336h, 1);  // Priority 1 (secondary)
     Serial .println("GPS sensors added");
 
     delay(1000);  // Wait for sensors to stabilize
