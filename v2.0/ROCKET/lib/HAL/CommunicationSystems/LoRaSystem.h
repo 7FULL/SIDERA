@@ -55,6 +55,8 @@ private:
     int8_t irqPin;
     StorageManager* storageManager;
 
+    bool receiving = false; // Flag to indicate if the sensor is in receive mode
+
     uint8_t nodeId = 1;           // Default node ID
     uint8_t destinationId = 0;    // Default destination (0 = broadcast)
     uint8_t packetCounter = 0;    // Packet counter

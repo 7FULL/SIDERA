@@ -65,6 +65,7 @@ void setup() {
     LoRa.setCodingRate4(5);          // 4/5 coding rate
     LoRa.setPreambleLength(8);       // Default preamble length
     LoRa.enableCrc();                // Enable CRC checking
+    LoRa.setTxPower(13, PA_OUTPUT_PA_BOOST_PIN); // Higher power
 
     Serial.println("LoRa Receiver initialized successfully!");
     Serial.println("Waiting for messages...");
