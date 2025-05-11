@@ -1,3 +1,5 @@
+//region Pruebas
+//region Lora prueba
 #include <Arduino.h>
 #include <SPI.h>
 #include <LoRa.h>
@@ -153,7 +155,11 @@ void loop() {
         lastReceiveTime = millis(); // Reset timer
     }
 }
+//endregion Lora prueba
+//endregion Pruebas
 
+//region to close
+////region main
 //#include <Arduino.h>
 //#include <SPI.h>
 //#include <LoRa.h>
@@ -181,9 +187,9 @@ void loop() {
 //
 //// LoRa settings
 //#define LORA_FREQUENCY 868E6  // Use 915E6 for US
-//#define LORA_SPREADING_FACTOR 12
-//#define LORA_BANDWIDTH 62.5E3
-//#define LORA_CODING_RATE 8
+//#define LORA_SPREADING_FACTOR 9
+//#define LORA_BANDWIDTH 125E3
+//#define LORA_CODING_RATE 5
 //#define LORA_TX_POWER 20
 //
 //// Node IDs
@@ -346,32 +352,22 @@ void loop() {
 //void initLoRa() {
 //    Serial.print("Initializing LoRa... ");
 //
-//    Serial.println("LoRa: Performing hardware reset...");
-//    pinMode(LORA_RST, OUTPUT);
-//    digitalWrite(LORA_RST, LOW);
-//    delay(1000);
-//    digitalWrite(LORA_RST, HIGH);
-//    delay(1000);// Give the module more time to stabilize
-//
-//    Serial.println("LoRa: Resetting SPI...");
-//    SPI1.end();
-//    delay(1000);
-//    SPI1.begin();
-//    delay(1000);
-//
-//    // Configure LoRa
 //    LoRa.setPins(LORA_CS, LORA_RST, LORA_DIO0);
 //    LoRa.setSPI(SPI1);
 //
+//    Serial.println("LoRa: Performing hardware reset...");
+//    pinMode(LORA_RST, OUTPUT);
+//    digitalWrite(LORA_RST, LOW);
+//    delay(20);
+//    digitalWrite(LORA_RST, HIGH);
+//    delay(150);// Give the module more time to stabilize
+//
 //    // Initialize LoRa with multiple retries
 //    bool success = false;
-//    for (int attempt = 0; attempt < 5; attempt++) {
-//        if (LoRa.begin(LORA_FREQUENCY)) {
-//            success = true;
-//            break;
-//        }
-//        Serial.print(".");
-//        delay(500);
+//
+//    if (LoRa.begin(LORA_FREQUENCY)) {
+//        success = true;
+////        break;
 //    }
 //
 //    if (!success) {
@@ -385,12 +381,13 @@ void loop() {
 //    }
 //
 //    // Configure LoRa parameters
-//    LoRa.setSpreadingFactor(LORA_SPREADING_FACTOR);
-//    LoRa.setSignalBandwidth(LORA_BANDWIDTH);
-//    LoRa.setCodingRate4(LORA_CODING_RATE);
-//    LoRa.setSyncWord(0x34);  // Match the rocket's sync word
-//    LoRa.setTxPower(LORA_TX_POWER);
-//    LoRa.enableCrc();
+//    LoRa.setSpreadingFactor(9);      // Range 6-12, higher = more range but slower
+//    LoRa.setSignalBandwidth(125E3);  // 125kHz bandwidth
+//    LoRa.setCodingRate4(5);          // 4/5 coding rate
+//    LoRa.setPreambleLength(8);       // Default preamble length
+//    LoRa.setSyncWord(0x34);       // Match the ground station sync word
+//    LoRa.enableCrc();                // Enable CRC checking
+//    LoRa.setTxPower(13, PA_OUTPUT_PA_BOOST_PIN); // Higher power
 //
 //    LoRa.onReceive(processLoRaPacket);
 //
@@ -759,3 +756,5 @@ void loop() {
 //        digitalWrite(LED_RED, LOW);
 //    }
 //}
+////endregion main
+//endregion to close

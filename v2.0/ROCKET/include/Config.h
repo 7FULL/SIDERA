@@ -12,7 +12,7 @@
 //#define ENABLE_BMIO88_DEBUG
 //#define ENABLE_DS18B20_DEBUG
 //#define ENABLE_ADXL375_DEBUG
-#define ENABLE_LORA_DEBUG
+//#define ENABLE_LORA_DEBUG
 #define ENABLE_LOGS_DEBUG
 
 // Version information
@@ -49,7 +49,7 @@
 
 //=== COMMUNICATION PARAMETERS ===//
 // Telemetry rates by state (ms)
-#define GROUND_IDLE_TELEMETRY_RATE 4000     // 0.5Hz in idle - reduced to save power
+#define GROUND_IDLE_TELEMETRY_RATE 1000     // 0.5Hz in idle - reduced to save power
 #define READY_TELEMETRY_RATE 2000           // 1Hz when ready
 #define FLIGHT_TELEMETRY_RATE 1000           // 5Hz during flight
 #define COAST_TELEMETRY_RATE 1000            // 5Hz during coast
