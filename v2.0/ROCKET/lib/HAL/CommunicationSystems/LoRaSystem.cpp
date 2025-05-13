@@ -44,10 +44,10 @@ SensorStatus LoRaSystem::begin() {
     }
 
     // Set parameters for better performance
-    LoRa.setSpreadingFactor(12);      // Range 6-12, higher = more range but slower
-    LoRa.setSignalBandwidth(62.5E3);  // 125kHz bandwidth
-    LoRa.setCodingRate4(8);          // 4/5 coding rate
-    LoRa.setPreambleLength(12);       // Default preamble length
+    LoRa.setSpreadingFactor(9);      // Range 6-12, higher = more range but slower
+    LoRa.setSignalBandwidth(125E3);  // 125kHz bandwidth
+    LoRa.setCodingRate4(5);          // 4/5 coding rate
+    LoRa.setPreambleLength(8);       // Default preamble length
     LoRa.setSyncWord(0x34);
     LoRa.enableCrc();                // Enable CRC checking
     LoRa.setTxPower(20, PA_OUTPUT_PA_BOOST_PIN); // Higher power
@@ -141,75 +141,73 @@ bool LoRaSystem::sendMessage(const Message& message) {
     Serial.println("LoRa: Writing header...");
     #endif
 
-//    LoRa.write(destinationId);
+    LoRa.write(destinationId);
 
     #ifdef ENABLE_LORA_DEBUG
     Serial.println("LoRa: Writing node ID...");
     #endif
 
-//    LoRa.write(nodeId);
+    LoRa.write(nodeId);
 
     #ifdef ENABLE_LORA_DEBUG
     Serial.println("LoRa: Writing packet counter...");
     #endif
 
-//    LoRa.write(packetCounter++);
+    LoRa.write(packetCounter++);
 
     #ifdef ENABLE_LORA_DEBUG
     Serial.println("LoRa: Writing message type...");
     #endif
 
-//    LoRa.write(static_cast<uint8_t>(message.type));
+    LoRa.write(static_cast<uint8_t>(message.type));
 
     #ifdef ENABLE_LORA_DEBUG
     Serial.println("LoRa: Writing message length...");
     #endif
 
-    LoRa.print("Hello World #");
+    if (message.data != nullptr && message.length > 0) {
+        #ifdef ENABLE_LORA_DEBUG
+        Serial.println("LoRa: Condition OK, entering data-write block");
+        Serial.print("LoRa: Writing %d bytes of data...\n");
+        Serial.println(message.length);
+        #endif
 
-//    if (message.data != nullptr && message.length > 0) {
-//        #ifdef ENABLE_LORA_DEBUG
-//        Serial.println("LoRa: Condition OK, entering data-write block");
-//        Serial.print("LoRa: Writing %d bytes of data...\n");
-//        Serial.println(message.length);
-//        #endif
-//
-//        #ifdef ENABLE_LORA_DEBUG
-//        Serial.println("LoRa: About to write payload in chunks...");
-//        #endif
-//
-//        size_t bytesRemaining = message.length;
-//        const uint8_t* bufferPtr = reinterpret_cast<const uint8_t*>(message.data);
-//
-//        while (bytesRemaining > 0) {
-//            size_t chunkSize = (bytesRemaining > MAX_CHUNK_SIZE) ? MAX_CHUNK_SIZE : bytesRemaining;
-//
-//            #ifdef ENABLE_LORA_DEBUG
-//            Serial.print("LoRa: Writing chunk of ");
-//            Serial.print(chunkSize);
-//            Serial.println(" bytes...");
-//            #endif
-//
-//            LoRa.write(bufferPtr, chunkSize);
-//
-//            #ifdef ENABLE_LORA_DEBUG
-//            Serial.println("LoRa: Chunk written");
-//            #endif
-//
-//            bufferPtr     += chunkSize;
-//            bytesRemaining -= chunkSize;
-//
-//            // Pequeña pausa para dar tiempo al módulo a procesar el chunk
-//            delay(5);
-//        }
-//
-//        #ifdef ENABLE_LORA_DEBUG
-//        Serial.println("LoRa: Finished writing all chunks");
-//        #endif
-//    } else {
-//        Serial.println("LoRa: No data to send");
-//        return false;
-//    }
+        #ifdef ENABLE_LORA_DEBUG
+        Serial.println("LoRa: About to write payload in chunks...");
+        #endif
+
+        size_t bytesRemaining = message.length;
+        const uint8_t* bufferPtr = reinterpret_cast<const uint8_t*>(message.data);
+
+        while (bytesRemaining > 0) {
+            size_t chunkSize = (bytesRemaining > MAX_CHUNK_SIZE) ? MAX_CHUNK_SIZE : bytesRemaining;
+
+            #ifdef ENABLE_LORA_DEBUG
+            Serial.print("LoRa: Writing chunk of ");
+            Serial.print(chunkSize);
+            Serial.println(" bytes...");
+            #endif
+
+            LoRa.write(bufferPtr, chunkSize);
+
+            #ifdef ENABLE_LORA_DEBUG
+            Serial.println("LoRa: Chunk written");
+            #endif
+
+            bufferPtr     += chunkSize;
+            bytesRemaining -= chunkSize;
+
+            // Pequeña pausa para dar tiempo al módulo a procesar el chunk
+            delay(5);
+        }
+
+        #ifdef ENABLE_LORA_DEBUG
+        Serial.println("LoRa: Finished writing all chunks");
+        #endif
+    } else {
+        Serial.println("LoRa: No data to send");
+        return false;
+    }
 
     #ifdef ENABLE_LORA_DEBUG
     Serial.println("LoRa: Ending packet...");

@@ -5,10 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d1ca9a27-336a-4e31-a514-cb52368ef075" name="Changes" comment="V2.0">
-      <change beforePath="$PROJECT_DIR$/../PCB_CONTROL_PANEL/platformio.ini" beforeDir="false" afterPath="$PROJECT_DIR$/../PCB_CONTROL_PANEL/platformio.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../PCB_CONTROL_PANEL/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../PCB_CONTROL_PANEL/src/main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/include/Config.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/include/Config.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/CommunicationSystems/LoRaSystem.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/CommunicationSystems/LoRaSystem.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ROCKET/platformio.ini" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/platformio.ini" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ROCKET/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -109,6 +109,9 @@
       <workItem from="1746727932744" duration="1840000" />
       <workItem from="1746730961847" duration="4010000" />
       <workItem from="1746923324492" duration="693000" />
+      <workItem from="1747032999057" duration="1432000" />
+      <workItem from="1747073418358" duration="1732000" />
+      <workItem from="1747124491490" duration="141000" />
     </task>
     <task id="LOCAL-00001" summary="V2.0">
       <option name="closed" value="true" />
