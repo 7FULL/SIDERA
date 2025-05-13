@@ -13,7 +13,7 @@
 //#define ENABLE_DS18B20_DEBUG
 //#define ENABLE_ADXL375_DEBUG
 //#define ENABLE_LORA_DEBUG
-#define ENABLE_LOGS_DEBUG
+//#define ENABLE_LOGS_DEBUG
 
 // Version information
 #define FIRMWARE_VERSION "1.0.0"

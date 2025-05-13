@@ -277,7 +277,7 @@ void StateHandlers::handleReadyState(
         DiagnosticManager* diagnosticManager,
         PowerManager* powerManager
 ) {
-    Serial.println("Ready state handler called");
+//    Serial.println("Ready state handler called");
     // Update sensors at a higher rate now that we're armed
     unsigned long currentTime = millis();
     if (currentTime - lastSensorUpdateTime >= READY_SENSOR_RATE) {  // 10Hz updates when ready
