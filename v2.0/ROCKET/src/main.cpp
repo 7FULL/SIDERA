@@ -236,6 +236,7 @@ void initializeAllSystems() {
 
     Serial.println("Adding temperature sensors...");
     DS18B20Sensor* ds18b20 = new DS18B20Sensor(DS18B20_PIN);
+    ds18b20->setAsyncResolution(9);
     temperatureManager.addSensor(ds18b20);
     Serial.println("Temperature sensors added");
 
@@ -544,7 +545,7 @@ void loop() {
 
     // Check system health periodically
     unsigned long currentTime = millis();
-    if (currentTime - lastPerformanceCheckTime >= 10000) { // Every 10 seconds
+    if (currentTime - lastPerformanceCheckTime >= 300000) { // Every 10 seconds
         lastPerformanceCheckTime = currentTime;
 
         // Check for low memory condition
@@ -567,16 +568,16 @@ void loop() {
             );
         }
     }
-
-    // Log resource usage periodically
+//
+//    // Log resource usage periodically
     if (currentTime - lastResourceLogTime > 300000) { // Every 5 minutes
         lastResourceLogTime = currentTime;
         resourceMonitor->logResourceUsage();
     }
-
-    // Update power management
-    powerManager->update();
-    powerController->update();
+//
+//    // Update power management
+//    powerManager->update();
+//    powerController->update();
 
     // Update state machine
     stateMachine.update();
@@ -584,9 +585,9 @@ void loop() {
     // *** NON-CRITICAL OPERATIONS ***
 
     // Process commands
-    if (commandHandler) {
-        commandHandler->update();
-    }
+//    if (commandHandler) {
+//        commandHandler->update();
+//    }
 
     // Brief delay to prevent hammering the CPU
 //    delay(10);

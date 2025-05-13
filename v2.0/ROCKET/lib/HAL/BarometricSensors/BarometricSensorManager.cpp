@@ -98,8 +98,13 @@ void BarometricSensorManager::update() {
     }
 
     // Update all sensors
-    for (auto& sensorInfo : sensors) {
-        sensorInfo.sensor->update();
+//    for (auto& sensorInfo : sensors) {
+//        sensorInfo.sensor->update();
+//    }
+
+    //Update only the active sensor
+    if (activeSensor) {
+        activeSensor->update();
     }
 
     // Check if we need to switch active sensors

@@ -38,36 +38,68 @@ SensorStatus DS18B20Sensor::begin() {
     return status;
 }
 
+void DS18B20Sensor::setAsyncResolution(uint8_t resolution) {
+    this->resolution = resolution;
+
+    // Set conversion delay based on resolution
+    switch (resolution) {
+        case 9:  conversionDelay = 94; break;
+        case 10: conversionDelay = 188; break;
+        case 11: conversionDelay = 375; break;
+        case 12: conversionDelay = 750; break;
+        default: conversionDelay = 750; break;
+    }
+
+    if (deviceFound) {
+        sensors.setResolution(deviceAddress, resolution);
+    }
+}
+
 SensorStatus DS18B20Sensor::update() {
     if (!deviceFound) {
         status = SensorStatus::NOT_INITIALIZED;
         return status;
     }
 
-    // Request temperatures from all devices
-    sensors.requestTemperatures();
+    unsigned long currentTime = millis();
 
-    // Read temperature from the device
-    float temp = sensors.getTempC(deviceAddress);
+    if (!conversionInProgress) {
+        // Start new conversion
+        sensors.requestTemperatures();
+        conversionInProgress = true;
+        conversionStartTime = currentTime;
 
-    // Check if the read was successful
-    if (temp == DEVICE_DISCONNECTED_C) {
-        status = SensorStatus::READING_ERROR;
+        // Don't wait - return immediately
         return status;
     }
 
-    // Apply offset
-    temperature = temp + temperatureOffset;
+    // Check if conversion is complete
+    if (currentTime - conversionStartTime >= conversionDelay) {
+        // Read temperature from the device
+        float temp = sensors.getTempC(deviceAddress);
 
-    #ifdef ENABLE_DS18B20_DEBUG
-    Serial.print("DS18B20: ");
-    Serial.print("Temperature: ");
-    Serial.print(temperature);
-    Serial.println(" °C");
-    #endif
+        // Check if the read was successful
+        if (temp == DEVICE_DISCONNECTED_C) {
+            status = SensorStatus::READING_ERROR;
+            conversionInProgress = false;
+            return status;
+        }
 
-    lastReadingTime = millis();
-    status = SensorStatus::OK;
+        // Apply offset
+        temperature = temp + temperatureOffset;
+
+#ifdef ENABLE_DS18B20_DEBUG
+        Serial.print("DS18B20: Temperature: ");
+        Serial.print(temperature);
+        Serial.println(" °C");
+#endif
+
+        lastReadingTime = millis();
+        status = SensorStatus::OK;
+        conversionInProgress = false;
+    }
+
+    // If conversion not complete yet, just return current status
     return status;
 }
 

@@ -31,6 +31,7 @@ public:
     void setResolution(uint8_t resolution);
     uint8_t getResolution() const;
     DeviceAddress* getDeviceAddress();
+    void setAsyncResolution(uint8_t resolution);
 
 private:
     uint8_t pin;
@@ -41,6 +42,10 @@ private:
 
     OneWire oneWire;
     DallasTemperature sensors;
+
+    bool conversionInProgress = false;
+    unsigned long conversionStartTime = 0;
+    unsigned long conversionDelay = 750; // Default for 12-bit
 };
 
 #endif // DS18B20_SENSOR_H

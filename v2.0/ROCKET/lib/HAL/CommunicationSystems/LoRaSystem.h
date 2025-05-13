@@ -55,8 +55,6 @@ private:
     int8_t irqPin;
     StorageManager* storageManager;
 
-    bool receiving = false; // Flag to indicate if the sensor is in receive mode
-
     uint8_t nodeId = 1;           // Default node ID
     uint8_t destinationId = 0;    // Default destination (0 = broadcast)
     uint8_t packetCounter = 0;    // Packet counter
@@ -69,10 +67,6 @@ private:
 
     // Process incoming packet
     void processPacket(int packetSize);
-
-    // Static callback for received packets
-    static void onReceiveStatic(int packetSize);
-    static LoRaSystem* instance;
 };
 
 #endif // LORA_SYSTEM_H

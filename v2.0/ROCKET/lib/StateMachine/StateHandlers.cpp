@@ -264,6 +264,9 @@ void StateHandlers::handleGroundIdleState(
         lastLedTime = currentTime;
         digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
     }
+
+    //TODO: Change the state to READY if a launch command is received (LoRa cant get into receive, dont know why)
+    stateMachine.processEvent(RocketEvent::WAKE_UP_COMMAND);
 }
 
 void StateHandlers::handleReadyState(
@@ -274,6 +277,7 @@ void StateHandlers::handleReadyState(
         DiagnosticManager* diagnosticManager,
         PowerManager* powerManager
 ) {
+    Serial.println("Ready state handler called");
     // Update sensors at a higher rate now that we're armed
     unsigned long currentTime = millis();
     if (currentTime - lastSensorUpdateTime >= READY_SENSOR_RATE) {  // 10Hz updates when ready

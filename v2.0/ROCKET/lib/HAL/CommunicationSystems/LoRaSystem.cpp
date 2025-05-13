@@ -8,20 +8,20 @@
 
 static const size_t MAX_CHUNK_SIZE = 16;
 
-// Initialize static instance pointer
-LoRaSystem* LoRaSystem::instance = nullptr;
+//// Initialize static instance pointer
+//LoRaSystem* LoRaSystem::instance = nullptr;
 
 LoRaSystem::LoRaSystem(SPIClass& spi, int8_t csPin, int8_t resetPin, int8_t irqPin, StorageManager* storageManager)
         : spi(spi), csPin(csPin), resetPin(resetPin), irqPin(irqPin), storageManager(storageManager) {
-    instance = this;
+//    instance = this;
 }
 
 LoRaSystem::~LoRaSystem() {
     // Clean up LoRa
     LoRa.end();
-    if (instance == this) {
-        instance = nullptr;
-    }
+//    if (instance == this) {
+//        instance = nullptr;
+//    }
 }
 
 SensorStatus LoRaSystem::begin() {
@@ -53,7 +53,7 @@ SensorStatus LoRaSystem::begin() {
     LoRa.setTxPower(20, PA_OUTPUT_PA_BOOST_PIN); // Higher power
 
     // Set callback for received packets
-    LoRa.onReceive(onReceiveStatic);
+//    LoRa.onReceive(onReceiveStatic);
 
     // Start listening for packets
 //    LoRa.receive();
@@ -65,21 +65,11 @@ SensorStatus LoRaSystem::begin() {
     return status;
 }
 
-void LoRaSystem::onReceiveStatic(int packetSize) {
-
-    Serial.println("LoRa: Packet received!");
-    if (instance) {
-        instance->processPacket(packetSize);
-    }
-}
-
 SensorStatus LoRaSystem::update() {
     if (status == SensorStatus::NOT_INITIALIZED) {
         return status;
     }
 
-    // Nothing to do in update - LoRa interrupt will handle incoming packets
-    // Just update the last reading time
     lastReadingTime = millis();
     return status;
 }
@@ -106,11 +96,7 @@ bool LoRaSystem::sendMessage(const Message& message) {
         return false;
     }
 
-    RocketState currentState = storageManager->getCurrentState();
-
-    bool canProcessCommands = (currentState == RocketState::INIT ||
-                               currentState == RocketState::GROUND_IDLE ||
-                               currentState == RocketState::READY);
+    LoRa.idle();
 
     #ifdef ENABLE_LORA_DEBUG
     Serial.println("LoRa: Starting packet...");
@@ -118,158 +104,31 @@ bool LoRaSystem::sendMessage(const Message& message) {
 
     if (!LoRa.beginPacket()) {
         Serial.println("LoRa: Failed to start packet");
-
-        //We try putting it in idle mode and then starting again
-        LoRa.idle();
-        delay(10);
-        if (!LoRa.beginPacket()) {
-            Serial.println("LoRa: Failed to start packet after idle");
-            return false;
-        }else{
-            #ifdef ENABLE_LORA_DEBUG
-            Serial.println("LoRa: Packet started successfully after idle");
-            #endif
-            receiving = false;
-        }
-    }else{
-        #ifdef ENABLE_LORA_DEBUG
-        Serial.println("LoRa: Packet started successfully");
-        #endif
+        return false;
     }
 
     #ifdef ENABLE_LORA_DEBUG
-    Serial.println("LoRa: Writing header...");
+    Serial.println("LoRa: Packet started successfully");
     #endif
 
     LoRa.write(destinationId);
-
-    #ifdef ENABLE_LORA_DEBUG
-    Serial.println("LoRa: Writing node ID...");
-    #endif
-
     LoRa.write(nodeId);
-
-    #ifdef ENABLE_LORA_DEBUG
-    Serial.println("LoRa: Writing packet counter...");
-    #endif
-
     LoRa.write(packetCounter++);
-
-    #ifdef ENABLE_LORA_DEBUG
-    Serial.println("LoRa: Writing message type...");
-    #endif
-
     LoRa.write(static_cast<uint8_t>(message.type));
 
-    #ifdef ENABLE_LORA_DEBUG
-    Serial.println("LoRa: Writing message length...");
-    #endif
-
     if (message.data != nullptr && message.length > 0) {
-        #ifdef ENABLE_LORA_DEBUG
-        Serial.println("LoRa: Condition OK, entering data-write block");
-        Serial.print("LoRa: Writing %d bytes of data...\n");
-        Serial.println(message.length);
-        #endif
-
-        #ifdef ENABLE_LORA_DEBUG
-        Serial.println("LoRa: About to write payload in chunks...");
-        #endif
-
-        size_t bytesRemaining = message.length;
-        const uint8_t* bufferPtr = reinterpret_cast<const uint8_t*>(message.data);
-
-        while (bytesRemaining > 0) {
-            size_t chunkSize = (bytesRemaining > MAX_CHUNK_SIZE) ? MAX_CHUNK_SIZE : bytesRemaining;
-
-            #ifdef ENABLE_LORA_DEBUG
-            Serial.print("LoRa: Writing chunk of ");
-            Serial.print(chunkSize);
-            Serial.println(" bytes...");
-            #endif
-
-            LoRa.write(bufferPtr, chunkSize);
-
-            #ifdef ENABLE_LORA_DEBUG
-            Serial.println("LoRa: Chunk written");
-            #endif
-
-            bufferPtr     += chunkSize;
-            bytesRemaining -= chunkSize;
-
-            // Pequeña pausa para dar tiempo al módulo a procesar el chunk
-            delay(5);
-        }
-
-        #ifdef ENABLE_LORA_DEBUG
-        Serial.println("LoRa: Finished writing all chunks");
-        #endif
+        // Write the message data
+        LoRa.write(message.data, message.length);
     } else {
         Serial.println("LoRa: No data to send");
         return false;
     }
 
-    #ifdef ENABLE_LORA_DEBUG
-    Serial.println("LoRa: Ending packet...");
-    #endif
-
-//    LoRa.endPacket(true);
-
-    LoRa.endPacket(true);
-
-    #ifdef ENABLE_LORA_DEBUG
-    Serial.println("LoRa: Waiting for transmission to complete...");
-    #endif
-    while (LoRa.isTransmitting()) {
-        delay(10);
-    }
-
-    #ifdef ENABLE_LORA_DEBUG
-    Serial.println("LoRa: Transmission complete");
-    Serial.println("LoRa: Packet sent successfully");
-    #endif
+    LoRa.endPacket();
 
     if (storageManager) {
-        char logMsg[64];
-        snprintf(logMsg, sizeof(logMsg),
-                 "LoRa: Sent %d byte message to ID %d, type %d",
-                 message.length, destinationId, static_cast<uint8_t>(message.type));
-        storageManager->logMessage(LogLevel::DEBUG, Subsystem::COMMUNICATION, logMsg);
-
-        if (canProcessCommands) {
-            #ifdef ENABLE_LORA_DEBUG
-            Serial.println("LoRa: Changing to receive mode...");
-            #endif
-//            while (LoRa.isTransmitting()) {
-//                delay(10);
-//            }
-            LoRa.receive();
-            receiving = true;
-
-            #ifdef ENABLE_LORA_DEBUG
-            Serial.println("LoRa: Now in receive mode");
-            #endif
-        }
+        storageManager->logMessage(LogLevel::DEBUG, Subsystem::COMMUNICATION, "LoRa: Message sent");
     }
-
-    #ifdef ENABLE_LORA_DEBUG
-    Serial.print("LoRa: Packet counter: ");
-    Serial.println(packetCounter);
-    Serial.print("LoRa: Destination ID: ");
-    Serial.println(destinationId);
-    Serial.print("LoRa: Node ID: ");
-    Serial.println(nodeId);
-    Serial.print("LoRa: Message type: ");
-    Serial.println(static_cast<uint8_t>(message.type));
-    Serial.print("LoRa: Message length: ");
-    Serial.println(message.length);
-//    Serial.print("LoRa: Message data: ");
-//    for (size_t i = 0; i < message.length; ++i) {
-//        Serial.print(message.data[i], HEX);
-//        Serial.print(" ");
-//    }
-    Serial.println();
-    #endif
 
     return true;
 }
