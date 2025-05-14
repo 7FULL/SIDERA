@@ -223,6 +223,13 @@ void DataIntegrationManager::detectApogee() {
         // Reset descent counter if we're not consistently descending
         descentCount = 0;
     }
+
+    Serial.print("Current altitude: ");
+    Serial.print(flightData.altitude);
+    Serial.print(" meters, Max altitude: ");
+    Serial.print(maxAltitude);
+    Serial.print(" meters, Descent count: ");
+    Serial.println(descentCount);
 }
 
 void DataIntegrationManager::detectLanding() {
