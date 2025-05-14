@@ -216,54 +216,54 @@ void StateHandlers::handleGroundIdleState(
         }
     }
 
-    // Update sensors at a reduced rate to save power
-    unsigned long currentTime = millis();
-    if (currentTime - lastSensorUpdateTime >= GROUND_IDLE_SENSOR_RATE) {  // 1Hz updates in idle
-        lastSensorUpdateTime = currentTime;
-
-        if (dataManager){
-            // Update data integration system
-            dataManager->update();
-        }
-    }
-
-    // Periodically send telemetry
-    if (currentTime - lastTelemetryTime >= GROUND_IDLE_TELEMETRY_RATE) {  // 0.2Hz telemetry in idle
-        lastTelemetryTime = currentTime;
-
-        if (loraSystem) {
-            // Send telemetry data
-            sendTelemetryData(
-                    loraSystem,
-                    dataManager,
-                    powerManager,
-                    static_cast<uint8_t>(RocketState::GROUND_IDLE)
-            );
-        }else{
-            Serial.println("LoRa system not available, cannot send telemetry.");
-        }
-    }
-
-    switch (*subState) {
-        case GroundIdleSubState::SLEEP:
-            // In deep sleep mode, waiting for wake command
-            // This would be implemented with actual sleep mode in production
-            break;
-
-        case GroundIdleSubState::RECEIVING_COMMANDS:
-            // Actively checking for commands
-            break;
-
-        case GroundIdleSubState::LOW_POWER:
-            // Low power monitoring mode
-            break;
-    }
-
-    static unsigned long lastLedTime = 0;
-    if (currentTime - lastLedTime >= 250) { // Cambia el intervalo según el estado
-        lastLedTime = currentTime;
-        digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
-    }
+//    // Update sensors at a reduced rate to save power
+//    unsigned long currentTime = millis();
+//    if (currentTime - lastSensorUpdateTime >= GROUND_IDLE_SENSOR_RATE) {  // 1Hz updates in idle
+//        lastSensorUpdateTime = currentTime;
+//
+//        if (dataManager){
+//            // Update data integration system
+//            dataManager->update();
+//        }
+//    }
+//
+//    // Periodically send telemetry
+//    if (currentTime - lastTelemetryTime >= GROUND_IDLE_TELEMETRY_RATE) {  // 0.2Hz telemetry in idle
+//        lastTelemetryTime = currentTime;
+//
+//        if (loraSystem) {
+//            // Send telemetry data
+//            sendTelemetryData(
+//                    loraSystem,
+//                    dataManager,
+//                    powerManager,
+//                    static_cast<uint8_t>(RocketState::GROUND_IDLE)
+//            );
+//        }else{
+//            Serial.println("LoRa system not available, cannot send telemetry.");
+//        }
+//    }
+//
+//    switch (*subState) {
+//        case GroundIdleSubState::SLEEP:
+//            // In deep sleep mode, waiting for wake command
+//            // This would be implemented with actual sleep mode in production
+//            break;
+//
+//        case GroundIdleSubState::RECEIVING_COMMANDS:
+//            // Actively checking for commands
+//            break;
+//
+//        case GroundIdleSubState::LOW_POWER:
+//            // Low power monitoring mode
+//            break;
+//    }
+//
+//    static unsigned long lastLedTime = 0;
+//    if (currentTime - lastLedTime >= 250) { // Cambia el intervalo según el estado
+//        lastLedTime = currentTime;
+//        digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
+//    }
 
     //TODO: Change the state to READY if a launch command is received (LoRa cant get into receive, dont know why)
     stateMachine.processEvent(RocketEvent::WAKE_UP_COMMAND);
@@ -336,6 +336,9 @@ void StateHandlers::handleReadyState(
             stateMachine.processEvent(RocketEvent::ACCELERATION_DETECTED);
         }
     }
+
+    // Due to the update of the datamanager taking some time we need to update the current time here
+    currentTime = millis();
 
     // Periodically send telemetry
     if (currentTime - lastTelemetryTime >= READY_TELEMETRY_RATE) {  // 1Hz telemetry when ready
@@ -422,14 +425,26 @@ void StateHandlers::handlePoweredFlightState(
 
             // Then detect when it drops below threshold
             if (highAccelPhase && flightData.accelData.magnitude < BURNOUT_ACCEL_THRESHOLD) {
+                stateMachine.processEvent(RocketEvent::ENGINE_BURNOUT);
+
                 if (storageManager) {
                     storageManager->logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE, "Engine burnout detected");
                 }
+            }
+        }
 
-                stateMachine.processEvent(RocketEvent::ENGINE_BURNOUT);
+        // Timeout for powered flight as a safety measure
+        if (currentTime - flightStartTime >= POWERED_FLIGHT_TIMEOUT) {
+            stateMachine.processEvent(RocketEvent::ENGINE_BURNOUT);
+
+            if (storageManager) {
+                storageManager->logMessage(LogLevel::ERROR, Subsystem::STATE_MACHINE, "Flight timeout detected");
             }
         }
     }
+
+    // Due to the update of the datamanager taking some time we need to update the current time here
+    currentTime = millis();
 
     // Send telemetry less frequently
     if (currentTime - lastTelemetryTime >= FLIGHT_TELEMETRY_RATE) {  // 5Hz telemetry during flight
@@ -506,13 +521,16 @@ void StateHandlers::handleCoastingState(
 
         // Check for apogee
         if (detectApogee(dataManager)) {
+            stateMachine.processEvent(RocketEvent::APOGEE_DETECTED);
+
             if (storageManager) {
                 storageManager->logMessage(LogLevel::INFO, Subsystem::STATE_MACHINE, "Apogee detected!");
             }
-
-            stateMachine.processEvent(RocketEvent::APOGEE_DETECTED);
         }
     }
+
+    // Due to the update of the datamanager taking some time we need to update the current time here
+    currentTime = millis();
 
     // Send telemetry
     if (currentTime - lastTelemetryTime >= COAST_TELEMETRY_RATE) {  // 5Hz telemetry
@@ -629,6 +647,9 @@ void StateHandlers::handleParachuteDescentState(
         }
     }
 
+    // Due to the update of the datamanager taking some time we need to update the current time here
+    currentTime = millis();
+
     // Send telemetry
     if (currentTime - lastTelemetryTime >= DESCENT_TELEMETRY_RATE) {  // 2Hz telemetry during descent
         lastTelemetryTime = currentTime;
@@ -703,6 +724,9 @@ void StateHandlers::handleLandedState(
         }
     }
 
+    // Due to the update of the datamanager taking some time we need to update the current time here
+    currentTime = millis();
+
     // Send telemetry at reduced rate to save power but allow tracking
     if (currentTime - lastTelemetryTime >= LANDED_TELEMETRY_RATE) {  // 1Hz telemetry after landing
         lastTelemetryTime = currentTime;
@@ -770,6 +794,9 @@ void StateHandlers::handleErrorState(
             dataManager->update();
         }
     }
+
+    // Due to the update of the datamanager taking some time we need to update the current time here
+    currentTime = millis();
 
     // Send error telemetry more frequently
     if (currentTime - lastTelemetryTime >= ERROR_TELEMETRY_RATE) {  // 0.5Hz telemetry in error state

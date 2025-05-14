@@ -55,7 +55,7 @@ bool DataIntegrationManager::begin() {
 
     if (imuManager) {
         flightData.accelData = imuManager->getAccelerometerData();
-        flightData.verticalAccel = flightData.accelData.z; // Assuming Z is up
+        flightData.verticalAccel = flightData.accelData.magnitude; // Assuming Z is up TODO
         if (imuManager->hasGyroscope()) {
             flightData.gyroData = imuManager->getGyroscopeData();
         }

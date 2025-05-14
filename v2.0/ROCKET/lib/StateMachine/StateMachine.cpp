@@ -88,6 +88,8 @@ bool StateMachine::processEvent(RocketEvent event) {
 //        return true;  // Event was handled by the state handler
 //    }
 
+    Serial.printf("Processing event %d in state %d\n", static_cast<int>(event), static_cast<int>(currentState));
+
     //Log the event
     if (storageManager) {
         char message[50];
