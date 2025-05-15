@@ -1386,11 +1386,11 @@ document.addEventListener('DOMContentLoaded', () => {
             0x00: 'INITIALIZING',
             0x01: 'IDLE',
             0x02: 'READY',
-            0x03: 'POWERED_FLIGHT',
+            0x03: 'FLIGHT',
             0x04: 'COASTING',
             0x05: 'APOGEE',
             0x06: 'DESCENT',
-            0x07: 'PARACHUTE_DESCENT',
+            0x07: 'PARACHUTE',
             0x08: 'LANDED',
             0x09: 'ERROR'
         };

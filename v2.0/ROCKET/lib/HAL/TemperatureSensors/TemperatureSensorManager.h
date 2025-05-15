@@ -35,7 +35,6 @@ public:
 
 private:
     std::vector<TemperatureSensor*> sensors;
-    float fuseTemperatureData();
     bool initialized = false;
     float globalTemperatureOffset = 0.0f;
 };

@@ -69,11 +69,6 @@ float TemperatureSensorManager::getTemperature() {
         return 0.0f;
     }
 
-    // If sensor fusion is enabled and we have multiple operational sensors
-    if (USE_SENSOR_FUSION && getOperationalSensorCount() > 1) {
-        return fuseTemperatureData() + globalTemperatureOffset;
-    }
-
     // Otherwise, use the first operational sensor
     for (auto sensor : sensors) {
         if (sensor->isOperational()) {
@@ -97,19 +92,4 @@ int TemperatureSensorManager::getOperationalSensorCount() {
 
 void TemperatureSensorManager::setGlobalTemperatureOffset(float offset) {
     globalTemperatureOffset = offset;
-}
-
-float TemperatureSensorManager::fuseTemperatureData() {
-    float total = 0.0f;
-    int count = 0;
-
-    // Simple averaging fusion for now
-    for (auto sensor : sensors) {
-        if (sensor->isOperational()) {
-            total += sensor->getTemperature();
-            count++;
-        }
-    }
-
-    return (count > 0) ? (total / count) : 0.0f;
 }

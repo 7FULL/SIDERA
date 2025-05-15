@@ -24,29 +24,25 @@
 #define VERBOSE_LOGGING 1
 
 //=== FLIGHT PARAMETERS ===//
-#define LAUNCH_ACCELERATION_THRESHOLD 1.2f  // g-force needed to detect launch 1.5
+#define LAUNCH_ACCELERATION_THRESHOLD 2.5f  // g-force needed to detect launch 1.5
 #define APOGEE_DETECTION_THRESHOLD 1.0f     // m below peak to confirm apogee
-#define APOGEE_DETECTION_WINDOW 1          // samples to confirm apogee
+#define APOGEE_DETECTION_WINDOW 5          // samples to confirm apogee
 #define LANDED_ALTITUDE_THRESHOLD 10.0f     // meters from ground level
 #define LANDED_STABILITY_TIME 5000          // ms of stability to confirm landing
 #define BURNOUT_ACCEL_THRESHOLD 2.0f        // g threshold for burnout detection 2.0
 #define POWERED_FLIGHT_TIMEOUT 3000         // ms to timeout powered flight
+#define LAUNCH_HEIGHT_THRESHOLD 3.0f       // meters above ground to confirm launch
+#define APOGEE_METERS_THRESHOLD 3.0f        // meters below max altitude to confirm apogee
 
 //=== SENSOR PARAMETERS ===//
 // Update rates by state (ms)
 #define GROUND_IDLE_SENSOR_RATE 1000        // 1Hz in idle
-#define READY_SENSOR_RATE 100               // 10Hz when ready
+#define READY_SENSOR_RATE 50                // 10Hz when ready
 #define FLIGHT_SENSOR_RATE 10               // 100Hz during flight
 #define COAST_SENSOR_RATE 10                // 100Hz during coast
 #define DESCENT_SENSOR_RATE 20              // 50Hz during descent
 #define LANDED_SENSOR_RATE 500              // 2Hz after landing
 #define ERROR_SENSOR_RATE 1000              // 1Hz in error state
-
-// Sensor fusion settings
-#define USE_SENSOR_FUSION 0
-#define COMPLEMENTARY_FILTER_ALPHA 0.98f
-#define KALMAN_POSITION_NOISE 0.01f
-#define KALMAN_VELOCITY_NOISE 0.1f
 
 //=== COMMUNICATION PARAMETERS ===//
 // Telemetry rates by state (ms)

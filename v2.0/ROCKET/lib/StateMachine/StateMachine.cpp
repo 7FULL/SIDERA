@@ -100,8 +100,13 @@ bool StateMachine::processEvent(RocketEvent event) {
     // Otherwise, check the transition table
     for (const auto& transition : transitions) {
         if (transition.fromState == currentState && transition.event == event) {
+            Serial.printf("Transitioning from %d to %d on event %d\n",
+                   static_cast<int>(currentState), static_cast<int>(transition.toState), static_cast<int>(event));
+
             RocketState oldState = currentState;
             changeState(transition.toState);
+
+//            Serial.printf("State changed: %d -> %d\n", static_cast<int>(oldState), static_cast<int>(currentState));
 
             if (dataManager) {
                 dataManager->setCurrentState(currentState);
@@ -111,6 +116,11 @@ bool StateMachine::processEvent(RocketEvent event) {
             logStateChange(oldState, currentState);
 
 //            Serial.printf("State changed: %d -> %d\n", static_cast<int>(oldState), static_cast<int>(currentState));
+
+            //Flush the storage manager
+            if (storageManager) {
+                storageManager->flush();
+            }
 
             return true;
         }
@@ -122,6 +132,8 @@ bool StateMachine::processEvent(RocketEvent event) {
         snprintf(message, sizeof(message), "Unhandled event %d in state %d",
                  static_cast<int>(event), static_cast<int>(currentState));
         storageManager->logMessage(LogLevel::WARNING, Subsystem::STATE_MACHINE, message);
+
+        Serial.printf("Unhandled event %d in state %d\n", static_cast<int>(event), static_cast<int>(currentState));
     }
 
     return false;
@@ -173,7 +185,7 @@ void StateMachine::initializeTransitions() {
             {RocketState::COASTING, RocketEvent::APOGEE_DETECTED, RocketState::APOGEE},
 
             // APOGEE state transitions (immediately goes to DESCENT)
-            {RocketState::APOGEE, RocketEvent::BOOT_COMPLETED, RocketState::DESCENT},
+            {RocketState::APOGEE, RocketEvent::APOGEE_DETECTED, RocketState::DESCENT},
 
             // DESCENT state transitions
             {RocketState::DESCENT, RocketEvent::PARACHUTE_DEPLOYED, RocketState::PARACHUTE_DESCENT},
@@ -194,8 +206,8 @@ void StateMachine::initializeTransitions() {
 
             // Abort handling
             {RocketState::READY, RocketEvent::ABORT_COMMAND, RocketState::GROUND_IDLE},
-            {RocketState::POWERED_FLIGHT, RocketEvent::ABORT_COMMAND, RocketState::PARACHUTE_DESCENT},
-            {RocketState::COASTING, RocketEvent::ABORT_COMMAND, RocketState::PARACHUTE_DESCENT},
+//            {RocketState::POWERED_FLIGHT, RocketEvent::ABORT_COMMAND, RocketState::PARACHUTE_DESCENT},
+//            {RocketState::COASTING, RocketEvent::ABORT_COMMAND, RocketState::PARACHUTE_DESCENT},
     };
 
     // Initialize sub-state mappings
@@ -261,7 +273,8 @@ void StateMachine::changeState(RocketState newState) {
         return;  // No change needed
     }
 
-    Serial.printf("Changing state from %d to %d\n", static_cast<int>(currentState), static_cast<int>(newState));
+    Serial.println("Changing state from " + String(static_cast<int>(currentState)) +
+                   " to " + String(static_cast<int>(newState)));
 
     RocketState oldState = currentState;
     currentState = newState;
@@ -269,6 +282,8 @@ void StateMachine::changeState(RocketState newState) {
     // Reset state entry time
     lastStateChangeTime = millis();
     stateEntryTime = lastStateChangeTime;
+
+    Serial.printf("State entry time updated to %lu\n", stateEntryTime);
 
     // Update substate mapping
     updateSubState();

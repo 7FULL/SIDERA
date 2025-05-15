@@ -360,6 +360,9 @@ void StateHandlers::handleReadyState(
         lastLedTime = currentTime;
         digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
     }
+
+    //TODO: Change the state to POWERED_FLIGHT
+//    stateMachine.processEvent(RocketEvent::ACCELERATION_DETECTED);
 }
 
 void StateHandlers::handlePoweredFlightState(
@@ -369,6 +372,7 @@ void StateHandlers::handlePoweredFlightState(
         StorageManager* storageManager,
         PowerManager* powerManager
 ) {
+//    delay(5000);
     // Update sensors at full rate during flight
     unsigned long currentTime = millis();
     if (currentTime - lastSensorUpdateTime >= FLIGHT_SENSOR_RATE) {  // 100Hz during powered flight
@@ -466,6 +470,9 @@ void StateHandlers::handlePoweredFlightState(
         lastLedTime = currentTime;
         digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
     }
+
+    //TODO Change state to COASTING
+//    stateMachine.processEvent(RocketEvent::ENGINE_BURNOUT);
 }
 
 void StateHandlers::handleCoastingState(
@@ -491,7 +498,7 @@ void StateHandlers::handleCoastingState(
             FlightData flightData = dataManager->getFlightData();
 
             telemetry.timestamp = currentTime;
-            telemetry.state = static_cast<uint8_t>(RocketState::POWERED_FLIGHT);
+            telemetry.state = static_cast<uint8_t>(RocketState::COASTING);
             telemetry.altitude = flightData.altitude;
             telemetry.vertSpeed = flightData.verticalSpeed;
             telemetry.accelX = flightData.accelData.x;
@@ -909,10 +916,12 @@ bool StateHandlers::detectLaunch(DataIntegrationManager* dataManager) {
     if (!dataManager) return false;
 
     // Launch is detected when vertical acceleration exceeds threshold
-    // and vertical speed is positive
+    // or vertical speed is positive
+    // or we are 10m above ground
     FlightData flightData = dataManager->getFlightData();
-    return (flightData.verticalAccel > LAUNCH_ACCELERATION_THRESHOLD * 9.81f) &&
-           (flightData.verticalSpeed > 1.0f);
+    return (flightData.verticalAccel > LAUNCH_ACCELERATION_THRESHOLD * 9.81f) ||
+           (flightData.verticalSpeed > 1.0f) ||
+          (flightData.altitude > LAUNCH_HEIGHT_THRESHOLD);
 }
 
 bool StateHandlers::detectApogee(DataIntegrationManager* dataManager) {

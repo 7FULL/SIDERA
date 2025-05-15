@@ -108,7 +108,7 @@ void DataIntegrationManager::update() {
 
     if (imuManager) {
         flightData.accelData = imuManager->getAccelerometerData();
-        flightData.verticalAccel = flightData.accelData.z; // Assuming Z is up
+        flightData.verticalAccel = flightData.accelData.magnitude; // Assuming Z is up
         if (imuManager->hasGyroscope()) {
             flightData.gyroData = imuManager->getGyroscopeData();
         }
@@ -201,6 +201,8 @@ void DataIntegrationManager::calculateVerticalSpeed() {
 }
 
 void DataIntegrationManager::detectApogee() {
+//    Serial.println("Detecting apogee...");
+
     // Update max altitude
     if (flightData.altitude > maxAltitude) {
         maxAltitude = flightData.altitude;
@@ -214,22 +216,16 @@ void DataIntegrationManager::detectApogee() {
 
         if (descentCount >= APOGEE_DETECTION_WINDOW && !apogeeDetected) {
             apogeeDetected = true;
-
-            Serial.print("Apogee detected at altitude: ");
-            Serial.print(maxAltitude);
-            Serial.println(" meters");
         }
     } else {
         // Reset descent counter if we're not consistently descending
         descentCount = 0;
     }
 
-    Serial.print("Current altitude: ");
-    Serial.print(flightData.altitude);
-    Serial.print(" meters, Max altitude: ");
-    Serial.print(maxAltitude);
-    Serial.print(" meters, Descent count: ");
-    Serial.println(descentCount);
+    // If we are 3 meters below the max altitude, we assume we are descending(Backup)
+//    if (maxAltitude - flightData.altitude > APOGEE_METERS_THRESHOLD) {
+//        apogeeDetected = true;
+//    }
 }
 
 void DataIntegrationManager::detectLanding() {

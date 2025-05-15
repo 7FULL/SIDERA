@@ -445,7 +445,7 @@ void initializeAllSystems() {
 
     // Initialize and setup state machine
     Serial.println("Initializing state machine...");
-    stateMachine.begin(&baroManager, &imuManager, &gpsManager, loraSystem, &storageManager);
+    stateMachine.begin(&baroManager, &imuManager, &gpsManager, loraSystem, &storageManager, dataManager);
     StateHandlers::setupHandlers(stateMachine, dataManager, loraSystem, &storageManager, diagnosticManager, preflightSystem, powerManager);
     Serial.println("State machine initialized");
 
