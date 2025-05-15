@@ -161,18 +161,18 @@ void StateHandlers::handleInitState(
 
                         Serial.println("Pre-flight checks failed!");
 
-                        if (storageManager) {
-                            String report = preflightSystem->generatePreflightReport();
-
-                            Serial.println(report);
-                            // Log the report in chunks if necessary
-                            // (limited by log message size)
-                            int chunkSize = 60;
-                            for (int i = 0; i < report.length(); i += chunkSize) {
-                                String chunk = report.substring(i, min(i + chunkSize, report.length()));
-                                storageManager->logMessage(LogLevel::ERROR, Subsystem::SYSTEM, chunk.c_str());
-                            }
-                        }
+//                        if (storageManager) {
+//                            String report = preflightSystem->generatePreflightReport();
+//
+//                            Serial.println(report);
+//                            // Log the report in chunks if necessary
+//                            // (limited by log message size)
+//                            int chunkSize = 60;
+//                            for (int i = 0; i < report.length(); i += chunkSize) {
+//                                String chunk = report.substring(i, min(i + chunkSize, report.length()));
+//                                storageManager->logMessage(LogLevel::ERROR, Subsystem::SYSTEM, chunk.c_str());
+//                            }
+//                        }
                     }
                 } else {
                     Serial.println("Pre-flight system not available, skipping checks.");

@@ -201,48 +201,53 @@ void DataIntegrationManager::calculateVerticalSpeed() {
 }
 
 void DataIntegrationManager::detectApogee() {
-//    Serial.println("Detecting apogee...");
-
-    // Update max altitude
+    // Actualizar la altitud máxima
     if (flightData.altitude > maxAltitude) {
         maxAltitude = flightData.altitude;
-        descentCount = 0;
+        descentCount = 0; // Reiniciar contador de descenso
         return;
     }
 
-    // Check if we're significantly below max altitude for several consecutive readings
+    // Detectar apogeo basado en altitud descendente
     if (maxAltitude - flightData.altitude > APOGEE_DETECTION_THRESHOLD) {
         descentCount++;
-
         if (descentCount >= APOGEE_DETECTION_WINDOW && !apogeeDetected) {
             apogeeDetected = true;
         }
     } else {
-        // Reset descent counter if we're not consistently descending
         descentCount = 0;
     }
 
-    // If we are 3 meters below the max altitude, we assume we are descending(Backup)
-//    if (maxAltitude - flightData.altitude > APOGEE_METERS_THRESHOLD) {
-//        apogeeDetected = true;
-//    }
+    // Detectar apogeo basado en velocidad vertical negativa
+    if (flightData.verticalSpeed < APOGEE_SPEED_THRESHOLD && !apogeeDetected) {
+        apogeeDetected = true;
+    }
+
+    // Detectar apogeo basado en aceleración cercana a cero
+    if (abs(flightData.verticalAccel) < APOGEE_ACCELERATION_THRESHOLD && !apogeeDetected) {
+        apogeeDetected = true;
+    }
+
+    // Mensaje de depuración
+    if (apogeeDetected) {
+        Serial.print("Apogeo detectado a una altitud de: ");
+        Serial.println(maxAltitude);
+    }
 }
 
 void DataIntegrationManager::detectLanding() {
-    // First time initialization
-    if (landingAltitude == 0.0f) {
-        landingAltitude = flightData.altitude;
-        return;
-    }
+    static float previousAltitude = 0.0f;
+    static unsigned long stableStartTime = 0;
+    static bool stableAltitudeDetected = false;
 
-    // Check if the altitude is stable
-    if (abs(flightData.altitude - landingAltitude) < LANDED_ALTITUDE_THRESHOLD) {
+    // Check if the altitude is stable within a range
+    if (abs(flightData.altitude - previousAltitude) < LANDED_ALTITUDE_THRESHOLD) {
         if (!stableAltitudeDetected) {
             stableAltitudeDetected = true;
             stableStartTime = millis();
         }
 
-        // Check if we've been stable for long enough
+        // Check if the altitude has been stable for the required time
         if (millis() - stableStartTime >= LANDED_STABILITY_TIME && !landingDetected) {
             landingDetected = true;
 
@@ -251,8 +256,11 @@ void DataIntegrationManager::detectLanding() {
             Serial.println(" meters");
         }
     } else {
-        // Update landing altitude and reset stable detection
-        landingAltitude = flightData.altitude;
+        // Reset stability detection if altitude is not stable
         stableAltitudeDetected = false;
+        stableStartTime = 0;
     }
+
+    // Update the previous altitude
+    previousAltitude = flightData.altitude;
 }

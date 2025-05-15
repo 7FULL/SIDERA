@@ -90,7 +90,7 @@
             </div>
             <div class="status-item">
               <div class="status-label">Last Packet:</div>
-              <div id="last-packet-time" class="status-value">--:--:--</div>
+              <div id="last-packet-time" class="status-value">Never</div>
             </div>
           </div>
         </div>
@@ -150,7 +150,7 @@
 
     <!-- Command row - Command center and event console -->
     <div class="dashboard-row command-row">
-      <!-- Command Center Updated -->
+      <!-- Command Center -->
       <div class="panel command-panel">
         <div class="panel-header">
           <h2>Command Center</h2>
@@ -189,10 +189,6 @@
                 <i class="fas fa-exclamation-triangle"></i>
                 Abort
               </button>
-<!--              <button id="cmd-deploy-parachute" class="command-btn emergency">-->
-<!--                <i class="fas fa-parachute-box"></i>-->
-<!--                Deploy Parachute-->
-<!--              </button>-->
             </div>
           </div>
         </div>
@@ -217,48 +213,6 @@
         <div id="console-log" class="console-log"></div>
       </div>
     </div>
-
-    <!-- Bottom row - Telemetry graphs -->
-    <div class="dashboard-row bottom-row">
-      <div class="panel graph-panel">
-        <div class="panel-header">
-          <h2>Altitude</h2>
-          <div class="graph-controls">
-            <select id="graph-timespan">
-              <option value="60" selected>Last Minute</option>
-              <option value="300">Last 5 Minutes</option>
-              <option value="600">Last 10 Minutes</option>
-              <option value="1800">Last 30 Minutes</option>
-            </select>
-            <button id="pause-graphs" class="btn small">
-              <i class="fas fa-pause"></i>
-            </button>
-            <button id="clear-graphs" class="btn small">
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
-        </div>
-        <div class="panel-body">
-          <div class="graph-wrapper">
-            <canvas id="altitude-chart"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel graph-panel">
-        <div class="panel-header">
-          <h2>Speed & Acceleration</h2>
-          <div class="graph-controls second-graph">
-            <!-- Graph 2 controls will be synced with Graph 1 via JavaScript -->
-          </div>
-        </div>
-        <div class="panel-body">
-          <div class="graph-wrapper">
-            <canvas id="speed-accel-chart"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
   </main>
 </div>
 
@@ -275,8 +229,6 @@
 </div>
 
 <!-- Loading Script Libraries -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
 <!-- Leaflet JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>

@@ -1,5 +1,5 @@
 const SerialBridge = (function() {
-    // Variables privadas
+    // Private variables
     let port = null;
     let reader = null;
     let writer = null;
@@ -13,12 +13,12 @@ const SerialBridge = (function() {
         onError: () => {}
     };
 
-    // Configuración predeterminada
+    // Default configuration
     const defaultOptions = {
         baudRate: 115200,
     };
 
-    // Comandos del protocolo
+    // Protocol commands
     const COMMANDS = {
         PING: 0x01,
         GET_STATUS: 0x02,
@@ -30,38 +30,38 @@ const SerialBridge = (function() {
         FORCE_DEPLOY_PARACHUTE: 0x09
     };
 
-    // Verificar si Web Serial API está disponible
+    // Check if Web Serial API is available
     const isSupported = () => {
         return 'serial' in navigator;
     };
 
-    // Inicializar el bridge
+    // Initialize the bridge
     const init = (options = {}) => {
-        // Fusionar opciones con los valores predeterminados
+        // Merge options with default values
         const config = { ...defaultOptions, ...options };
 
-        // Guardar callbacks
+        // Save callbacks
         if (options.onPortsDiscovered) callbacks.onPortsDiscovered = options.onPortsDiscovered;
         if (options.onConnect) callbacks.onConnect = options.onConnect;
         if (options.onDisconnect) callbacks.onDisconnect = options.onDisconnect;
         if (options.onData) callbacks.onData = options.onData;
         if (options.onError) callbacks.onError = options.onError;
 
-        // Verificar soporte
+        // Check support
         if (!isSupported()) {
-            console.error("Web Serial API no está soportada en este navegador");
-            callbacks.onError("Web Serial API no soportada");
+            console.error("Web Serial API is not supported in this browser");
+            callbacks.onError("Web Serial API not supported");
             return false;
         }
 
-        // Escuchar conexión/desconexión de puertos
+        // Listen for port connection/disconnection
         navigator.serial.addEventListener('connect', (e) => {
-            console.log('Dispositivo conectado:', e);
+            console.log('Device connected:', e);
             listPorts();
         });
 
         navigator.serial.addEventListener('disconnect', (e) => {
-            console.log('Dispositivo desconectado:', e);
+            console.log('Device disconnected:', e);
             if (port && e.target === port) {
                 disconnect();
             }
@@ -71,18 +71,18 @@ const SerialBridge = (function() {
         return true;
     };
 
-    // Listar puertos disponibles
+    // List available ports
     const listPorts = async () => {
         if (!isSupported()) {
-            callbacks.onError("Web Serial API no soportada");
+            callbacks.onError("Web Serial API not supported");
             return;
         }
 
         try {
             const ports = await navigator.serial.getPorts();
             const portInfos = ports.map(port => {
-                // Intentar obtener información del puerto
-                let info = "Puerto desconocido";
+                // Try to get port information
+                let info = "Unknown port";
                 if (port.getInfo) {
                     const portInfo = port.getInfo();
                     if (portInfo.usbVendorId) {
@@ -92,43 +92,43 @@ const SerialBridge = (function() {
                 return info;
             });
 
-            callbacks.onPortsDiscovered(portInfos.length > 0 ? portInfos : ['No hay puertos disponibles']);
+            callbacks.onPortsDiscovered(portInfos.length > 0 ? portInfos : ['No ports available']);
         } catch (error) {
-            console.error('Error al listar puertos:', error);
-            callbacks.onError(`Error al listar puertos: ${error.message}`);
+            console.error('Error listing ports:', error);
+            callbacks.onError(`Error listing ports: ${error.message}`);
         }
     };
 
-    // Solicitar puerto
+    // Request port
     const requestPort = async () => {
         if (!isSupported()) {
-            callbacks.onError("Web Serial API no soportada");
+            callbacks.onError("Web Serial API not supported");
             return null;
         }
 
         try {
             return await navigator.serial.requestPort();
         } catch (error) {
-            console.error('Error al solicitar puerto:', error);
-            callbacks.onError(`Error al solicitar puerto: ${error.message}`);
+            console.error('Error requesting port:', error);
+            callbacks.onError(`Error requesting port: ${error.message}`);
             return null;
         }
     };
 
-    // Conectar a un puerto específico o solicitar uno
+    // Connect to a specific port or request one
     const connect = async (requestedPort) => {
         if (!isSupported()) {
-            callbacks.onError("Web Serial API no soportada");
+            callbacks.onError("Web Serial API not supported");
             return false;
         }
 
         try {
-            // Si no tenemos un puerto, solicitamos uno
+            // If we don't have a port, request one
             if (!requestedPort) {
                 port = await requestPort();
                 if (!port) return false;
             } else {
-                // Intentar encontrar el puerto solicitado en la lista de puertos
+                // Try to find the requested port in the port list
                 const ports = await navigator.serial.getPorts();
                 const matchedPort = ports.find(p => {
                     const info = p.getInfo ? p.getInfo() : {};
@@ -143,10 +143,10 @@ const SerialBridge = (function() {
                 }
             }
 
-            // Abrir puerto
+            // Open port
             await port.open({ baudRate: defaultOptions.baudRate });
 
-            // Configurar lector y escritor
+            // Set up reader and writer
             const textDecoder = new TextDecoderStream();
             const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
             reader = textDecoder.readable.getReader();
@@ -155,65 +155,65 @@ const SerialBridge = (function() {
             const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
             writer = textEncoder.writable.getWriter();
 
-            // Iniciar tarea de lectura
+            // Start reading task
             startReading();
 
-            // Notificar conexión exitosa
+            // Notify successful connection
             callbacks.onConnect();
             return true;
         } catch (error) {
-            console.error('Error al conectar:', error);
-            callbacks.onError(`Error al conectar: ${error.message}`);
+            console.error('Error connecting:', error);
+            callbacks.onError(`Error connecting: ${error.message}`);
             await disconnect();
             return false;
         }
     };
 
-    // Desconectar
+    // Disconnect
     const disconnect = async () => {
-        // Detener la lectura
+        // Stop reading
         if (readingTask) {
             readingTask.cancel();
             readingTask = null;
         }
 
-        // Cerrar escritor
+        // Close writer
         if (writer) {
             try {
                 await writer.close();
             } catch (error) {
-                console.error('Error al cerrar escritor:', error);
+                console.error('Error closing writer:', error);
             }
             writer = null;
         }
 
-        // Cerrar lector
+        // Close reader
         if (reader) {
             try {
                 await reader.cancel();
                 await reader.releaseLock();
             } catch (error) {
-                console.error('Error al cerrar lector:', error);
+                console.error('Error closing reader:', error);
             }
             reader = null;
         }
 
-        // Cerrar puerto
+        // Close port
         if (port) {
             try {
                 await port.close();
             } catch (error) {
-                console.error('Error al cerrar puerto:', error);
+                console.error('Error closing port:', error);
             }
             port = null;
         }
 
-        // Notificar desconexión
+        // Notify disconnection
         callbacks.onDisconnect();
         return true;
     };
 
-    // Iniciar tarea de lectura
+    // Start reading task
     const startReading = () => {
         if (!reader) return;
 
@@ -227,12 +227,12 @@ const SerialBridge = (function() {
                         break;
                     }
 
-                    // Añadir datos al buffer
+                    // Add data to buffer
                     buffer += value;
 
-                    // Procesar líneas completas
+                    // Process complete lines
                     const lines = buffer.split('\n');
-                    buffer = lines.pop(); // La última línea queda en el buffer si no está completa
+                    buffer = lines.pop(); // The last line stays in the buffer if not complete
 
                     for (const line of lines) {
                         const trimmedLine = line.trim();
@@ -242,24 +242,24 @@ const SerialBridge = (function() {
                     }
                 }
             } catch (error) {
-                console.error('Error al leer del puerto:', error);
-                callbacks.onError(`Error al leer del puerto: ${error.message}`);
+                console.error('Error reading from port:', error);
+                callbacks.onError(`Error reading from port: ${error.message}`);
                 disconnect();
             }
         })();
     };
 
-    // Procesar datos recibidos
+    // Process received data
     const processReceivedData = (data) => {
-        console.log("Datos recibidos:", data);
+        console.log("Data received:", data);
 
-        // Intentar parsear como JSON primero
+        // Try to parse as JSON first
         try {
-            //If it starts with __telemetry__ then parse it as JSON
+            // If it starts with __telemetry__ then parse it as JSON
             if (data.startsWith('__tl__')) {
                 data = data.substring('__tl__'.length);
             }else{
-                // Si no es JSON, continuar
+                // If it's not JSON, continue
                 return;
             }
 
@@ -269,16 +269,16 @@ const SerialBridge = (function() {
             callbacks.onData(data);
             return;
         } catch (e) {
-            // No es JSON, seguir procesando
+            // Not JSON, continue processing
         }
 
         return;
     };
 
-    // Enviar comando
+    // Send command
     const sendCommand = async (command) => {
         if (!writer || !port) {
-            callbacks.onError("No conectado");
+            callbacks.onError("Not connected");
             return false;
         }
 
@@ -286,7 +286,7 @@ const SerialBridge = (function() {
             let commandChar = '';
             lastCommandSent = command.command;
 
-            // Convertir comando a carácter correspondiente según el protocolo del PCB CONTROL PANEL
+            // Convert command to corresponding character according to PCB CONTROL PANEL protocol
             switch (command.command) {
                 case 'PING':
                     commandChar = 'p';
@@ -313,35 +313,35 @@ const SerialBridge = (function() {
                     commandChar = 'e';
                     break;
                 default:
-                    commandChar = 'h'; // Ayuda por defecto
+                    commandChar = 'h'; // Help by default
             }
 
-            // Enviar comando
-            console.log(`Enviando comando: ${command.command} (char: ${commandChar})`);
+            // Send command
+            console.log(`Sending command: ${command.command} (char: ${commandChar})`);
             await writer.write(commandChar);
 
-            // Para comandos que requieren confirmación, enviar 'y' después
+            // For commands that require confirmation, send 'y' after
             if (command.command === 'LAUNCH_COMMAND' ||
                 command.command === 'FORCE_DEPLOY_PARACHUTE' ||
                 command.command === 'ABORT_COMMAND') {
 
-                // Pequeña pausa para que el panel de control muestre el mensaje de confirmación
+                // Small pause so control panel shows confirmation message
                 await new Promise(resolve => setTimeout(resolve, 500));
 
-                // Enviar confirmación
-                console.log("Enviando confirmación 'y'");
+                // Send confirmation
+                console.log("Sending confirmation 'y'");
                 await writer.write('y');
             }
 
             return true;
         } catch (error) {
-            console.error('Error al enviar comando:', error);
-            callbacks.onError(`Error al enviar comando: ${error.message}`);
+            console.error('Error sending command:', error);
+            callbacks.onError(`Error sending command: ${error.message}`);
             return false;
         }
     };
 
-    // API pública
+    // Public API
     return {
         init,
         isSupported,

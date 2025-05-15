@@ -28,12 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
             roll: 0,
             yaw: 0,
             rssi: 0,
-            snr: 0
+            snr: 0,
+            receivedAt: 0
         },
         lastCommand: null,
         rocketTrajectory: [],
         telemetryLog: [],
-        graphsPaused: false,
         commandHistory: [],
         mapInitialized: false,
         homeLocation: null,
@@ -70,13 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
         yawValue: document.getElementById('yaw-value'),
         rocketModel: document.getElementById('rocket-model'),
 
-        // Graph elements
-        graphTimespan: document.getElementById('graph-timespan'),
-        pauseGraphs: document.getElementById('pause-graphs'),
-        clearGraphs: document.getElementById('clear-graphs'),
-        altitudeChart: document.getElementById('altitude-chart'),
-        speedAccelChart: document.getElementById('speed-accel-chart'),
-
         // GPS elements
         gpsLat: document.getElementById('gps-lat'),
         gpsLon: document.getElementById('gps-lon'),
@@ -88,14 +81,12 @@ document.addEventListener('DOMContentLoaded', () => {
         lastCommand: document.getElementById('last-command'),
         commandStatus: document.getElementById('command-status'),
         cmdPing: document.getElementById('cmd-ping'),
-        // cmdStatus: document.getElementById('cmd-status'),
         cmdDiagnostics: document.getElementById('cmd-diagnostics'),
         cmdCalibrate: document.getElementById('cmd-calibrate'),
         cmdWake: document.getElementById('cmd-wake'),
         cmdArm: document.getElementById('cmd-arm'),
         cmdLaunch: document.getElementById('cmd-launch'),
         cmdAbort: document.getElementById('cmd-abort'),
-        // cmdDeployParachute: document.getElementById('cmd-deploy-parachute'),
 
         // Console elements
         consoleLog: document.getElementById('console-log'),
@@ -109,12 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
         modalMessage: document.getElementById('modal-message'),
         modalCancel: document.getElementById('modal-cancel'),
         modalConfirm: document.getElementById('modal-confirm')
-    };
-
-    // Charts configuration
-    const charts = {
-        altitude: null,
-        speedAccel: null
     };
 
     // 3D Model
@@ -133,9 +118,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---- INITIALIZATION FUNCTIONS ----
 
     function init() {
-        // Initialize charts
-        initCharts();
-
         // Initialize 3D model
         initRocketModel();
 
@@ -158,184 +140,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Log initial message
         logToConsole('System initialized', 'info');
-    }
 
-    function initCharts() {
-        // Configure altitude chart
-        const altitudeCtx = elements.altitudeChart.getContext('2d');
-        charts.altitude = new Chart(altitudeCtx, {
-            type: 'line',
-            data: {
-                datasets: [{
-                    label: 'Altitude (m)',
-                    data: [],
-                    borderColor: '#00aaff',
-                    backgroundColor: 'rgba(0, 170, 255, 0.1)',
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    fill: true,
-                    tension: 0.3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        type: 'time',
-                        time: {
-                            unit: 'second',
-                            tooltipFormat: 'HH:mm:ss'
-                        },
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                        },
-                        ticks: {
-                            color: 'rgba(255, 255, 255, 0.6)'
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Altitude (m)',
-                            color: 'rgba(255, 255, 255, 0.6)'
-                        },
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                        },
-                        ticks: {
-                            color: 'rgba(255, 255, 255, 0.6)'
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        labels: {
-                            color: 'rgba(255, 255, 255, 0.7)'
-                        }
-                    }
-                },
-                animation: false
-            }
-        });
-
-        // Configure speed/acceleration chart
-        const speedAccelCtx = elements.speedAccelChart.getContext('2d');
-        charts.speedAccel = new Chart(speedAccelCtx, {
-            type: 'line',
-            data: {
-                datasets: [
-                    {
-                        label: 'Speed (m/s)',
-                        data: [],
-                        borderColor: '#4caf50',
-                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        yAxisID: 'y',
-                        tension: 0.3
-                    },
-                    {
-                        label: 'Acceleration (m/s²)',
-                        data: [],
-                        borderColor: '#ff9800',
-                        backgroundColor: 'rgba(255, 152, 0, 0.1)',
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        yAxisID: 'y1',
-                        tension: 0.3
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        type: 'time',
-                        time: {
-                            unit: 'second',
-                            tooltipFormat: 'HH:mm:ss'
-                        },
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                        },
-                        ticks: {
-                            color: 'rgba(255, 255, 255, 0.6)'
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Speed (m/s)',
-                            color: 'rgba(255, 255, 255, 0.6)'
-                        },
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                        },
-                        ticks: {
-                            color: 'rgba(255, 255, 255, 0.6)'
-                        }
-                    },
-                    y1: {
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: 'Acceleration (m/s²)',
-                            color: 'rgba(255, 255, 255, 0.6)'
-                        },
-                        grid: {
-                            drawOnChartArea: false
-                        },
-                        ticks: {
-                            color: 'rgba(255, 255, 255, 0.6)'
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        labels: {
-                            color: 'rgba(255, 255, 255, 0.7)'
-                        }
-                    }
-                },
-                animation: false
-            }
-        });
-
-        // Sync graph controls
-        const secondGraphControls = document.querySelector('.graph-controls.second-graph');
-        if (secondGraphControls) {
-            // Clone controls from first graph to second graph
-            secondGraphControls.innerHTML = document.querySelector('.graph-controls:not(.second-graph)').innerHTML;
-
-            // Remove the ID from the cloned elements to avoid duplicate IDs
-            const clonedSelect = secondGraphControls.querySelector('select');
-            const clonedPauseButton = secondGraphControls.querySelector('button:first-of-type');
-            const clonedClearButton = secondGraphControls.querySelector('button:last-of-type');
-
-            if (clonedSelect) {
-                clonedSelect.id = 'graph-timespan-2';
-                clonedSelect.addEventListener('change', function() {
-                    // Sync with main graph timespan
-                    elements.graphTimespan.value = this.value;
-                    updateGraphTimespan();
-                });
-            }
-
-            if (clonedPauseButton) {
-                clonedPauseButton.id = 'pause-graphs-2';
-                clonedPauseButton.addEventListener('click', toggleGraphPause);
-            }
-
-            if (clonedClearButton) {
-                clonedClearButton.id = 'clear-graphs-2';
-                clonedClearButton.addEventListener('click', clearGraphs);
-            }
-        }
+        // Start updating last packet time
+        setInterval(updateLastPacketTime, 1000);
     }
 
     function initRocketModel() {
@@ -505,27 +312,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- EVENT LISTENERS ----
 
-    // ---- EVENT LISTENERS ACTUALIZADOS ----
-
     function setupEventListeners() {
         // Connection button
         elements.connectButton.addEventListener('click', toggleConnection);
 
-        // Command buttons - Actualizados sin despertar y armar
+        // Command buttons
         elements.cmdPing.addEventListener('click', () => sendCommand('PING'));
-        // elements.cmdStatus.addEventListener('click', () => sendCommand('GET_STATUS'));
         elements.cmdDiagnostics.addEventListener('click', () => sendCommand('RUN_DIAGNOSTICS'));
         elements.cmdCalibrate.addEventListener('click', () => sendCommand('CALIBRATE_SENSORS'));
 
         // Critical commands with confirmation
-        elements.cmdLaunch.addEventListener('click', () => showConfirmation('INICIAR LANZAMIENTO', '¡ADVERTENCIA! Estás a punto de iniciar la secuencia de lanzamiento. ¿Estás COMPLETAMENTE seguro?', () => sendCommand('LAUNCH_COMMAND')));
-        elements.cmdAbort.addEventListener('click', () => showConfirmation('ABORTAR MISIÓN', '¡ADVERTENCIA! Estás a punto de abortar la misión. ¿Estás COMPLETAMENTE seguro?', () => sendCommand('ABORT_COMMAND')));
-        // elements.cmdDeployParachute.addEventListener('click', () => showConfirmation('DESPLIEGUE DE EMERGENCIA', '¡ADVERTENCIA! Estás a punto de desplegar el paracaídas manualmente. ¿Estás COMPLETAMENTE seguro?', () => sendCommand('FORCE_DEPLOY_PARACHUTE')));
-
-        // Graph controls
-        elements.graphTimespan.addEventListener('change', updateGraphTimespan);
-        elements.pauseGraphs.addEventListener('click', toggleGraphPause);
-        elements.clearGraphs.addEventListener('click', clearGraphs);
+        elements.cmdLaunch.addEventListener('click', () => showConfirmation('START LAUNCH', 'WARNING! You are about to start the launch sequence. Are you COMPLETELY sure?', () => sendCommand('LAUNCH_COMMAND')));
+        elements.cmdAbort.addEventListener('click', () => showConfirmation('ABORT MISSION', 'WARNING! You are about to abort the mission. Are you COMPLETELY sure?', () => sendCommand('ABORT_COMMAND')));
 
         // Console controls
         elements.logLevel.addEventListener('change', filterLogs);
@@ -627,9 +425,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateConnectionStatus('online');
         logToConsole('Connected to rocket', 'info');
         elements.connectButton.textContent = 'Disconnect';
-        //
-        // // Send an initial status request
-        // setTimeout(() => sendCommand('GET_STATUS'), 500);
     }
 
     function handleDisconnect() {
@@ -685,7 +480,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     processEventNotification(packet.data);
                     break;
                 default:
-                    // logToConsole(`Unknown packet: ${data} assuming it is telemetry`, 'warning');
+                    // If packet type is not recognized, assume it's telemetry
                     processTelemetryData(packet);
             }
         } catch (error) {
@@ -710,11 +505,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update UI
         updateTelemetryDisplay(telemetry);
         updateOrientationDisplay(telemetry);
-
-        // Add to charts if not paused
-        if (!appState.graphsPaused) {
-            addDataToCharts(telemetry);
-        }
 
         // Update GPS if available
         if (telemetry.gpsS > 0) {
@@ -798,18 +588,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---- UI UPDATES ----
 
     function updateTelemetryDisplay(telemetry) {
-        // console.log(telemetry);
-
         // Update numeric values
         elements.altitude.textContent = `${telemetry.alt.toFixed(1)} m`;
         elements.verticalSpeed.textContent = `${telemetry.vS.toFixed(1)} m/s`;
         elements.acceleration.textContent = `${telemetry.acc.toFixed(2)} m/s²`;
         elements.temperature.textContent = `${telemetry.tem.toFixed(1)} °C`;
         elements.pressure.textContent = `${telemetry.pres.toFixed(1)} hPa`;
-
-        // Update last packet time
-        const now = new Date();
-        elements.lastPacketTime.textContent = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
 
         // Update mission time
         updateMissionTime();
@@ -827,6 +611,26 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update signal if included
         if (telemetry.rssi !== undefined && telemetry.snr !== undefined) {
             updateSignalDisplay(telemetry.rssi, telemetry.snr);
+        }
+    }
+
+    function updateLastPacketTime() {
+        if (appState.lastTelemetry.receivedAt === 0) {
+            elements.lastPacketTime.textContent = 'Never';
+            return;
+        }
+
+        const now = Date.now();
+        const elapsed = now - appState.lastTelemetry.receivedAt;
+
+        if (elapsed < 1000) {
+            elements.lastPacketTime.textContent = 'Just now';
+        } else if (elapsed < 60000) {
+            elements.lastPacketTime.textContent = `${Math.floor(elapsed / 1000)}s ago`;
+        } else if (elapsed < 3600000) {
+            elements.lastPacketTime.textContent = `${Math.floor(elapsed / 60000)}m ago`;
+        } else {
+            elements.lastPacketTime.textContent = `${Math.floor(elapsed / 3600000)}h ago`;
         }
     }
 
@@ -862,7 +666,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateRocketStateDisplay(stateCode) {
-        //Parse the String to an integer
+        // Parse the String to an integer
         stateCode = parseInt(stateCode);
 
         const stateName = getRocketStateName(stateCode);
@@ -987,98 +791,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const seconds = Math.floor((elapsed % 60000) / 1000).toString().padStart(2, '0');
 
         elements.missionTime.textContent = `${hours}:${minutes}:${seconds}`;
-    }
-
-    // ---- CHART FUNCTIONS ----
-
-    function addDataToCharts(telemetry) {
-        const timestamp = telemetry.ts ? new Date(appState.missionStartTime + telemetry.ts) : new Date();
-
-        // Add data to altitude chart
-        if (charts.altitude) {
-            charts.altitude.data.datasets[0].data.push({
-                x: timestamp,
-                y: telemetry.alt
-            });
-
-            // Limit data points to avoid performance issues
-            if (charts.altitude.data.datasets[0].data.length > 1000) {
-                charts.altitude.data.datasets[0].data.shift();
-            }
-
-            charts.altitude.update();
-        }
-
-        // Add data to speed/acceleration chart
-        if (charts.speedAccel) {
-            // Add vertical speed
-            charts.speedAccel.data.datasets[0].data.push({
-                x: timestamp,
-                y: telemetry.vS
-            });
-
-            // Add acceleration
-            charts.speedAccel.data.datasets[1].data.push({
-                x: timestamp,
-                y: telemetry.acc
-            });
-
-            // Limit data points
-            if (charts.speedAccel.data.datasets[0].data.length > 1000) {
-                charts.speedAccel.data.datasets[0].data.shift();
-                charts.speedAccel.data.datasets[1].data.shift();
-            }
-
-            charts.speedAccel.update();
-        }
-    }
-
-    function updateGraphTimespan() {
-        const timespan = parseInt(elements.graphTimespan.value, 10) * 1000; // Convert to milliseconds
-        const now = Date.now();
-
-        // Update altitude chart
-        if (charts.altitude) {
-            charts.altitude.options.scales.x.min = new Date(now - timespan);
-            charts.altitude.options.scales.x.max = new Date(now);
-            charts.altitude.update();
-        }
-
-        // Update speed/acceleration chart
-        if (charts.speedAccel) {
-            charts.speedAccel.options.scales.x.min = new Date(now - timespan);
-            charts.speedAccel.options.scales.x.max = new Date(now);
-            charts.speedAccel.update();
-        }
-    }
-
-    function toggleGraphPause() {
-        appState.graphsPaused = !appState.graphsPaused;
-
-        // Update button icon
-        elements.pauseGraphs.innerHTML = appState.graphsPaused
-            ? '<i class="fas fa-play"></i>'
-            : '<i class="fas fa-pause"></i>';
-
-        // Log pause state
-        logToConsole(`Graphs ${appState.graphsPaused ? 'paused' : 'resumed'}`, 'info');
-    }
-
-    function clearGraphs() {
-        // Clear altitude chart
-        if (charts.altitude) {
-            charts.altitude.data.datasets[0].data = [];
-            charts.altitude.update();
-        }
-
-        // Clear speed/acceleration chart
-        if (charts.speedAccel) {
-            charts.speedAccel.data.datasets[0].data = [];
-            charts.speedAccel.data.datasets[1].data = [];
-            charts.speedAccel.update();
-        }
-
-        logToConsole('Graphs cleared', 'info');
     }
 
     // ---- COMMAND FUNCTIONS ----
@@ -1425,15 +1137,6 @@ document.addEventListener('DOMContentLoaded', () => {
             rocketModel.renderer.setSize(elements.rocketModel.clientWidth, elements.rocketModel.clientHeight);
         }
 
-        // Update charts
-        if (charts.altitude) {
-            charts.altitude.resize();
-        }
-
-        if (charts.speedAccel) {
-            charts.speedAccel.resize();
-        }
-
         if (appState.mapInitialized && rocketModel.map) {
             rocketModel.map.invalidateSize();
         }
@@ -1441,7 +1144,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function playAlertSound() {
         // Play an alert sound
-        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJermZKwe4lYFz1Zn8z///7//e2XOAAA//90FwAAAAAAAAAAAAAAIgj3XL3a//////////95HwMgAAAAAAAAAAAAsZGgnp6dgW1bALGql5OufIdYG0Bbn8r8/v/////+7Zg5AAD//3UYAGz/////ayYPlcv//6lZEQAAAAAAAAAAAP//y6EaAAAAAAAAAACxkaCfnp2BbVsAr6mUkrFoglkYQFmexfv+/////f/tl4E5AAD//3UYAG7/////ah4Om8n//6dXEQAAAAAAAAAAAP//y6CZAAAAAAAAAP//E/IBAAAAAAAAsZKgoJ6dgm9aAK6pj42ugIVaGkFZncL7/v/////+7le8QQAA//91GQBu/////2kaB53O//+tVBQAAAAAAAAAAAD//8uhmQAAAAAAAAAA//8T8gEAAAAAAABqDUuoqzFaY7S1noNqOB2kxJAA/v////7/7hHcTAAA//91GgBv/////2gXBJ/P//+uUhUAAAAAAAAAAAD//8uimQAAAAAAAAAA//8T8gEAAAAAAABmDD9jqyRKZbW2n4ZtOhuiwYwA/f////9b3m8NAP//dRsAb/////9nFQKgz///r1AWAAAAAAAAAAAAAP//zKKaAAAAAAAAAAD//xPyAQAAAAAAAGcKT1GqGTZouLehiGw3G6K9iAD9/////1ved3MI//91HABw/////2YTAaLP//+vThgAAAAAAAAAAAD//82imgAAAAAAAAAA//8T8gEAAAAAAABpDmhBqgYle7m4pIlqNhuiuYYA/f////9a3ndDB///dR0AcP////9lEQCj0P//sE0ZAAAAAAAAAAAAAP//zaOaAAAAAAAAAAD//xPyAQAAAAAAAGYOdTaq9wuIurmmiWUyG6G1gwD9/////1reekAG//91HgBy/////2QQAKbQ//+xSxsAAAAAAAAAAAD//82jmgAAAAAAAAAA//8T8gEAAAAAAABnEIMmp+f3kru7qIliLRqespEA/f////9Z3nx9BP//dR8AcP////9iDf2o0P//sUocAAAAAAAAAAAA//7OpJoAAAAAAAAAAP//E/IBAAAAAAAAaROQFafX5JS9vamJYCoboK6OAP3/////WN6AFAL//3YgAHP/////Ygz8qtD//7JIIAAAAAAAAAAAAAD//s6lmwAAAAAAAAAA//8T8gEAAAAAAABrFJwGpdPUmL2+q4lelBifqowA/f////9Y3oSSAP//diEAdP////9gCfqr0P//s0UiAAAAAAAAAAAA//7Pp5sAAAAAAAAAAP//E/IBAAAAAAAAbBenA6PPxpy+v62KW4sYnqaJAP3/////V96GFAD//3YiAHT/////YAj5rNH//7RDJQAAAAAAAAAAAAAA/v7QqJwAAAAAAAAAAP//E/IBAAAAAAAAaxmoAKLLuZ++wK6KWYIYnqKHAP3/////Vt6I2QD//3YjAHb/////Xgb3rtH//7VBJAAAAAAAAAAAAAD+/tGonAAAAAAAAAAA//8T8gEAAAAAAABsGqoAndCxo7/BsIpWfBidnoUA/f////9V3outdQD//3YkAHb/////Xgb0r9H//7Y/JgAAAAAAAAAAAP790qmdAAAAAAAAAAD//xPyAQAAAAAAAGsZrACb1Kmlv8KyilN3GJ2ahAD9/////1PejiDv//92JQB3/////10D9LHR//+2PScAAAAAAAAAAAD+/dOpnQAAAAAAAAAA//8T8gEAAAAAAABtGa0AmNinp7/EtYRDRm4tAAAAAAAAAADNhQDA//92JgB4/////1wC8rPR//+3OykAAAAAAAAAAAD+/dSqnQAAAAAAAAAA//8T8gEAAAAAAABuGa4GmUBtcGsAAAAAAAAAAAAAAAAAAAAAAAAA//92JwB5/////1wB8rTR//+3OisAAAAAAAAAAAD+/dWqngAAAAAAAAAA//8T8gEAAAAAAABwGa8P6ejo2AEAAAAAAAAAAAAAAAAAAAAAAAAAY5cAef////9bAO+20f//uDgtAAAAAAAAAAAA/vzWq54AAAAAAAAAAP//E/IBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==');
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJermZKwe4lYFz1Zn8z///7//e2XOAAA//90FwAAAAAAAAAAAAAAIgj3XL3a//////////95HwMgAAAAAAAAAAAAsZGgnp6dgW1bALGql5OufIdYG0Bbn8r8/v/////+7Zg5AAD//3UYAGz/////ayYPlcv//6lZEQAAAAAAAAAAAP//y6EaAAAAAAAAAACxkaCfnp2BbVsAr6mUkrFoglkYQFmexfv+/////f/tl4E5AAD//3UYAG7/////ah4Om8n//6dXEQAAAAAAAAAAAP//y6CZAAAAAAAAAP//E/IBAAAAAAAAsZKgoJ6dgm9aAK6pj42ugIVaGkFZncL7/v/////+7le8QQAA//91GQBu/////2kaB53O//+tVBQAAAAAAAAAAAD//8uhmQAAAAAAAAAA//8T8gEAAAAAAABqDUuoqzFaY7S1noNqOB2kxJAA/v////7/7hHcTAAA//91GgBv/////2gXBJ/P//+uUhUAAAAAAAAAAAD//8uimQAAAAAAAAAA//8T8gEAAAAAAABmDD9jqyRKZbW2n4ZtOhuiwYwA/f////9b3m8NAP//dRsAb/////9nFQKgz///r1AWAAAAAAAAAAAAAP//zKKaAAAAAAAAAAD//xPyAQAAAAAAAGcKT1GqGTZouLehiGw3G6K9iAD9/////1ved3MI//91HABw/////2YTAaLP//+vThgAAAAAAAAAAAD//82imgAAAAAAAAAA//8T8gEAAAAAAABpDmhBqgYle7m4pIlqNhuiuYYA/f////9a3ndDB///dR0AcP////9lEQCj0P//sE0ZAAAAAAAAAAAAAP//zaOaAAAAAAAAAAD//xPyAQAAAAAAAGYOdTaq9wuIurmmiWUyG6G1gwD9/////1reekAG//91HgBy/////2QQAKbQ//+xSxsAAAAAAAAAAAD//82jmgAAAAAAAAAA//8T8gEAAAAAAABnEIMmp+f3kru7qIliLRqespEA/f////9Z3nx9BP//dR8AcP////9iDf2o0P//sUocAAAAAAAAAAAA//7OpJoAAAAAAAAAAP//E/IBAAAAAAAAaROQFafX5JS9vamJYCoboK6OAP3/////WN6AFAL//3YgAHP/////Ygz8qtD//7JIIAAAAAAAAAAAAAD//s6lmwAAAAAAAAAA//8T8gEAAAAAAABrFJwGpdPUmL2+q4lelBifqowA/f////9Y3oSSAP//diEAdP////9gCfqr0P//s0UiAAAAAAAAAAAA//7Pp5sAAAAAAAAAAP//E/IBAAAAAAAAbBenA6PPxpy+v62KW4sYnqaJAP3/////V96GFAD//3YiAHT/////YAj5rNH//7RDJQAAAAAAAAAAAAAA/v7QqJwAAAAAAAAAAP//E/IBAAAAAAAAaxmoAKLLuZ++wK6KWYIYnqKHAP3/////Vt6I2QD//3YjAHb/////Xgb3rtH//7VBJAAAAAAAAAAAAAD+/tGonAAAAAAAAAAA//8T8gEAAAAAAABsGqoAndCxo7/BsIpWfBidnoUA/f////9V3outdQD//3YkAHb/////Xgb0r9H//7Y/JgAAAAAAAAAAAP790qmdAAAAAAAAAAD//xPyAQAAAAAAAGsZrACb1Kmlv8KyilN3GJ2ahAD9/////1PejiDv//92JQB3/////10D9LHR//+2PScAAAAAAAAAAAD+/dOpnQAAAAAAAAAA//8T8gEAAAAAAABtGa0AmNinp7/EtYRDRm4tAAAAAAAAAADNhQDA//92JgB4/////1wC8rPR//+3OykAAAAAAAAAAAD+/dSqnQAAAAAAAAAA//8T8gEAAAAAAABuGa4GmUBtcGsAAAAAAAAAAAAAAAAAAAAAAAAA//92JwB5/////1wB8rTR//+3OisAAAAAAAAAAAD+/dWqngAAAAAAAAAA//8T8gEAAAAAAABwGa8P6ejo2AEAAAAAAAAAAAAAAAAAAAAAAAAAY5cAef////9bAO+20f//uDgtAAAAAAAAAAAA/vzWq54AAAAAAAAAAP//E/IBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==');
         audio.play();
     }
 
@@ -1690,7 +1393,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update mission time periodically
     setInterval(updateMissionTime, 1000);
-
-    // Update graph timespan periodically
-    setInterval(updateGraphTimespan, 5000);
 });

@@ -25,14 +25,15 @@
 
 //=== FLIGHT PARAMETERS ===//
 #define LAUNCH_ACCELERATION_THRESHOLD 2.5f  // g-force needed to detect launch 1.5
-#define APOGEE_DETECTION_THRESHOLD 1.0f     // m below peak to confirm apogee
+#define APOGEE_DETECTION_THRESHOLD 2.0f     // m below peak to confirm apogee
 #define APOGEE_DETECTION_WINDOW 5          // samples to confirm apogee
 #define LANDED_ALTITUDE_THRESHOLD 10.0f     // meters from ground level
 #define LANDED_STABILITY_TIME 5000          // ms of stability to confirm landing
 #define BURNOUT_ACCEL_THRESHOLD 2.0f        // g threshold for burnout detection 2.0
 #define POWERED_FLIGHT_TIMEOUT 3000         // ms to timeout powered flight
 #define LAUNCH_HEIGHT_THRESHOLD 3.0f       // meters above ground to confirm launch
-#define APOGEE_METERS_THRESHOLD 3.0f        // meters below max altitude to confirm apogee
+#define APOGEE_SPEED_THRESHOLD -0.3f       // m/s to confirm apogee
+#define APOGEE_ACCELERATION_THRESHOLD 0.5f // g to confirm apogee
 
 //=== SENSOR PARAMETERS ===//
 // Update rates by state (ms)
