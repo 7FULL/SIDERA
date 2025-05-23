@@ -37,20 +37,20 @@ SensorStatus LoRaSystem::begin() {
         delay(150); // Give the module more time to stabilize
     }
 
-    if (!LoRa.begin(868E6)) { // Default to 915E6 for US region 868E6 for EU
+    if (!LoRa.begin(LORA_FREQUENCY)) { // Default to 915E6 for US region 868E6 for EU
         Serial.println("LoRa: ERROR: Initialization failed!");
         status = SensorStatus::NOT_INITIALIZED;
         return status;
     }
 
     // Set parameters for better performance
-    LoRa.setSpreadingFactor(9);      // Range 6-12, higher = more range but slower
-    LoRa.setSignalBandwidth(125E3);  // 125kHz bandwidth
-    LoRa.setCodingRate4(5);          // 4/5 coding rate
-    LoRa.setPreambleLength(8);       // Default preamble length
-    LoRa.setSyncWord(0x34);
+    LoRa.setSpreadingFactor(LORA_SPREADING_FACTOR);      // Range 6-12, higher = more range but slower
+    LoRa.setSignalBandwidth(LORA_BANDWIDTH);  // 125kHz bandwidth
+    LoRa.setCodingRate4(LORA_CODING_RATE);          // 4/5 coding rate
+    LoRa.setPreambleLength(LORA_PREAMBLE_LENGTH);       // Default preamble length
+    LoRa.setSyncWord(LORA_SYNC_WORD);
     LoRa.enableCrc();                // Enable CRC checking
-    LoRa.setTxPower(20, PA_OUTPUT_PA_BOOST_PIN); // Higher power
+    LoRa.setTxPower(LORA_TX_POWER, PA_OUTPUT_PA_BOOST_PIN); // Higher power
 
     // Set callback for received packets
 //    LoRa.onReceive(onReceiveStatic);

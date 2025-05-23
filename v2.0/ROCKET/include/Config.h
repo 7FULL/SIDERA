@@ -56,13 +56,13 @@
 #define ERROR_TELEMETRY_RATE 4000           // 0.5Hz in error state
 
 // LoRa parameters
-#define LORA_FREQUENCY 915E6                // Hz (US frequency)
+#define LORA_FREQUENCY 868E6                // Hz (EUROPE frequency)
 #define LORA_BANDWIDTH 125E3                // 125 kHz bandwidth
-#define LORA_SPREADING_FACTOR 7             // SF7
+#define LORA_SPREADING_FACTOR 9             // SF9
 #define LORA_CODING_RATE 5                  // 4/5 coding rate
-#define LORA_TX_POWER 17                    // dBm (5-20)
-#define LORA_RETRY_MAX 5                    // Max transmission retries
-#define LORA_RETRY_INTERVAL 1000            // ms between retries
+#define LORA_TX_POWER 20                    // dBm (5-20)
+#define LORA_PREAMBLE_LENGTH 8              // Default preamble length
+#define LORA_SYNC_WORD 0x34                 // Sync word for LoRa
 
 //=== STORAGE PARAMETERS ===//
 #define LOG_FILE_PREFIX "FLIGHT_"
