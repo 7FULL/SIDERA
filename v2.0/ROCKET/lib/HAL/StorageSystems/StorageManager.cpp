@@ -76,6 +76,7 @@ bool StorageManager::storeTelemetry(const StoredTelemetry& telemetry) {
     // Store in operational secondary storage systems
     for (auto storage : secondaryStorage) {
         if (storage->isOperational()) {
+//            Serial.println("Storing telemetry in secondary storage");
             storage->storeTelemetry(telemetry);
         }
     }

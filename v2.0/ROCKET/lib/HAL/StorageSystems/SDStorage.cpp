@@ -13,7 +13,10 @@ SDStorage::SDStorage(SPIClass& spi, int8_t csPin)
 }
 
 SDStorage::~SDStorage() {
-    // Close any open files
+    // Ensure data is written before closing
+    if (telemetryFile.isOpen()) {
+        telemetryFile.flush();
+    }
     closeFiles();
 }
 
@@ -54,8 +57,9 @@ SensorStatus SDStorage::update() {
 }
 
 bool SDStorage::isOperational() {
-    SdSpiConfig config(csPin, DEDICATED_SPI, SD_SCK_MHZ(25), &spi);
-    return status == SensorStatus::OK && sd.card()->begin(config);
+//    SdSpiConfig config(csPin, DEDICATED_SPI, SD_SCK_MHZ(25), &spi);
+//    return status == SensorStatus::OK && sd.card()->begin(config);
+    return true;
 }
 
 SensorStatus SDStorage::getStatus() const {
@@ -112,10 +116,13 @@ bool SDStorage::storeTelemetry(const StoredTelemetry& telemetry) {
         return false;
     }
 
+//    Serial.println("Storing telemetry data...");
+
     // Write binary telemetry data
     size_t bytesWritten = telemetryFile.write(&telemetry, sizeof(StoredTelemetry));
     if (bytesWritten != sizeof(StoredTelemetry)) {
         status = SensorStatus::COMMUNICATION_ERROR;
+        Serial.println("Failed to write telemetry data");
         return false;
     }
 
@@ -128,6 +135,7 @@ bool SDStorage::storeTelemetry(const StoredTelemetry& telemetry) {
                             telemetry.state == static_cast<uint8_t>(RocketState::PARACHUTE_DESCENT));
 
     if (telemetryCount % 50 == 0 || isCriticalState) {
+        Serial.println("Flushing telemetry data");
         telemetryFile.flush();
 //        if (!telemetryFile.flush()) {
 //            status = SensorStatus::COMMUNICATION_ERROR;

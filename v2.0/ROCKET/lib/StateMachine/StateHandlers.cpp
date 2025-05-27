@@ -70,6 +70,41 @@ void StateHandlers::setupHandlers(
     lastTelemetryTime = millis();
 }
 
+StoredTelemetry StateHandlers::createScaledTelemetry(const FlightData& flightData, RocketState currentState) {
+    StoredTelemetry telemetry{};
+
+    telemetry.timestamp = millis();
+    telemetry.state = static_cast<uint8_t>(currentState);
+
+    // Scale values according to StoredTelemetry structure
+    telemetry.altitude = static_cast<int32_t>(flightData.altitude * 1000.0f);         // m to mm
+    telemetry.vertSpeed = static_cast<int16_t>(flightData.verticalSpeed * 100.0f);   // m/s to cm/s
+    telemetry.accelX = static_cast<int16_t>(flightData.accelData.x * 100.0f);        // g to 0.01g
+    telemetry.accelY = static_cast<int16_t>(flightData.accelData.y * 100.0f);
+    telemetry.accelZ = static_cast<int16_t>(flightData.accelData.z * 100.0f);
+    telemetry.gyroX = static_cast<int16_t>(flightData.gyroData.x * 10.0f);           // deg/s to 0.1 deg/s
+    telemetry.gyroY = static_cast<int16_t>(flightData.gyroData.y * 10.0f);
+    telemetry.gyroZ = static_cast<int16_t>(flightData.gyroData.z * 10.0f);
+    telemetry.temperature = static_cast<int16_t>(flightData.temperature * 10.0f);    // C to 0.1C
+    telemetry.pressure = static_cast<uint16_t>(flightData.pressure * 10.0f);         // hPa to 0.1 hPa
+    telemetry.batteryMv = static_cast<uint16_t>(flightData.batteryVoltage * 1000.0f); // V to mV
+    telemetry.gpsLat = static_cast<int32_t>(flightData.gpsData.latitude * 10000000.0f);  // deg to 10^-7 deg
+    telemetry.gpsLon = static_cast<int32_t>(flightData.gpsData.longitude * 10000000.0f);
+    telemetry.gpsAlt = static_cast<uint16_t>(flightData.gpsData.altitude);           // Already in meters
+    telemetry.gpsSats = flightData.gpsSatellites;
+
+    // Set flags
+    telemetry.flags = 0;
+    if (flightData.apogeeDetected) {
+        telemetry.flags |= 0x01;  // FLAG_APOGEE_DETECTED
+    }
+    if (flightData.landingDetected) {
+        telemetry.flags |= 0x02;  // FLAG_LANDED
+    }
+
+    return telemetry;
+}
+
 void StateHandlers::handleInitState(
         StateMachine& stateMachine,
         DataIntegrationManager* dataManager,
@@ -290,34 +325,8 @@ void StateHandlers::handleReadyState(
         // Log sensor data
         if (storageManager && dataManager) {
             // Create and store telemetry entry
-            StoredTelemetry telemetry{};
             FlightData flightData = dataManager->getFlightData();
-
-            telemetry.timestamp = currentTime;
-            telemetry.state = static_cast<uint8_t>(RocketState::POWERED_FLIGHT);
-            telemetry.altitude = flightData.altitude;
-            telemetry.vertSpeed = flightData.verticalSpeed;
-            telemetry.accelX = flightData.accelData.x;
-            telemetry.accelY = flightData.accelData.y;
-            telemetry.accelZ = flightData.accelData.z;
-            telemetry.gyroX = flightData.gyroData.x;
-            telemetry.gyroY = flightData.gyroData.y;
-            telemetry.gyroZ = flightData.gyroData.z;
-            telemetry.temperature = flightData.temperature;
-            telemetry.pressure = flightData.pressure;
-            telemetry.batteryMv = flightData.batteryVoltage;
-            telemetry.gpsLat = flightData.gpsData.latitude;
-            telemetry.gpsLon = flightData.gpsData.longitude;
-            telemetry.gpsAlt = flightData.gpsData.altitude;
-            telemetry.gpsSats = flightData.gpsSatellites;
-            telemetry.flags = 0;
-            // Set flags based on flight data
-            if (flightData.apogeeDetected) {
-                telemetry.flags |= TelemetryPacket::FLAG_APOGEE_DETECTED;
-            }
-            if (flightData.landingDetected) {
-                telemetry.flags |= TelemetryPacket::FLAG_LANDED;
-            }
+            StoredTelemetry telemetry = createScaledTelemetry(flightData, RocketState::READY);
 
             storageManager->storeTelemetry(telemetry);
         }
@@ -385,34 +394,8 @@ void StateHandlers::handlePoweredFlightState(
         // Log sensor data
         if (storageManager && dataManager) {
             // Create and store telemetry entry
-            StoredTelemetry telemetry{};
             FlightData flightData = dataManager->getFlightData();
-
-            telemetry.timestamp = currentTime;
-            telemetry.state = static_cast<uint8_t>(RocketState::POWERED_FLIGHT);
-            telemetry.altitude = flightData.altitude;
-            telemetry.vertSpeed = flightData.verticalSpeed;
-            telemetry.accelX = flightData.accelData.x;
-            telemetry.accelY = flightData.accelData.y;
-            telemetry.accelZ = flightData.accelData.z;
-            telemetry.gyroX = flightData.gyroData.x;
-            telemetry.gyroY = flightData.gyroData.y;
-            telemetry.gyroZ = flightData.gyroData.z;
-            telemetry.temperature = flightData.temperature;
-            telemetry.pressure = flightData.pressure;
-            telemetry.batteryMv = flightData.batteryVoltage;
-            telemetry.gpsLat = flightData.gpsData.latitude;
-            telemetry.gpsLon = flightData.gpsData.longitude;
-            telemetry.gpsAlt = flightData.gpsData.altitude;
-            telemetry.gpsSats = flightData.gpsSatellites;
-            telemetry.flags = 0;
-            // Set flags based on flight data
-            if (flightData.apogeeDetected) {
-                telemetry.flags |= TelemetryPacket::FLAG_APOGEE_DETECTED;
-            }
-            if (flightData.landingDetected) {
-                telemetry.flags |= TelemetryPacket::FLAG_LANDED;
-            }
+            StoredTelemetry telemetry = createScaledTelemetry(flightData, RocketState::POWERED_FLIGHT);
 
             storageManager->storeTelemetry(telemetry);
         }
@@ -494,34 +477,8 @@ void StateHandlers::handleCoastingState(
         // Log sensor data
         if (storageManager && dataManager) {
             // Create and store telemetry entry
-            StoredTelemetry telemetry{};
             FlightData flightData = dataManager->getFlightData();
-
-            telemetry.timestamp = currentTime;
-            telemetry.state = static_cast<uint8_t>(RocketState::COASTING);
-            telemetry.altitude = flightData.altitude;
-            telemetry.vertSpeed = flightData.verticalSpeed;
-            telemetry.accelX = flightData.accelData.x;
-            telemetry.accelY = flightData.accelData.y;
-            telemetry.accelZ = flightData.accelData.z;
-            telemetry.gyroX = flightData.gyroData.x;
-            telemetry.gyroY = flightData.gyroData.y;
-            telemetry.gyroZ = flightData.gyroData.z;
-            telemetry.temperature = flightData.temperature;
-            telemetry.pressure = flightData.pressure;
-            telemetry.batteryMv = flightData.batteryVoltage;
-            telemetry.gpsLat = flightData.gpsData.latitude;
-            telemetry.gpsLon = flightData.gpsData.longitude;
-            telemetry.gpsAlt = flightData.gpsData.altitude;
-            telemetry.gpsSats = flightData.gpsSatellites;
-            telemetry.flags = 0;
-            // Set flags based on flight data
-            if (flightData.apogeeDetected) {
-                telemetry.flags |= TelemetryPacket::FLAG_APOGEE_DETECTED;
-            }
-            if (flightData.landingDetected) {
-                telemetry.flags |= TelemetryPacket::FLAG_LANDED;
-            }
+            StoredTelemetry telemetry = createScaledTelemetry(flightData, RocketState::COASTING);
 
             storageManager->storeTelemetry(telemetry);
         }
@@ -612,34 +569,8 @@ void StateHandlers::handleParachuteDescentState(
         // Log sensor data
         if (storageManager && dataManager) {
             // Create and store telemetry entry
-            StoredTelemetry telemetry{};
             FlightData flightData = dataManager->getFlightData();
-
-            telemetry.timestamp = currentTime;
-            telemetry.state = static_cast<uint8_t>(RocketState::POWERED_FLIGHT);
-            telemetry.altitude = flightData.altitude;
-            telemetry.vertSpeed = flightData.verticalSpeed;
-            telemetry.accelX = flightData.accelData.x;
-            telemetry.accelY = flightData.accelData.y;
-            telemetry.accelZ = flightData.accelData.z;
-            telemetry.gyroX = flightData.gyroData.x;
-            telemetry.gyroY = flightData.gyroData.y;
-            telemetry.gyroZ = flightData.gyroData.z;
-            telemetry.temperature = flightData.temperature;
-            telemetry.pressure = flightData.pressure;
-            telemetry.batteryMv = flightData.batteryVoltage;
-            telemetry.gpsLat = flightData.gpsData.latitude;
-            telemetry.gpsLon = flightData.gpsData.longitude;
-            telemetry.gpsAlt = flightData.gpsData.altitude;
-            telemetry.gpsSats = flightData.gpsSatellites;
-            telemetry.flags = 0;
-            // Set flags based on flight data
-            if (flightData.apogeeDetected) {
-                telemetry.flags |= TelemetryPacket::FLAG_APOGEE_DETECTED;
-            }
-            if (flightData.landingDetected) {
-                telemetry.flags |= TelemetryPacket::FLAG_LANDED;
-            }
+            StoredTelemetry telemetry = createScaledTelemetry(flightData, RocketState::PARACHUTE_DESCENT);
 
             storageManager->storeTelemetry(telemetry);
         }
@@ -698,34 +629,8 @@ void StateHandlers::handleLandedState(
         // Log sensor data
         if (storageManager && dataManager) {
             // Create and store telemetry entry
-            StoredTelemetry telemetry{};
             FlightData flightData = dataManager->getFlightData();
-
-            telemetry.timestamp = currentTime;
-            telemetry.state = static_cast<uint8_t>(RocketState::POWERED_FLIGHT);
-            telemetry.altitude = flightData.altitude;
-            telemetry.vertSpeed = flightData.verticalSpeed;
-            telemetry.accelX = flightData.accelData.x;
-            telemetry.accelY = flightData.accelData.y;
-            telemetry.accelZ = flightData.accelData.z;
-            telemetry.gyroX = flightData.gyroData.x;
-            telemetry.gyroY = flightData.gyroData.y;
-            telemetry.gyroZ = flightData.gyroData.z;
-            telemetry.temperature = flightData.temperature;
-            telemetry.pressure = flightData.pressure;
-            telemetry.batteryMv = flightData.batteryVoltage;
-            telemetry.gpsLat = flightData.gpsData.latitude;
-            telemetry.gpsLon = flightData.gpsData.longitude;
-            telemetry.gpsAlt = flightData.gpsData.altitude;
-            telemetry.gpsSats = flightData.gpsSatellites;
-            telemetry.flags = 0;
-            // Set flags based on flight data
-            if (flightData.apogeeDetected) {
-                telemetry.flags |= TelemetryPacket::FLAG_APOGEE_DETECTED;
-            }
-            if (flightData.landingDetected) {
-                telemetry.flags |= TelemetryPacket::FLAG_LANDED;
-            }
+            StoredTelemetry telemetry = createScaledTelemetry(flightData, RocketState::LANDED);
 
             storageManager->storeTelemetry(telemetry);
         }

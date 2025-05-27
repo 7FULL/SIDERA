@@ -133,6 +133,9 @@ public:
     static unsigned long lastSensorUpdateTime;
     static unsigned long lastTelemetryTime;
     static unsigned long flightStartTime;
+
+private:
+    static StoredTelemetry createScaledTelemetry(const FlightData& flightData, RocketState currentState);
 };
 
 #endif // STATE_HANDLERS_H

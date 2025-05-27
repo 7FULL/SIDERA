@@ -22,17 +22,32 @@ void DiagnosticManager::addTest(DiagnosticTest* test) {
 
 std::vector<TestResult> DiagnosticManager::runAllTests() {
     lastResults.clear();
-//    return lastResults;
+
+    // For debug only
+    Serial.println("Cleared lastResults vector");
 
     if (storageManager) {
         storageManager->logMessage(LogLevel::INFO, Subsystem::SYSTEM,
                                    "Starting diagnostic tests");
+        Serial.println("Logged start of diagnostic tests");
     }
 
     for (auto test : tests) {
+        Serial.print("Running test: ");
+        Serial.println(test->getName().c_str());
+
         TestResult result = test->runTest();
         lastResults.push_back(result);
+
+        Serial.print("Test result for ");
+        Serial.print(test->getName().c_str());
+        Serial.print(": ");
+        Serial.println(result.passed ? "PASS" : "FAIL");
+
         logTestResult(result);
+        Serial.println("Logged test result");
+
+        delay(1000);  // Small delay to avoid flooding the serial output
     }
 
     if (storageManager) {
@@ -45,8 +60,15 @@ std::vector<TestResult> DiagnosticManager::runAllTests() {
         snprintf(message, sizeof(message), "Diagnostics complete: %d/%d tests passed",
                  passCount, (int)lastResults.size());
         storageManager->logMessage(LogLevel::INFO, Subsystem::SYSTEM, message);
+
+        Serial.print("Diagnostics complete: ");
+        Serial.print(passCount);
+        Serial.print("/");
+        Serial.print((int)lastResults.size());
+        Serial.println(" tests passed");
     }
 
+    Serial.println("Returning lastResults vector");
     return lastResults;
 }
 
@@ -236,22 +258,31 @@ void DiagnosticManager::setVerboseLogging(bool verbose) {
 }
 
 void DiagnosticManager::logTestResult(const TestResult& result) {
+    Serial.println("Entering logTestResult");
+
     if (!storageManager) {
+        Serial.println("StorageManager is null, exiting logTestResult");
         return;
     }
 
     // Always log failures
     if (!result.passed) {
+        Serial.println("Logging test failure");
         char message[64];
         snprintf(message, sizeof(message), "TEST FAILED: %s - %s",
                  result.testName.c_str(), result.errorMessage.c_str());
         storageManager->logMessage(LogLevel::ERROR, Subsystem::SYSTEM, message);
+        Serial.println("Test failure logged");
     }
         // Log passes only if verbose
     else if (verboseLogging) {
+        Serial.println("Verbose logging enabled, logging test pass");
         char message[64];
         snprintf(message, sizeof(message), "Test passed: %s",
                  result.testName.c_str());
         storageManager->logMessage(LogLevel::DEBUG, Subsystem::SYSTEM, message);
+        Serial.println("Test pass logged");
     }
+
+    Serial.println("Exiting logTestResult");
 }

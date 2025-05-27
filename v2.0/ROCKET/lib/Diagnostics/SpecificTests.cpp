@@ -170,6 +170,7 @@ TestResult GPSSensorTest::runTest() {
     // Check if we have a position fix
     // This might fail indoors, so it's not necessarily a critical error
     if (!manager->hasPositionFix()) {
+        Serial.println("No GPS position fix available");
         return createResult(false, "No GPS position fix", 3003);
     }
 
@@ -178,6 +179,8 @@ TestResult GPSSensorTest::runTest() {
 
     // Check satellite count (at least 4 for a 3D fix)
     if (gpsData.satellites < 4) {
+        Serial.println("Insufficient satellites for GPS fix");
+        Serial.printf("Satellites: %d (need at least 4)\n", gpsData.satellites);
         char errorMsg[64];
         snprintf(errorMsg, sizeof(errorMsg), "Insufficient satellites: %d (need ≥4)",
                  gpsData.satellites);
@@ -186,6 +189,8 @@ TestResult GPSSensorTest::runTest() {
 
     // Verify coordinates are valid
     if (gpsData.latitude == 0.0f && gpsData.longitude == 0.0f) {
+        Serial.println("Invalid GPS coordinates");
+        Serial.printf("Latitude: %.6f, Longitude: %.6f\n", gpsData.latitude, gpsData.longitude);
         return createResult(false, "Invalid GPS coordinates", 3005);
     }
 

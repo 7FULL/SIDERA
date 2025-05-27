@@ -126,9 +126,9 @@ bool LoRaSystem::sendMessage(const Message& message) {
 
     LoRa.endPacket();
 
-    if (storageManager) {
-        storageManager->logMessage(LogLevel::DEBUG, Subsystem::COMMUNICATION, "LoRa: Message sent");
-    }
+//    if (storageManager) {
+//        storageManager->logMessage(LogLevel::DEBUG, Subsystem::COMMUNICATION, "LoRa: Message sent");
+//    }
 
     return true;
 }
