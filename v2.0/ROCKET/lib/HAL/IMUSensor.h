@@ -1,9 +1,3 @@
-/**
- * IMU Sensor Interface
- *
- * Base class for Inertial Measurement Unit sensors
- */
-
 #ifndef IMU_SENSOR_H
 #define IMU_SENSOR_H
 
@@ -45,4 +39,4 @@ public:
     virtual float getAccelerometerRange() const = 0;
 };
 
-#endif // IMU_SENSOR_H
+#endif

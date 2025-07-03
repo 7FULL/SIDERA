@@ -1,9 +1,3 @@
-/**
- * Diagnostic Manager
- *
- * Manages diagnostic tests and reporting
- */
-
 #ifndef DIAGNOSTIC_MANAGER_H
 #define DIAGNOSTIC_MANAGER_H
 
@@ -59,4 +53,4 @@ private:
     void logTestResult(const TestResult& result);
 };
 
-#endif // DIAGNOSTIC_MANAGER_H
+#endif

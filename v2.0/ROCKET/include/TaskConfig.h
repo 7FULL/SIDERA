@@ -1,9 +1,3 @@
-/**
- * Rocket Control System - FreeRTOS Task Configuration
- *
- * This file defines task priorities, stack sizes, and other FreeRTOS configurations.
- */
-
 #ifndef TASK_CONFIG_H
 #define TASK_CONFIG_H
 
@@ -25,4 +19,4 @@
 #define LOGGING_STACK_SIZE      1536
 #define GPS_STACK_SIZE          1536
 
-#endif // TASK_CONFIG_H
+#endif

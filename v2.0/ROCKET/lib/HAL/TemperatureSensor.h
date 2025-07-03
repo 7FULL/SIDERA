@@ -1,9 +1,3 @@
-/**
- * Temperature Sensor Interface
- *
- * Base class for all temperature sensors
- */
-
 #ifndef TEMPERATURE_SENSOR_H
 #define TEMPERATURE_SENSOR_H
 
@@ -26,4 +20,4 @@ protected:
     float temperatureOffset = 0.0f;
 };
 
-#endif // TEMPERATURE_SENSOR_H
+#endif

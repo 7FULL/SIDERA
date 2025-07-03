@@ -1,9 +1,3 @@
-/**
- * State Handlers - Implementation
- *
- * Specific handler implementations for each rocket state
- */
-
 #ifndef STATE_HANDLERS_H
 #define STATE_HANDLERS_H
 
@@ -138,4 +132,4 @@ private:
     static StoredTelemetry createScaledTelemetry(const FlightData& flightData, RocketState currentState);
 };
 
-#endif // STATE_HANDLERS_H
+#endif

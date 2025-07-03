@@ -1,7 +1,5 @@
 #include "RocketProtocol.h"
 
-// Initialize static members
-// Initialize static members
 const uint8_t ProtocolPacket::PROTOCOL_VERSION = 0x01;
 const uint16_t ProtocolPacket::HEADER_MAGIC = 0xA55A;
 uint16_t RocketProtocol::sequenceCounter = 0;
@@ -41,7 +39,6 @@ std::vector<uint8_t> RocketProtocol::createCommandPacket(CommandCode code,
         }
     }
 
-    // Calculate CRC16 checksum of everything so far
     uint16_t crc = calculateCrc16(packetData.data(), packetData.size());
 
     // Add checksum (2 bytes)
@@ -67,7 +64,7 @@ std::vector<uint8_t> RocketProtocol::createResponsePacket(ResponseCode code,
     // Type (1 byte)
     packetData.push_back(static_cast<uint8_t>(code));
 
-    // Sequence number (2 bytes) - use provided sequence for responses
+    // Sequence number (2 bytes)
     packetData.push_back(sequenceNumber >> 8);       // High byte
     packetData.push_back(sequenceNumber & 0xFF);     // Low byte
 

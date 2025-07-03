@@ -1,9 +1,3 @@
-/**
- * Rocket Control System - State Definitions
- *
- * This file defines the states for the hierarchical state machine.
- */
-
 #ifndef STATES_H
 #define STATES_H
 
@@ -65,4 +59,4 @@ enum class RocketEvent {
     ABORT_COMMAND
 };
 
-#endif // STATES_H
+#endif

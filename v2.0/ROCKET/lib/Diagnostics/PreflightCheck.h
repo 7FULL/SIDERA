@@ -1,9 +1,3 @@
-/**
- * Pre-flight Check System
- *
- * Comprehensive verification system for pre-launch checks
- */
-
 #ifndef PREFLIGHT_CHECK_H
 #define PREFLIGHT_CHECK_H
 
@@ -85,4 +79,4 @@ private:
     void logStatus(PreflightStatus status, PreflightPhase phase);
 };
 
-#endif // PREFLIGHT_CHECK_H
+#endif

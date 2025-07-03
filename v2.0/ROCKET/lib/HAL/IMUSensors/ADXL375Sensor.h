@@ -1,7 +1,3 @@
-/**
- * ADXL375 High-G Accelerometer Implementation
- */
-
 #ifndef ADXL375_SENSOR_H
 #define ADXL375_SENSOR_H
 
@@ -49,4 +45,4 @@ private:
     float offsetZ = 0.0f;
 };
 
-#endif // ADXL375_SENSOR_H
+#endif

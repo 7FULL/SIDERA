@@ -1,9 +1,3 @@
-/**
- * Barometric Sensor Manager
- *
- * Manages multiple barometric sensors with failover capability
- */
-
 #ifndef BAROMETRIC_SENSOR_MANAGER_H
 #define BAROMETRIC_SENSOR_MANAGER_H
 
@@ -61,4 +55,4 @@ private:
     void updateActiveSensor();
 };
 
-#endif // BAROMETRIC_SENSOR_MANAGER_H
+#endif

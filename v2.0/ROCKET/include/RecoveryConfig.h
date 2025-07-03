@@ -1,4 +1,3 @@
-// RecoveryConfig.h - For recovery system parameters
 #ifndef RECOVERY_CONFIG_H
 #define RECOVERY_CONFIG_H
 
@@ -15,4 +14,4 @@
 #define LANDING_VELOCITY_THRESHOLD 0.5f  // m/s
 #define LANDING_STABILITY_TIME 5000      // ms
 
-#endif // RECOVERY_CONFIG_H
+#endif

@@ -1,9 +1,3 @@
-/**
- * Diagnostic Test Interface
- *
- * Base class for all diagnostic tests
- */
-
 #ifndef DIAGNOSTIC_TEST_H
 #define DIAGNOSTIC_TEST_H
 
@@ -62,4 +56,4 @@ protected:
     }
 };
 
-#endif // DIAGNOSTIC_TEST_H
+#endif

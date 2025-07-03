@@ -1,9 +1,3 @@
-/**
- * Storage System Interface
- *
- * Base class for all storage systems
- */
-
 #ifndef STORAGE_SYSTEM_H
 #define STORAGE_SYSTEM_H
 
@@ -95,4 +89,4 @@ public:
     virtual bool clearAllData() = 0;
 };
 
-#endif // STORAGE_SYSTEM_H
+#endif

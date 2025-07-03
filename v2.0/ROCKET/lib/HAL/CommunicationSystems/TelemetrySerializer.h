@@ -1,9 +1,3 @@
-/**
- * Telemetry Serializer
- *
- * Handles serialization and deserialization of telemetry data for transmission
- */
-
 #ifndef TELEMETRY_SERIALIZER_H
 #define TELEMETRY_SERIALIZER_H
 
@@ -76,4 +70,4 @@ private:
     float readFloat(const uint8_t* data, size_t& offset);
 };
 
-#endif // TELEMETRY_SERIALIZER_H
+#endif

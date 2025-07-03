@@ -1,9 +1,3 @@
-/**
- * IMU Sensor Manager
- *
- * Manages multiple IMU sensors with failover capability
- */
-
 #ifndef IMU_SENSOR_MANAGER_H
 #define IMU_SENSOR_MANAGER_H
 
@@ -72,4 +66,4 @@ private:
     void updateActiveSensors();
 };
 
-#endif // IMU_SENSOR_MANAGER_H
+#endif

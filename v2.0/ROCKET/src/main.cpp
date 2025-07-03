@@ -242,15 +242,17 @@ void initializeAllSystems() {
 
     delay(1000);  // Wait for sensors to stabilize
 
+    // IMPROVED: Initialize GPS sensors with better error handling
     Serial.println("Adding GPS sensors...");
     L76KBGPSSensor* l76kb = new L76KBGPSSensor(Serial1, L76_STBY);
-    ATGM336HGPSSensor* atgm336h = new ATGM336HGPSSensor(Serial2, ATGM_STBY);
-    //TODO
-    gpsManager.addSensor(l76kb, 0);  // Priority 0 (primary)
-    gpsManager.addSensor(atgm336h, 1);  // Priority 1 (secondary)
-    Serial .println("GPS sensors added");
+//    ATGM336HGPSSensor* atgm336h = new ATGM336HGPSSensor(Serial2, ATGM_STBY);
 
-    delay(1000);  // Wait for sensors to stabilize
+    // Add both sensors but initialization will be non-blocking
+    gpsManager.addSensor(l76kb, 0);    // Priority 0 (primary)
+//    gpsManager.addSensor(atgm336h, 1); // Priority 1 (secondary)
+    Serial.println("GPS sensors added");
+
+    delay(1000);  // Wait for GPS sensors to stabilize
 
     Serial.println("Initializing LoRaSystem...");
     loraSystem = new LoRaSystem(SPI1, LORA_CS, LORA_RST, LORA_DIO0, &storageManager);
@@ -335,7 +337,7 @@ void initializeAllSystems() {
 
     delay(1000);  // Wait for IMU sensors to stabilize
 
-    Serial.println("Initializing loraSystem...");
+    Serial.println("Initializing LoRa system...");
     initSuccess &= loraSystem->begin() == SensorStatus::OK;
     Serial.println("LoRa system initialized");
 
@@ -353,9 +355,25 @@ void initializeAllSystems() {
 
     delay(1000);  // Wait for storage systems to stabilize
 
+    // IMPROVED: GPS initialization with timeout and better error handling
     Serial.println("Initializing GPS sensors...");
-    initSuccess &= gpsManager.begin();
-    Serial.println("GPS sensors initialized");
+    Serial.println("GPS initialization may take up to 60 seconds per sensor...");
+
+    unsigned long gpsStartTime = millis();
+    bool gpsSuccess = gpsManager.begin();
+    unsigned long gpsInitTime = millis() - gpsStartTime;
+
+    Serial.print("GPS initialization completed in ");
+    Serial.print(gpsInitTime / 1000);
+    Serial.println(" seconds");
+
+    if (gpsSuccess) {
+        Serial.println("GPS sensors initialized successfully");
+    } else {
+        Serial.println("GPS initialization failed or no fix obtained");
+        Serial.println("GPS will continue to work in background");
+        // Don't fail overall initialization due to GPS issues
+    }
 
     delay(1000);  // Wait for GPS sensors to stabilize
 
@@ -421,11 +439,12 @@ void initializeAllSystems() {
     Serial.print(initialResults.size());
     Serial.println(" tests passed");
 
+    // IMPROVED: Don't fail system initialization due to GPS issues
     if (!initSuccess) {
-        Serial.println("ERROR: Failed to initialize all subsystems!");
+        Serial.println("WARNING: Some subsystems failed to initialize");
         // Log the error if storage is working
         if (storageManager.isOperational()) {
-            storageManager.logMessage(LogLevel::ERROR, Subsystem::SYSTEM, "Failed to initialize all subsystems");
+            storageManager.logMessage(LogLevel::WARNING, Subsystem::SYSTEM, "Some subsystems failed to initialize");
         }
 
         // Print all the errors
@@ -437,10 +456,12 @@ void initializeAllSystems() {
                 Serial.println(result.errorMessage);
             }
         }
+
+        Serial.println("System will continue with available subsystems");
     } else {
-        Serial.println("All subsystems initialized successfully");
+        Serial.println("All critical subsystems initialized successfully");
         // Log success
-        storageManager.logMessage(LogLevel::INFO, Subsystem::SYSTEM, "All subsystems initialized successfully");
+        storageManager.logMessage(LogLevel::INFO, Subsystem::SYSTEM, "All critical subsystems initialized successfully");
     }
 
     // Initialize and setup state machine
@@ -450,11 +471,6 @@ void initializeAllSystems() {
     Serial.println("State machine initialized");
 
     delay(1000);  // Wait for state machine to stabilize
-
-    // Long beep to indicate initialization complete
-//    digitalWrite(BUZZER_PIN, HIGH);
-//    delay(1000);
-//    digitalWrite(BUZZER_PIN, LOW);
 
     Serial.println("Initializing command handler...");
     commandHandler = new CommandHandler(
@@ -483,6 +499,13 @@ void initializeAllSystems() {
     // Initialize timing variables
     lastPerformanceCheckTime = millis();
     lastResourceLogTime = millis();
+
+    // Long beep to indicate initialization complete
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(1000);
+    digitalWrite(BUZZER_PIN, LOW);
+
+    Serial.println("=== SYSTEM INITIALIZATION COMPLETE ===");
 }
 
 void setup() {

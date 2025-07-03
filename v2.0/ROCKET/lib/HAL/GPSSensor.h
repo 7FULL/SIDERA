@@ -1,9 +1,3 @@
-/**
- * GPS Sensor Interface
- *
- * Base class for all GPS sensors
- */
-
 #ifndef GPS_SENSOR_H
 #define GPS_SENSOR_H
 
@@ -53,4 +47,4 @@ public:
     virtual bool reset() = 0;
 };
 
-#endif // GPS_SENSOR_H
+#endif

@@ -1,9 +1,3 @@
-/**
- * Specific Diagnostic Tests
- *
- * Implementation of specific tests for each subsystem
- */
-
 #ifndef SPECIFIC_TESTS_H
 #define SPECIFIC_TESTS_H
 
@@ -114,4 +108,4 @@ private:
     TemperatureSensorManager* manager;
 };
 
-#endif // SPECIFIC_TESTS_H
+#endif

@@ -37,7 +37,9 @@ document.addEventListener('DOMContentLoaded', () => {
         commandHistory: [],
         mapInitialized: false,
         homeLocation: null,
-        rocketPath: []
+        rocketPath: [],
+        maxAltitude: 0,
+        maxVelocity: 0
     };
 
     // DOM Elements
@@ -53,6 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
         rocketState: document.getElementById('rocket-state'),
         altitude: document.getElementById('altitude'),
         verticalSpeed: document.getElementById('vertical-speed'),
+        maxAltitude: document.getElementById('max-altitude'),
+        maxVelocity: document.getElementById('max-velocity'),
         acceleration: document.getElementById('acceleration'),
         temperature: document.getElementById('temperature'),
         pressure: document.getElementById('pressure'),
@@ -594,6 +598,18 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.acceleration.textContent = `${telemetry.acc.toFixed(2)} m/s²`;
         elements.temperature.textContent = `${telemetry.tem.toFixed(1)} °C`;
         elements.pressure.textContent = `${telemetry.pres.toFixed(1)} hPa`;
+
+        // Update maximum values
+        if (telemetry.alt > appState.maxAltitude) {
+            appState.maxAltitude = telemetry.alt;
+            elements.maxAltitude.textContent = `${appState.maxAltitude.toFixed(1)} m`;
+        }
+        
+        const currentSpeed = Math.abs(telemetry.vS);
+        if (currentSpeed > appState.maxVelocity) {
+            appState.maxVelocity = currentSpeed;
+            elements.maxVelocity.textContent = `${appState.maxVelocity.toFixed(1)} m/s`;
+        }
 
         // Update mission time
         updateMissionTime();

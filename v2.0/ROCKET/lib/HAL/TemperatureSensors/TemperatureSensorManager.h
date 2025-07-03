@@ -1,9 +1,3 @@
-/**
- * Temperature Sensor Manager
- *
- * Manages multiple temperature sensors and provides fusion capabilities
- */
-
 #ifndef TEMPERATURE_SENSOR_MANAGER_H
 #define TEMPERATURE_SENSOR_MANAGER_H
 
@@ -39,4 +33,4 @@ private:
     float globalTemperatureOffset = 0.0f;
 };
 
-#endif // TEMPERATURE_SENSOR_MANAGER_H
+#endif

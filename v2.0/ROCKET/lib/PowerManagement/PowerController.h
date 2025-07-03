@@ -1,9 +1,3 @@
-/**
- * Power Controller
- *
- * Implements power saving strategies based on battery state
- */
-
 #ifndef POWER_CONTROLLER_H
 #define POWER_CONTROLLER_H
 
@@ -85,4 +79,4 @@ private:
     void adjustGPSPower(PowerState state);
 };
 
-#endif // POWER_CONTROLLER_H
+#endif

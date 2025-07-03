@@ -1,7 +1,3 @@
-/**
- * Pre-flight Check System Implementation
- */
-
 #include "PreflightCheck.h"
 
 PreflightCheckSystem::PreflightCheckSystem(

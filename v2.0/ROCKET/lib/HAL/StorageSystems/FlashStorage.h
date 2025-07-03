@@ -1,9 +1,3 @@
-/**
- * Flash Storage Implementation
- *
- * Uses W25Q128 SPI Flash memory for storage
- */
-
 #ifndef FLASH_STORAGE_H
 #define FLASH_STORAGE_H
 
@@ -77,4 +71,4 @@ private:
     bool readFromFlash(uint32_t address, void* data, uint16_t length);
 };
 
-#endif // FLASH_STORAGE_H
+#endif

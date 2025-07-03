@@ -1,7 +1,3 @@
-/**
- * BMI088 IMU Sensor Implementation
- */
-
 #ifndef BMI088_SENSOR_H
 #define BMI088_SENSOR_H
 #include "PinDefinitions.h"
@@ -48,4 +44,4 @@ private:
     bool gyroInitialized = false;
 };
 
-#endif // BMI088_SENSOR_H
+#endif

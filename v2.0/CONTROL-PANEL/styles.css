@@ -214,7 +214,6 @@ main {
 .status-item {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
 }
 
 .status-label {
@@ -223,7 +222,7 @@ main {
 }
 
 .status-value {
-    font-size: 1.1rem;
+    font-size: medium;
     font-weight: 500;
 }
 
@@ -231,6 +230,13 @@ main {
     font-size: 1.3rem;
     font-weight: 600;
     color: var(--accent-primary);
+}
+
+.status-value.highlight-max {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--accent-warning);
+    text-shadow: 0 0 5px rgba(255, 193, 7, 0.3);
 }
 
 .mission-time {

@@ -26,4 +26,4 @@
 #define GROUND_STATION_ID 0x01
 #define ROCKET_ID 0x02
 
-#endif // SENSOR_CONFIG_H
+#endif

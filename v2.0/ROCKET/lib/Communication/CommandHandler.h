@@ -58,4 +58,4 @@ private:
     bool handleAbortCommand(const ProtocolPacket& packet);
 };
 
-#endif // COMMAND_HANDLER_H
+#endif

@@ -1,9 +1,3 @@
-/**
- * Sensor Interface - Base class for all sensors
- *
- * Defines the common interface that all sensors must implement.
- */
-
 #ifndef SENSOR_H
 #define SENSOR_H
 
@@ -49,4 +43,4 @@ protected:
     unsigned long lastReadingTime = 0;
 };
 
-#endif // SENSOR_H
+#endif

@@ -1,9 +1,3 @@
-/**
- * Storage Manager
- *
- * Manages multiple storage systems and provides a unified interface
- */
-
 #ifndef STORAGE_MANAGER_H
 #define STORAGE_MANAGER_H
 
@@ -73,4 +67,4 @@ private:
     );
 };
 
-#endif // STORAGE_MANAGER_H
+#endif

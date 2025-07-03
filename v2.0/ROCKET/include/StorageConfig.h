@@ -17,4 +17,4 @@
 // Log message format
 #define LOG_FORMAT_CSV 1  // 1 for CSV, 0 for binary
 
-#endif // STORAGE_CONFIG_H
+#endif

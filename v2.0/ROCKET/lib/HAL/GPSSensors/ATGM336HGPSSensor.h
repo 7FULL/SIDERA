@@ -1,7 +1,3 @@
-/**
- * ATGM336H GPS Sensor Implementation
- */
-
 #ifndef ATGM336H_GPS_SENSOR_H
 #define ATGM336H_GPS_SENSOR_H
 
@@ -50,4 +46,4 @@ private:
     String getHDOPDescription(float hdopValue) const;
 };
 
-#endif // ATGM336H_GPS_SENSOR_H
+#endif

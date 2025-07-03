@@ -129,8 +129,6 @@ void CommandHandler::update() {
 
 bool CommandHandler::sendResponse(ResponseCode code, const uint8_t* payload,
                                   uint16_t length, uint16_t sequenceNumber) {
-    // We're no longer sending explicit command responses
-    // Just log the command status internally instead
 
     if (storageManager) {
         char message[64];
@@ -204,7 +202,6 @@ bool CommandHandler::handleWakeUpCommand(const ProtocolPacket& packet) {
     Serial.print("DEBUG: Current state is: ");
     Serial.println(static_cast<int>(currentState));
 
-    // Only allow wake-up from GROUND_IDLE state
     if (currentState != RocketState::GROUND_IDLE) {
         Serial.println("DEBUG: Wake-up command rejected - not in GROUND_IDLE state");
         if (storageManager) {
@@ -267,9 +264,6 @@ bool CommandHandler::handleCalibrateSensorsCommand(const ProtocolPacket& packet)
         }
     }
 
-    // Implement sensor calibration here
-    // This would call appropriate calibration methods on your sensor systems
-
     if (storageManager) {
         storageManager->logMessage(LogLevel::INFO, Subsystem::COMMUNICATION,
                                    "Sensor calibration initiated via command");
@@ -286,7 +280,6 @@ bool CommandHandler::handleRunDiagnosticsCommand(const ProtocolPacket& packet) {
     // Run diagnostics
     std::vector<TestResult> results = diagnosticManager->runAllTests();
 
-    // Prepare response - first byte is test count, then each test result
     std::vector<uint8_t> payload;
     payload.push_back(results.size());
 

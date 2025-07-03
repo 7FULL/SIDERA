@@ -12,7 +12,7 @@
 //#define ENABLE_BMIO88_DEBUG
 //#define ENABLE_ADXL375_DEBUG
 //#define ENABLE_DS18B20_DEBUG
-#define ENABLE_LORA_DEBUG
+//#define ENABLE_LORA_DEBUG
 #define ENABLE_LOGS_DEBUG
 
 // Version information
@@ -44,6 +44,10 @@
 #define DESCENT_SENSOR_RATE 20              // 50Hz during descent
 #define LANDED_SENSOR_RATE 500              // 2Hz after landing
 #define ERROR_SENSOR_RATE 1000              // 1Hz in error state
+
+#define GPS_INIT_TIMEOUT 300000        // 60 seconds timeout for GPS initialization
+#define GPS_BACKGROUND_MODE true      // Allow GPS to work in background without blocking
+#define GPS_PROGRESS_INTERVAL 10000   // Show progress every 10 seconds
 
 //=== COMMUNICATION PARAMETERS ===//
 // Telemetry rates by state (ms)

@@ -1,7 +1,3 @@
-/**
- * MPL3115A2 Barometric Sensor Implementation
- */
-
 #ifndef MPL3115A2_SENSOR_H
 #define MPL3115A2_SENSOR_H
 
@@ -38,4 +34,4 @@ private:
     float altitude;
 };
 
-#endif // MPL3115A2_SENSOR_H
+#endif

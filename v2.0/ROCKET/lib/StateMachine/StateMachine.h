@@ -1,9 +1,3 @@
-/**
- * State Machine - Core Implementation
- *
- * Hierarchical state machine for controlling rocket behavior
- */
-
 #ifndef STATE_MACHINE_H
 #define STATE_MACHINE_H
 
@@ -126,4 +120,4 @@ bool StateMachine::isInSubState(T subState) const {
     return *static_cast<T*>(currentSubState) == subState;
 }
 
-#endif // STATE_MACHINE_H
+#endif

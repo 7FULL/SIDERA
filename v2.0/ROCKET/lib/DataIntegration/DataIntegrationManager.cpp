@@ -1,7 +1,3 @@
-/**
- * Data Integration Manager Implementation
- */
-
 #include "DataIntegrationManager.h"
 
 DataIntegrationManager::DataIntegrationManager(

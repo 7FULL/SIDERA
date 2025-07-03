@@ -1,9 +1,3 @@
-/**
- * CommunicationSystems System Interface
- *
- * Base class for all communication systems
- */
-
 #ifndef COMMUNICATION_SYSTEM_H
 #define COMMUNICATION_SYSTEM_H
 
@@ -65,4 +59,4 @@ public:
     virtual bool disableLowPowerMode() = 0;
 };
 
-#endif // COMMUNICATION_SYSTEM_H
+#endif

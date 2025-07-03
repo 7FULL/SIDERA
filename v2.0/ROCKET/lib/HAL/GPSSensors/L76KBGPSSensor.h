@@ -1,7 +1,3 @@
-/**
- * L76KB-A58 GPS Sensor Implementation
- */
-
 #ifndef L76KB_GPS_SENSOR_H
 #define L76KB_GPS_SENSOR_H
 
@@ -52,4 +48,4 @@ private:
     String getHDOPDescription(float hdopValue) const;
 };
 
-#endif // L76KB_GPS_SENSOR_H
+#endif

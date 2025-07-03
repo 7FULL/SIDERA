@@ -1,9 +1,3 @@
-/**
- * GPS Sensor Manager
- *
- * Manages multiple GPS sensors with automatic failover
- */
-
 #ifndef GPS_SENSOR_MANAGER_H
 #define GPS_SENSOR_MANAGER_H
 
@@ -63,4 +57,4 @@ private:
     GPSSensor* findBestSensor();
 };
 
-#endif // GPS_SENSOR_MANAGER_H
+#endif

@@ -1,7 +1,3 @@
-/**
- * DS18B20 Temperature Sensor Implementation
- */
-
 #ifndef DS18B20_SENSOR_H
 #define DS18B20_SENSOR_H
 
@@ -48,4 +44,4 @@ private:
     unsigned long conversionDelay = 750; // Default for 12-bit
 };
 
-#endif // DS18B20_SENSOR_H
+#endif

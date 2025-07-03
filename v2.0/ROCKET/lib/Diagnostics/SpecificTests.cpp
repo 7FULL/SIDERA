@@ -1,12 +1,4 @@
-/**
- * Specific Diagnostic Tests Implementation
- */
-
 #include "SpecificTests.h"
-
-//
-// Barometric Sensor Test
-//
 
 BarometricSensorTest::BarometricSensorTest(BarometricSensorManager* manager)
         : manager(manager) {

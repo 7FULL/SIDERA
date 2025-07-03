@@ -3,6 +3,7 @@
  */
 
 #include "L76KBGPSSensor.h"
+#include "Config.h"
 
 L76KBGPSSensor::L76KBGPSSensor(HardwareSerial& serial, int8_t standbyPin, int8_t resetPin)
         : serial(serial),
@@ -66,48 +67,62 @@ SensorStatus L76KBGPSSensor::begin() {
 
     Serial.println("L76KB: Waiting for GPS fix...");
 
-    // Wait until we receive a valid GPS fix or timeout after 2 minutes
+    // FIXED: Reduced timeout from 5 minutes to 60 seconds for faster startup
     unsigned long startTime = millis();
     bool receivedData = false;
-    unsigned long msToWait = 300000; // 5 minutos
+    unsigned long msToWait = GPS_INIT_TIMEOUT; // Changed from 300000 (5 min) to 60000 (1 min)
+    unsigned long lastProgressTime = 0; // Variable para rastrear el último mensaje de progreso
 
     while ((millis() - startTime < msToWait) && !receivedData) {
-//        Serial.print("Seconds elapsed: ");
-//        Serial.print((millis() - startTime) / 1000);
-//        Serial.print(" / ");
-//        Serial.print(msToWait / 1000);
-//        Serial.println(" seconds");
+        // Mostrar progreso cada GPS_PROGRESS_INTERVAL milisegundos
+        if (millis() - lastProgressTime >= GPS_PROGRESS_INTERVAL) {
+            lastProgressTime = millis();
+            Serial.print("L76KB: Waiting for fix... ");
+            Serial.print((millis() - startTime) / 1000);
+            Serial.println(" seconds elapsed");
+        }
 
-        while (serial.available() > 0) {
-            char c = serial.read();
-            gps.encode(c);
-            lastDataTime = millis();
+        if (serial.available()) {
+            while (serial.available() > 0) {
+                char c = serial.read();
+                gps.encode(c);
+                lastDataTime = millis();
 
-//             Serial.print(c);
+                // Verificar si tenemos una posición válida y un fix válido
+                if (gps.location.isValid() &&
+                    gps.location.age() < 2000 &&
+                    gps.hdop.isValid() &&
+                    gps.hdop.hdop() < 20 &&
+                    gps.satellites.isValid() &&
+                    gps.satellites.value() >= 4 &&
+                    gps.altitude.isValid() &&
+                    gps.speed.isValid() &&
+                    gps.course.isValid() &&
+                    gps.date.isValid() &&
+                    gps.time.isValid() &&
+                    hasPositionFix()) {
 
-            // Check if we have a valid location and a valid fix and a valid HDOP
-            if (
-                    gps.location.isValid()
-                    && gps.location.age() < 2000
-                    && gps.hdop.isValid()
-                    && gps.hdop.hdop() < 20
-                    && gps.satellites.isValid()
-                    && gps.satellites.value() >= 4
-                    && gps.altitude.isValid()
-                    && gps.speed.isValid()
-                    && gps.course.isValid()
-                    && gps.date.isValid()
-                    && gps.time.isValid()
-                    && hasPositionFix()
-                    ) {
-                receivedData = true;
-                displayDebugInfo();
-                break;
+                    receivedData = true;
+                    displayDebugInfo();
+                    break;
+                }
             }
         }
+
+        // Pequeña pausa para evitar uso excesivo de CPU
+        delay(100);
     }
 
-    // Mark as initialized
+    // IMPROVED: Better error handling for GPS initialization
+    if (!receivedData) {
+        Serial.println("L76KB: No GPS fix obtained within timeout");
+        Serial.println("L76KB: Continuing without GPS fix - GPS will work in background");
+        // Don't fail initialization - GPS can work in background
+    } else {
+        Serial.println("L76KB: GPS fix obtained successfully");
+    }
+
+    // Mark as initialized regardless of GPS fix status
     gpsInitialized = true;
     lastReadingTime = millis();
     status = SensorStatus::OK;

@@ -1,9 +1,3 @@
-/**
- * Resource Monitor
- *
- * Tracks system resources and performance metrics
- */
-
 #ifndef RESOURCE_MONITOR_H
 #define RESOURCE_MONITOR_H
 
@@ -72,4 +66,4 @@ private:
     void calculateCpuUsage();
 };
 
-#endif // RESOURCE_MONITOR_H
+#endif

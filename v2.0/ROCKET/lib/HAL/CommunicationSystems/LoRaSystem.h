@@ -1,9 +1,3 @@
-/**
- * LoRa Communication System Implementation
- *
- * Implementation for SX1276/77/78/79 LoRa modules
- */
-
 #ifndef LORA_SYSTEM_H
 #define LORA_SYSTEM_H
 
@@ -69,4 +63,4 @@ private:
     void processPacket(int packetSize);
 };
 
-#endif // LORA_SYSTEM_H
+#endif

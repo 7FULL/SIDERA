@@ -1,7 +1,3 @@
-/**
- * BMP388 Barometric Sensor Implementation
- */
-
 #ifndef BMP388_SENSOR_H
 #define BMP388_SENSOR_H
 
@@ -40,4 +36,4 @@ private:
     static constexpr float SEA_LEVEL_PRESSURE_HPA = 1013.25;
 };
 
-#endif // BMP388_SENSOR_H
+#endif

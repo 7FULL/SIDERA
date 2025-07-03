@@ -1,4 +1,3 @@
-// FusionConfig.h - For sensor fusion parameters
 #ifndef FUSION_CONFIG_H
 #define FUSION_CONFIG_H
 
@@ -17,4 +16,4 @@
 #define APOGEE_CONFIRMATION_SAMPLES 5
 #define APOGEE_MINIMUM_ALTITUDE 10.0f
 
-#endif // FUSION_CONFIG_H
+#endif

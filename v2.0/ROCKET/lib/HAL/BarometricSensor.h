@@ -1,9 +1,3 @@
-/**
- * Barometric Sensor Interface
- *
- * Base class for all barometric/pressure sensors
- */
-
 #ifndef BAROMETRIC_SENSOR_H
 #define BAROMETRIC_SENSOR_H
 
@@ -32,4 +26,4 @@ protected:
     float referenceAltitude = 0.0f;
 };
 
-#endif // BAROMETRIC_SENSOR_H
+#endif

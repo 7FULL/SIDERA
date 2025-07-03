@@ -1,9 +1,3 @@
-/**
- * Data Integration Manager
- *
- * Centralizes sensor data collection and provides detection algorithms
- */
-
 #ifndef DATA_INTEGRATION_MANAGER_H
 #define DATA_INTEGRATION_MANAGER_H
 
@@ -101,4 +95,4 @@ private:
     void calculateVerticalSpeed();
 };
 
-#endif // DATA_INTEGRATION_MANAGER_H
+#endif

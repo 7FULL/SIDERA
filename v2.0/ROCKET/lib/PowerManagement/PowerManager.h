@@ -1,9 +1,3 @@
-/**
- * Power Management System
- *
- * Monitors battery voltage and manages power modes
- */
-
 #ifndef POWER_MANAGER_H
 #define POWER_MANAGER_H
 
@@ -96,4 +90,4 @@ private:
     float voltageDividerRatio;    // For voltage divider if used
 };
 
-#endif // POWER_MANAGER_H
+#endif

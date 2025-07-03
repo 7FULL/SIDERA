@@ -1,9 +1,3 @@
-/**
- * Fault Handler
- *
- * Manages system recovery from faults and exceptions
- */
-
 #ifndef FAULT_HANDLER_H
 #define FAULT_HANDLER_H
 
@@ -106,4 +100,4 @@ private:
     void checkStateTransition(const FaultRecord& fault);
 };
 
-#endif // FAULT_HANDLER_H
+#endif

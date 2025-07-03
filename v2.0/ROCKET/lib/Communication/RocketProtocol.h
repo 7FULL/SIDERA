@@ -100,4 +100,4 @@ private:
     static uint16_t sequenceCounter;  // Tracks packet sequence numbers
 };
 
-#endif // ROCKET_PROTOCOL_H
+#endif

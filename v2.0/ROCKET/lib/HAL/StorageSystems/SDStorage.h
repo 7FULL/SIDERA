@@ -1,9 +1,3 @@
-/**
- * SD Card Storage Implementation
- *
- * Uses SdFat to access the SD card
- */
-
 #ifndef SD_STORAGE_H
 #define SD_STORAGE_H
 
@@ -65,4 +59,4 @@ private:
     void closeFiles();
 };
 
-#endif // SD_STORAGE_H
+#endif

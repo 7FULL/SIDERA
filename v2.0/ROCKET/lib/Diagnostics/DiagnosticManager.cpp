@@ -1,7 +1,3 @@
-/**
- * Diagnostic Manager Implementation
- */
-
 #include "DiagnosticManager.h"
 
 DiagnosticManager::DiagnosticManager(StorageManager* storageManager)

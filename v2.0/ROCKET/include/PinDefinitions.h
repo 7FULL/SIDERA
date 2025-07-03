@@ -1,9 +1,3 @@
-/**
- * Rocket Control System - RP2040 Pin Definitions
- *
- * This file defines all the GPIO pin assignments for the rocket hardware.
- */
-
 #ifndef PIN_DEFINITIONS_H
 #define PIN_DEFINITIONS_H
 
@@ -67,4 +61,4 @@
 // Battery voltage divider
 #define BATTERY_VOLTAGE_PIN 26
 
-#endif // PIN_DEFINITIONS_H
+#endif
