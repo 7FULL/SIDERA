@@ -12,67 +12,7 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d1ca9a27-336a-4e31-a514-cb52368ef075" name="Changes" comment="V2.0">
-      <change beforePath="$PROJECT_DIR$/.idea/CONTROL-PANEL.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/CONTROL-PANEL.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/rocket-dashboard.js" beforeDir="false" afterPath="$PROJECT_DIR$/rocket-dashboard.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/styles.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/include/Config.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/include/Config.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/include/FusionConfig.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/include/FusionConfig.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/include/PinDefinitions.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/include/PinDefinitions.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/include/RecoveryConfig.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/include/RecoveryConfig.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/include/SensorConfig.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/include/SensorConfig.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/include/States.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/include/States.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/include/StorageConfig.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/include/StorageConfig.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/include/TaskConfig.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/include/TaskConfig.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/Communication/CommandHandler.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/Communication/CommandHandler.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/Communication/CommandHandler.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/Communication/CommandHandler.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/Communication/RocketProtocol.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/Communication/RocketProtocol.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/Communication/RocketProtocol.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/Communication/RocketProtocol.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/DataIntegration/DataIntegrationManager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/DataIntegration/DataIntegrationManager.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/DataIntegration/DataIntegrationManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/DataIntegration/DataIntegrationManager.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/Diagnostics/DiagnosticManager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/Diagnostics/DiagnosticManager.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/Diagnostics/DiagnosticManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/Diagnostics/DiagnosticManager.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/Diagnostics/DiagnosticTest.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/Diagnostics/DiagnosticTest.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/Diagnostics/PreflightCheck.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/Diagnostics/PreflightCheck.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/Diagnostics/PreflightCheck.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/Diagnostics/PreflightCheck.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/Diagnostics/SpecificTests.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/Diagnostics/SpecificTests.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/Diagnostics/SpecificTests.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/Diagnostics/SpecificTests.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/BarometricSensor.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/BarometricSensor.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/BarometricSensors/BMP388Sensor.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/BarometricSensors/BMP388Sensor.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/BarometricSensors/BarometricSensorManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/BarometricSensors/BarometricSensorManager.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/BarometricSensors/MPL3115A2Sensor.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/BarometricSensors/MPL3115A2Sensor.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/CommunicationSystem.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/CommunicationSystem.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/CommunicationSystems/LoRaSystem.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/CommunicationSystems/LoRaSystem.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/CommunicationSystems/TelemetrySerializer.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/CommunicationSystems/TelemetrySerializer.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/GPSSensor.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/GPSSensor.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/GPSSensors/ATGM336HGPSSensor.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/GPSSensors/ATGM336HGPSSensor.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/GPSSensors/ATGM336HGPSSensor.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/GPSSensors/ATGM336HGPSSensor.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/GPSSensors/GPSSensorManager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/GPSSensors/GPSSensorManager.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/GPSSensors/GPSSensorManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/GPSSensors/GPSSensorManager.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/GPSSensors/L76KBGPSSensor.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/GPSSensors/L76KBGPSSensor.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/GPSSensors/L76KBGPSSensor.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/GPSSensors/L76KBGPSSensor.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/IMUSensor.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/IMUSensor.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/IMUSensors/ADXL375Sensor.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/IMUSensors/ADXL375Sensor.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/IMUSensors/BMI088Sensor.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/IMUSensors/BMI088Sensor.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/IMUSensors/IMUSensorManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/IMUSensors/IMUSensorManager.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/Sensor.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/Sensor.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/StorageSystem.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/StorageSystem.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/StorageSystems/FlashStorage.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/StorageSystems/FlashStorage.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/StorageSystems/SDStorage.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/StorageSystems/SDStorage.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/StorageSystems/StorageManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/StorageSystems/StorageManager.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/TemperatureSensor.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/TemperatureSensor.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/TemperatureSensors/DS18B20Sensor.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/TemperatureSensors/DS18B20Sensor.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/HAL/TemperatureSensors/TemperatureSensorManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/HAL/TemperatureSensors/TemperatureSensorManager.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/Optimization/FaultHandler.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/Optimization/FaultHandler.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/Optimization/ResourceMonitor.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/Optimization/ResourceMonitor.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/PowerManagement/PowerController.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/PowerManagement/PowerController.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/PowerManagement/PowerManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/PowerManagement/PowerManager.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/StateMachine/StateHandlers.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/StateMachine/StateHandlers.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/lib/StateMachine/StateMachine.h" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/lib/StateMachine/StateMachine.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ROCKET/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../ROCKET/src/main.cpp" afterDir="false" />
-    </list>
+    <list default="true" id="d1ca9a27-336a-4e31-a514-cb52368ef075" name="Changes" comment="V2.0" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -186,7 +126,7 @@
       <workItem from="1747124491490" duration="141000" />
       <workItem from="1747312166709" duration="3002000" />
       <workItem from="1747325914835" duration="4000" />
-      <workItem from="1751527367239" duration="1867000" />
+      <workItem from="1751527367239" duration="2130000" />
     </task>
     <task id="LOCAL-00001" summary="V2.0">
       <option name="closed" value="true" />
@@ -244,7 +184,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747324267849</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="V2.0">
+      <option name="closed" value="true" />
+      <created>1751529443856</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1751529443856</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

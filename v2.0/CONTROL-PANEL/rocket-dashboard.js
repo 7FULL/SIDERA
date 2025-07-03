@@ -521,8 +521,9 @@ document.addEventListener('DOMContentLoaded', () => {
             data: { ...telemetry }
         });
 
-        // Log the telemetry packet
-        logToConsole(`Telemetry received [Alt: ${telemetry.alt.toFixed(1)}m, V: ${telemetry.vS.toFixed(1)}m/s]`, 'telemetry');
+        // Log the telemetry packet  
+        const speedKmhLog = (telemetry.vS * 3.6);
+        logToConsole(`Telemetry received [Alt: ${telemetry.alt.toFixed(1)}m, V: ${speedKmhLog.toFixed(1)}km/h]`, 'telemetry');
 
         // Dispatch event for command monitoring
         const event = new CustomEvent('telemetryReceived', {
@@ -594,7 +595,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateTelemetryDisplay(telemetry) {
         // Update numeric values
         elements.altitude.textContent = `${telemetry.alt.toFixed(1)} m`;
-        elements.verticalSpeed.textContent = `${telemetry.vS.toFixed(1)} m/s`;
+        const speedKmh = (telemetry.vS * 3.6); // Convert m/s to km/h
+        elements.verticalSpeed.textContent = `${speedKmh.toFixed(1)} km/h`;
         elements.acceleration.textContent = `${telemetry.acc.toFixed(2)} m/s²`;
         elements.temperature.textContent = `${telemetry.tem.toFixed(1)} °C`;
         elements.pressure.textContent = `${telemetry.pres.toFixed(1)} hPa`;
@@ -608,7 +610,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentSpeed = Math.abs(telemetry.vS);
         if (currentSpeed > appState.maxVelocity) {
             appState.maxVelocity = currentSpeed;
-            elements.maxVelocity.textContent = `${appState.maxVelocity.toFixed(1)} m/s`;
+            const maxVelocityKmh = (appState.maxVelocity * 3.6); // Convert m/s to km/h
+            elements.maxVelocity.textContent = `${maxVelocityKmh.toFixed(1)} km/h`;
         }
 
         // Update mission time
