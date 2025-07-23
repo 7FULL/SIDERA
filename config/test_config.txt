@@ -1,0 +1,114 @@
+# Rocket Flight Computer TEST Configuration
+# This configuration is designed for ground testing and simulation
+# DO NOT USE FOR ACTUAL FLIGHTS - Pyrotechnics are disabled
+#
+
+[flight_parameters]
+# More sensitive thresholds for ground testing
+launch_accel_threshold=5.0         # Lower threshold for hand movement simulation
+launch_altitude_threshold=2.0      # Lower altitude change for testing
+launch_time_threshold=200          # Faster detection for testing
+
+# Burnout detection - more sensitive for testing
+burnout_accel_threshold=2.0        # Lower threshold
+burnout_time_threshold=500         # Faster detection
+
+# Apogee detection - adjusted for test scenarios
+apogee_velocity_threshold=0.5      # Very low velocity threshold
+apogee_altitude_delta=1.0          # Small altitude change
+apogee_time_threshold=300          # Quick apogee detection
+
+# Recovery deployment - safe test values
+drogue_delay=100                   # Short delay for testing
+drogue_altitude=50.0               # Low altitude for indoor testing
+main_altitude=20.0                 # Very low main altitude for safety
+main_timeout=10000                 # 10 second timeout
+
+# Landing detection - sensitive for testing
+landing_velocity_threshold=0.3     # Very low velocity
+landing_altitude_delta=0.5         # Small altitude stability
+landing_time_threshold=2000        # 2 second stability
+
+# Safety timeouts - shorter for testing
+max_flight_time=60000              # 1 minute max test time
+max_boost_time=3000                # 3 second max boost
+max_coast_time=20000               # 20 second max coast
+
+[sensor_settings]
+# High update rate for detailed testing
+sensor_update_rate=200             # High sampling rate for testing
+altitude_filter_alpha=0.1          # Light filtering for responsiveness
+accel_filter_alpha=0.05            # Light filtering for quick response
+enable_kalman_filter=true          # Keep filtering enabled
+kalman_process_noise=0.2           # Higher noise for testing
+kalman_measurement_noise=3.0       # Account for test environment noise
+
+[communication]
+# Frequent telemetry for testing
+telemetry_rate=20                  # High telemetry rate for monitoring
+radio_baud_rate=115200             # High baud rate for fast data
+enable_ground_commands=true        # Enable commands for testing
+command_timeout=1000               # Short timeout for testing
+
+[recovery_system]
+# SAFETY: Dual deploy disabled for testing
+enable_dual_deploy=false           # DISABLED FOR SAFETY
+pyro_fire_duration=0               # NO PYROTECHNICS IN TEST MODE
+backup_timer_main=0.0              # Disabled for testing
+backup_timer_drogue=0.0            # Disabled for testing
+enable_backup_altimeter=false      # Disabled for testing
+
+[logging]
+# Detailed logging for test analysis
+enable_sd_logging=true             # Log everything for analysis
+log_rate=100                       # High log rate for detailed data
+log_raw_sensors=true               # Log all raw sensor data
+log_processed_data=true            # Log processed data
+log_flight_events=true             # Log all state changes
+max_log_file_size=2097152          # 2MB limit for testing
+
+[debug]
+# Full debug output for testing
+enable_serial_debug=true           # Enable all debug output
+debug_baud_rate=115200             # High baud rate for debug
+verbose_logging=true               # Enable verbose messages
+enable_test_mode=true              # CRITICAL: Enable test mode
+
+[calibration]
+# Test calibration values
+ground_pressure_offset=0.0         # Reset for each test session
+accelerometer_bias_x=0.0           # Reset calibration for testing
+accelerometer_bias_y=0.0           # Will be set during test calibration
+accelerometer_bias_z=0.0           # Reset values
+gyroscope_bias_x=0.0               # Reset gyro calibration
+gyroscope_bias_y=0.0               # Will be calibrated during test
+gyroscope_bias_z=0.0               # Reset values
+
+#
+# TEST CONFIGURATION WARNINGS:
+#
+# ⚠️  THIS IS A TEST CONFIGURATION - NOT FOR FLIGHT USE! ⚠️
+#
+# Safety Features:
+# - Test mode is ENABLED (disables pyrotechnics)
+# - Recovery system is DISABLED
+# - Pyrotechnic firing duration is set to 0
+# - All safety timeouts are reduced
+#
+# Test Procedures:
+# 1. Always verify test_mode=true before powering on
+# 2. Perform ground calibration before each test session
+# 3. Monitor serial output for detailed system status
+# 4. Test state transitions by manually moving the system
+# 5. Verify all sensors are reading correctly
+#
+# Converting to Flight Configuration:
+# 1. Copy flight_config_template.txt as base
+# 2. Adjust parameters based on test results
+# 3. Set enable_test_mode=false
+# 4. Enable recovery system settings
+# 5. Set appropriate pyro_fire_duration
+# 6. Verify all safety timeouts are appropriate
+#
+# NEVER FLY WITH TEST CONFIGURATION!
+#

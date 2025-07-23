@@ -1,0 +1,93 @@
+# Rocket Flight Computer Configuration File
+# This is a template showing all available configuration options
+# Copy this file to flight_config.txt and modify as needed
+
+[flight_parameters]
+# Launch detection parameters
+launch_accel_threshold=20.0        # Acceleration threshold for launch detection (m/s²)
+launch_altitude_threshold=10.0     # Altitude change threshold for launch (m)
+launch_time_threshold=500          # Time above threshold to confirm launch (ms)
+
+# Burnout detection parameters
+burnout_accel_threshold=5.0        # Acceleration drops below this for burnout (m/s²)
+burnout_time_threshold=1000        # Time below threshold to confirm burnout (ms)
+
+# Apogee detection parameters
+apogee_velocity_threshold=2.0      # Velocity near zero for apogee (m/s)
+apogee_altitude_delta=5.0          # Altitude change tolerance at apogee (m)
+apogee_time_threshold=1000         # Time at apogee before drogue deploy (ms)
+
+# Recovery deployment parameters
+drogue_delay=1000                  # Delay after apogee before drogue deploy (ms)
+drogue_altitude=500.0              # Backup altitude for drogue deploy (m AGL)
+main_altitude=150.0                # Altitude for main chute deploy (m AGL)
+main_timeout=60000                 # Maximum time before main deploy (ms)
+
+# Landing detection parameters
+landing_velocity_threshold=3.0     # Velocity threshold for landing (m/s)
+landing_altitude_delta=2.0         # Altitude stability for landing (m)
+landing_time_threshold=5000        # Time stable to confirm landing (ms)
+
+# Safety timeouts
+max_flight_time=300000             # Maximum total flight time (ms) - 5 minutes
+max_boost_time=10000               # Maximum boost phase time (ms) - 10 seconds
+max_coast_time=120000              # Maximum coast phase time (ms) - 2 minutes
+
+[sensor_settings]
+# Sensor update and filtering
+sensor_update_rate=100             # Sensor sampling rate (Hz)
+altitude_filter_alpha=0.2          # Low-pass filter coefficient for altitude (0.0-1.0)
+accel_filter_alpha=0.1             # Low-pass filter coefficient for acceleration (0.0-1.0)
+enable_kalman_filter=true          # Enable Kalman filter for altitude/velocity
+kalman_process_noise=0.1           # Kalman filter process noise
+kalman_measurement_noise=2.0       # Kalman filter measurement noise
+
+[communication]
+# Telemetry and radio settings
+telemetry_rate=10                  # Telemetry transmission rate (Hz)
+radio_baud_rate=9600               # Radio module baud rate
+enable_ground_commands=true        # Allow ground station commands
+command_timeout=5000               # Command timeout (ms)
+
+[recovery_system]
+# Recovery system configuration
+enable_dual_deploy=true            # Enable dual deployment system
+pyro_fire_duration=1000            # Pyrotechnic firing duration (ms)
+backup_timer_main=60.0             # Backup timer for main deploy (seconds)
+backup_timer_drogue=10.0           # Backup timer for drogue deploy (seconds)
+enable_backup_altimeter=false      # Enable backup altimeter
+
+[logging]
+# Data logging settings
+enable_sd_logging=true             # Enable SD card logging
+log_rate=50                        # Data logging rate (Hz)
+log_raw_sensors=true               # Log raw sensor data
+log_processed_data=true            # Log processed/filtered data
+log_flight_events=true             # Log flight state changes and events
+max_log_file_size=10485760         # Maximum log file size (bytes) - 10MB
+
+[debug]
+# Debug and development settings
+enable_serial_debug=true           # Enable serial debug output
+debug_baud_rate=115200             # Debug serial baud rate
+verbose_logging=false              # Enable verbose debug messages
+enable_test_mode=false             # Enable test mode (disables pyrotechnics)
+
+[calibration]
+# Sensor calibration values (set during ground calibration)
+ground_pressure_offset=0.0         # Ground pressure offset (hPa)
+accelerometer_bias_x=0.0           # X-axis accelerometer bias (g)
+accelerometer_bias_y=0.0           # Y-axis accelerometer bias (g)
+accelerometer_bias_z=0.0           # Z-axis accelerometer bias (g)
+gyroscope_bias_x=0.0               # X-axis gyroscope bias (rad/s)
+gyroscope_bias_y=0.0               # Y-axis gyroscope bias (rad/s)
+gyroscope_bias_z=0.0               # Z-axis gyroscope bias (rad/s)
+
+# Configuration file format notes:
+# - Lines starting with # or // are comments
+# - Section headers are enclosed in square brackets [section_name]
+# - Parameters are in key=value format
+# - No spaces around the = sign
+# - Boolean values: true/false or 1/0
+# - Floating point numbers use decimal notation
+# - All times are in milliseconds unless otherwise specified

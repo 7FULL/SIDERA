@@ -1,0 +1,119 @@
+# Rocket Flight Computer Configuration File
+# Example configuration for testing and flight operations
+# Generated automatically - Edit with caution
+#
+# Format: key=value
+# Comments start with # or //
+#
+
+[flight_parameters]
+# Launch detection parameters
+launch_accel_threshold=25.0        # Acceleration threshold for launch detection (m/s²)
+launch_altitude_threshold=15.0     # Altitude change threshold for launch (m)
+launch_time_threshold=750          # Time above threshold to confirm launch (ms)
+
+# Burnout detection parameters
+burnout_accel_threshold=8.0        # Acceleration drops below this for burnout (m/s²)
+burnout_time_threshold=1500        # Time below threshold to confirm burnout (ms)
+
+# Apogee detection parameters
+apogee_velocity_threshold=1.5      # Velocity near zero for apogee (m/s)
+apogee_altitude_delta=3.0          # Altitude change tolerance at apogee (m)
+apogee_time_threshold=800          # Time at apogee before drogue deploy (ms)
+
+# Recovery deployment parameters
+drogue_delay=500                   # Delay after apogee before drogue deploy (ms)
+drogue_altitude=400.0              # Backup altitude for drogue deploy (m AGL)
+main_altitude=120.0                # Altitude for main chute deploy (m AGL)
+main_timeout=45000                 # Maximum time before main deploy (ms)
+
+# Landing detection parameters
+landing_velocity_threshold=2.5     # Velocity threshold for landing (m/s)
+landing_altitude_delta=1.8         # Altitude stability for landing (m)
+landing_time_threshold=4000        # Time stable to confirm landing (ms)
+
+# Safety timeouts
+max_flight_time=240000             # Maximum total flight time (ms) - 4 minutes
+max_boost_time=8000                # Maximum boost phase time (ms) - 8 seconds
+max_coast_time=90000               # Maximum coast phase time (ms) - 1.5 minutes
+
+[sensor_settings]
+# Sensor update and filtering
+sensor_update_rate=100             # Sensor sampling rate (Hz)
+altitude_filter_alpha=0.25         # Low-pass filter coefficient for altitude (0.0-1.0)
+accel_filter_alpha=0.15            # Low-pass filter coefficient for acceleration (0.0-1.0)
+enable_kalman_filter=true          # Enable Kalman filter for altitude/velocity
+kalman_process_noise=0.12          # Kalman filter process noise
+kalman_measurement_noise=1.8       # Kalman filter measurement noise
+
+[communication]
+# Telemetry and radio settings
+telemetry_rate=12                  # Telemetry transmission rate (Hz)
+radio_baud_rate=9600               # Radio module baud rate
+enable_ground_commands=true        # Allow ground station commands
+command_timeout=3000               # Command timeout (ms)
+
+[recovery_system]
+# Recovery system configuration
+enable_dual_deploy=true            # Enable dual deployment system
+pyro_fire_duration=800             # Pyrotechnic firing duration (ms)
+backup_timer_main=50.0             # Backup timer for main deploy (seconds)
+backup_timer_drogue=8.0            # Backup timer for drogue deploy (seconds)
+enable_backup_altimeter=false      # Enable backup altimeter
+
+[logging]
+# Data logging settings
+enable_sd_logging=true             # Enable SD card logging
+log_rate=50                        # Data logging rate (Hz)
+log_raw_sensors=true               # Log raw sensor data
+log_processed_data=true            # Log processed/filtered data
+log_flight_events=true             # Log flight state changes and events
+max_log_file_size=8388608          # Maximum log file size (bytes) - 8MB
+
+[debug]
+# Debug and development settings
+enable_serial_debug=true           # Enable serial debug output
+debug_baud_rate=115200             # Debug serial baud rate
+verbose_logging=false              # Enable verbose debug messages
+enable_test_mode=false             # Enable test mode (disables pyrotechnics)
+
+[calibration]
+# Sensor calibration values (set during ground calibration)
+ground_pressure_offset=0.0         # Ground pressure offset (hPa)
+accelerometer_bias_x=0.02          # X-axis accelerometer bias (g)
+accelerometer_bias_y=-0.01         # Y-axis accelerometer bias (g)
+accelerometer_bias_z=0.03          # Z-axis accelerometer bias (g)
+gyroscope_bias_x=0.001             # X-axis gyroscope bias (rad/s)
+gyroscope_bias_y=-0.002            # Y-axis gyroscope bias (rad/s)
+gyroscope_bias_z=0.001             # Z-axis gyroscope bias (rad/s)
+
+#
+# Configuration Notes:
+# 
+# IMPORTANT: Always test configuration changes on the ground before flight!
+#
+# Flight Parameter Guidelines:
+# - launch_accel_threshold: Set based on your motor's thrust curve
+# - main_altitude: Adjust based on field size and local regulations
+# - Safety timeouts prevent system from getting stuck in any state
+#
+# Sensor Settings:
+# - Higher update rates provide better data but use more power
+# - Filter values between 0.1-0.3 work well for most applications
+# - Kalman filter improves altitude/velocity estimates significantly
+#
+# Recovery System:
+# - pyro_fire_duration should be long enough to ensure deployment
+# - Backup timers provide redundancy if altitude detection fails
+# - Test pyrotechnic continuity before each flight
+#
+# Logging:
+# - Higher log rates capture more detail but fill SD card faster
+# - Always enable flight_events logging for post-flight analysis
+# - Monitor SD card free space before flights
+#
+# Calibration:
+# - Run ground calibration before each flight day
+# - Bias values compensate for sensor mounting and temperature
+# - Ground pressure offset accounts for weather changes
+#
