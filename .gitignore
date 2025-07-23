@@ -1,0 +1,8 @@
+/.claude/*
+/.claude/
+/Rocket Flight Computer PCB Specifications (2).pdf
+/.idea/
+/.idea/*
+src/mk20_master/.idea
+src/samd21_navigation/.idea
+src/samd21_telemetry/.idea
